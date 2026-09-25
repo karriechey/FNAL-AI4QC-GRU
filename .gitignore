@@ -1,0 +1,13 @@
+# Created: 2026-09-25 | Last updated: 2026-09-25
+# Data and model files stay out of git; configs/paths.yaml points at them.
+datasets/
+checkpoints/
+*.npy
+*.npz
+*.h5
+*.pt
+*.keras
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+.DS_Store
