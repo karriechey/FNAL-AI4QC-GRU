@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/StudentModels.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-09-25 (detector layout uses circuit_generators.build_circuit)
+# Last modified: 2026-09-26 (reset_after is a build argument, default False)
 """hls4ml-native student architectures for distillation from the custom RCNN teacher.
 
 Why train a student model?
@@ -217,7 +217,7 @@ def build_mlp_student(d=5, rounds=3, inputs='evts', hidden=(128, 128),
 
 
 def build_gru_student(d=5, rounds=3, inputs='evts', units=64, hidden=(), p=0.010,
-                      weight_bits=None, act_bits=None, name='gru_student'):
+                      weight_bits=None, act_bits=None, name='gru_student', reset_after=False):
     """Recurrent student: one GRU timestep per detector round.
 
     Input is [n_timesteps, n_positions] as produced by to_sequence() -- for d=5, r=3 that
@@ -237,11 +237,12 @@ def build_gru_student(d=5, rounds=3, inputs='evts', units=64, hidden=(), p=0.010
     seq = KL.Input(shape=(n_t, n_pos), name='syndrome_sequence')
     x_in = seq
 
-    # reset_after pinned explicitly: Keras GRU defaults to True, QKeras QGRU to False, so
-    # leaving it implicit makes the float and quantized students structurally different
-    # layers (differing bias shape) and their results incomparable.
+    # reset_after passed explicitly to both layers: Keras GRU defaults to True, QKeras QGRU
+    # to False, so leaving it implicit makes the float and quantized students structurally
+    # different layers (differing bias shape) and their results incomparable. Default False
+    # keeps every existing checkpoint loadable; True is the cuDNN-compatible form.
     if weight_bits is None or weight_bits >= 32:
-        h = KL.GRU(units, return_sequences=False, reset_after=False, name='gru')(seq)
+        h = KL.GRU(units, return_sequences=False, reset_after=reset_after, name='gru')(seq)
     else:
         from qkeras.qrecurrent import QGRU
         q = _quantizers(weight_bits)
@@ -251,7 +252,7 @@ def build_gru_student(d=5, rounds=3, inputs='evts', units=64, hidden=(), p=0.010
         a_tanh = f'quantized_tanh({act_bits})' if act_bits else 'tanh'
         a_sigm = f'quantized_sigmoid({act_bits})' if act_bits else 'sigmoid'
         state_q = _quantizers(act_bits) if act_bits else _quantizers(weight_bits)
-        h = QGRU(units, return_sequences=False, reset_after=False,
+        h = QGRU(units, return_sequences=False, reset_after=reset_after,
                  kernel_quantizer=q, recurrent_quantizer=q, bias_quantizer=q,
                  state_quantizer=state_q,
                  activation=a_tanh, recurrent_activation=a_sigm,
@@ -265,7 +266,7 @@ def build_gru_student(d=5, rounds=3, inputs='evts', units=64, hidden=(), p=0.010
 
 
 def build_student(student, d=5, rounds=3, inputs='evts', hidden=(128, 128), units=64,
-                  weight_bits=None, act_bits=None):
+                  weight_bits=None, act_bits=None, reset_after=False):
     """Dispatch on the student name so trainers take a plain string argument."""
     if student == 'mlp':
         return build_mlp_student(d=d, rounds=rounds, inputs=inputs, hidden=hidden,
@@ -273,7 +274,8 @@ def build_student(student, d=5, rounds=3, inputs='evts', hidden=(128, 128), unit
     if student == 'gru':
         return build_gru_student(d=d, rounds=rounds, inputs=inputs, units=units,
                                  hidden=hidden if hidden else (),
-                                 weight_bits=weight_bits, act_bits=act_bits)
+                                 weight_bits=weight_bits, act_bits=act_bits,
+                                 reset_after=reset_after)
     raise ValueError(f"unknown student={student!r} (expected 'mlp' or 'gru')")
 
 

@@ -1,0 +1,82 @@
+{
+ "hls4ml": "1.3.0",
+ "tensorflow": "2.15.0",
+ "precision": "ap_fixed<32,16>",
+ "table_size": "default 1024",
+ "table_precision": "default fixed<18,8>",
+ "inputs": "first 500 shots of the d=5 eval block [15200000, ...)",
+ "models": {
+  "u140_reset_after_True": {
+   "units": 140,
+   "reset_after": true,
+   "weights": "random, seed 140",
+   "params": 69861,
+   "bias_shape": [
+    2,
+    420
+   ],
+   "compile_s": 3.7,
+   "max_abs_diff": 0.017316758632659912,
+   "mean_abs_diff": 0.004498444963246584,
+   "sign_agreement": 0.972,
+   "keras_logit_std": 0.05264640226960182
+  },
+  "u140_reset_after_False": {
+   "units": 140,
+   "reset_after": false,
+   "weights": "random, seed 140",
+   "params": 69441,
+   "bias_shape": [
+    420
+   ],
+   "compile_s": 3.6,
+   "max_abs_diff": 0.042304299771785736,
+   "mean_abs_diff": 0.03139235079288483,
+   "sign_agreement": 0.668,
+   "keras_logit_std": 0.052604082971811295
+  },
+  "u70_reset_after_True": {
+   "units": 70,
+   "reset_after": true,
+   "weights": "random, seed 70",
+   "params": 20231,
+   "bias_shape": [
+    2,
+    210
+   ],
+   "compile_s": 3.4,
+   "max_abs_diff": 0.014509856700897217,
+   "mean_abs_diff": 0.004397224169224501,
+   "sign_agreement": 0.984,
+   "keras_logit_std": 0.07318459451198578
+  },
+  "u70_reset_after_False": {
+   "units": 70,
+   "reset_after": false,
+   "weights": "random, seed 70",
+   "params": 20021,
+   "bias_shape": [
+    210
+   ],
+   "compile_s": 3.4,
+   "max_abs_diff": 0.07929439097642899,
+   "mean_abs_diff": 0.06570619344711304,
+   "sign_agreement": 0.846,
+   "keras_logit_std": 0.07319267839193344
+  },
+  "u140_reset_after_False_trained_run_of_record": {
+   "units": 140,
+   "reset_after": false,
+   "weights": "/home/kchey/rcnn_threshold/results/gh200_gru_d5_e200_20260819T185011Z/seed0/ckpt/gru_d5_p004_u140_hard_seed0_ntr10000000_b10000.best.weights.h5",
+   "params": 69441,
+   "bias_shape": [
+    420
+   ],
+   "compile_s": 3.6,
+   "max_abs_diff": 23.61349868774414,
+   "mean_abs_diff": 9.370413780212402,
+   "sign_agreement": 0.634,
+   "keras_logit_std": 7.835958480834961
+  }
+ }
+}

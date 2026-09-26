@@ -1,0 +1,5 @@
+[C2] u140_reset_after_True: units=140, reset_after=True, params=69861, bias_shape=[2, 420], compile_s=4.6, max_abs_diff=0.017316758632659912, mean_abs_diff=0.004497744143009186, sign_agreement=0.972, keras_logit_std=0.05264639854431152
+[C2] u140_reset_after_False: units=140, reset_after=False, params=69441, bias_shape=[420], compile_s=4.5, max_abs_diff=0.04230431467294693, mean_abs_diff=0.03139234706759453, sign_agreement=0.668, keras_logit_std=0.052604082971811295
+[C2] u70_reset_after_True: units=70, reset_after=True, params=20231, bias_shape=[2, 210], compile_s=4.6, max_abs_diff=0.014509864151477814, mean_abs_diff=0.004397223703563213, sign_agreement=0.984, keras_logit_std=0.07318459451198578
+[C2] u70_reset_after_False: units=70, reset_after=False, params=20021, bias_shape=[210], compile_s=4.4, max_abs_diff=0.0792943686246872, mean_abs_diff=0.06570619344711304, sign_agreement=0.846, keras_logit_std=0.07319267839193344
+[C2] wrote /home/kchey/FNAL-AI4QC-GRU/experiments/gru_check/c2_20260926T052555Z/c2_results.json
