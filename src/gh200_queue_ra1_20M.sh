@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-09-26
-# Last updated: 2026-09-26
+# Last updated: 2026-09-26 (also treat 'Dst tensor is not initialized' as out of GPU memory)
 #
 # Overnight GPU queue (approved by Karrie 2026-09-26): the u140 GRU with reset_after=True,
 # trained exactly like the old d=5 / d=7 "20M augmented" runs except for reset_after.
@@ -80,7 +80,7 @@ for job in "${JOBS[@]}"; do
       log "PAIR  d=$D seed=$SEED: no old per-shot dump for this seed; not paired"
     fi
   else
-    if grep -qE "ResourceExhausted|OOM when allocating|out of memory" "$OUT/podman.log" "$SEEDDIR/run.log" 2>/dev/null; then
+    if grep -qE "ResourceExhausted|OOM when allocating|out of memory|Dst tensor is not initialized" "$OUT/podman.log" "$SEEDDIR/run.log" 2>/dev/null; then
       SKIP[$D]="d=$D seed=$SEED ran out of GPU memory under the ${GPU_MEM_MIB} MiB cap"
       log "FAIL  d=$D seed=$SEED rc=$rc after ${dt}s: out of GPU memory; skipping the remaining d=$D runs"
       printf '%s\t%s\tfailed_oom\t%s\t%s\n' "$D" "$SEED" "$dt" "$OUT" >> "$STATUS"
