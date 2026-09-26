@@ -1,0 +1,20 @@
+{
+  "pool": "/home/kchey/pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz",
+  "pool_shots": 19000000,
+  "d": 5,
+  "p": 0.004,
+  "rounds": 5,
+  "block_start": 15000000,
+  "block_stop": 15200000,
+  "n": 200000,
+  "mwpm_p_L": 0.007345,
+  "mwpm_se": 0.00019093259249012464,
+  "residual_errors": 1469,
+  "base_rate": 0.192475,
+  "decode_seconds": 0.4,
+  "flips_sha256": "",
+  "stim_version": "1.16.0",
+  "pymatching_version": "2.4.0",
+  "numpy_version": "1.26.4",
+  "measured_utc": "2026-09-26T21:37:59Z"
+}
