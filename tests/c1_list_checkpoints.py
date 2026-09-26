@@ -23,14 +23,21 @@ for f in sorted(glob.glob(os.path.join(root, '**', '*gru*.best.weights.h5'), rec
     shapes = {}
     with h5py.File(f, 'r') as h:
         h.visititems(lambda n, o: shapes.__setitem__(n, o.shape) if hasattr(o, 'shape') else None)
-    kern = [s for n, s in shapes.items() if n.endswith('gru_cell/kernel:0')]
-    bias = [s for n, s in shapes.items() if n.endswith('gru_cell/bias:0')]
+    # Two layouts: the .weights.h5 format (layers/<name>/cell/vars/0,1,2 = kernel,
+    # recurrent kernel, bias; also stores optimizer and metric state) and the legacy h5
+    # format (.../gru_cell/kernel:0, bias:0).
+    layer = {n: s for n, s in shapes.items() if n.startswith('layers/') or 'model_weights' in n
+             or ':0' in n}
+    kern = [s for n, s in layer.items()
+            if n.endswith('gru_cell/kernel:0') or (('gru' in n) and n.endswith('cell/vars/0'))]
+    bias = [s for n, s in layer.items()
+            if n.endswith('gru_cell/bias:0') or (('gru' in n) and n.endswith('cell/vars/2'))]
     if not kern:
         continue
     n_in, three_u = kern[0]
     units = three_u // 3
     reset_after = len(bias[0]) == 2
-    params = int(sum(np.prod(s) for s in shapes.values()))
+    params = int(sum(np.prod(s) for s in layer.values() if len(s)))
     run = os.path.relpath(f, root).split(os.sep)[0]
     seed = os.path.basename(f).split('_seed')[1].split('_')[0] if '_seed' in f else '?'
     key = (run, units, n_in, reset_after, params, str(bias[0]))
