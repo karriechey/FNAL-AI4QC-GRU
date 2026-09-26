@@ -3,3 +3,23 @@
 [queue 2026-09-26T05:36:47Z] FAIL  d=5 seed=0 rc=2 after 84s (COMPLETE absent); continuing
 [queue 2026-09-26T05:36:47Z] RUN   d=7 seed=0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s0_20260926T053647Z
 [queue 2026-09-26T05:37:12Z] STOPPED by operator: d5 s0 failed copying the training array to the GPU under the 3500 MiB cap (Dst tensor is not initialized); every remaining run needs more memory, so the queue was stopped instead of running them to failure
+[queue 2026-09-26T17:40:23Z] ---- relaunch: reset_after=True unroll=True, host-memory input, TF32 on for training / off for evaluation, old checkpoints re-scored (commit 2bd963b) ----
+[queue 2026-09-26T17:40:23Z] START queue pid=134804 jobs=5 image=qdec:tf215 gpu_cap=3500MiB repo=2bd963b
+[queue 2026-09-26T17:40:23Z] RUN   d=5 seed=0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s0_20260926T174023Z
+[queue 2026-09-26T18:01:49Z] old sequential driver 134804 stopped (bash only); d5 s0 container bf0ae523ffbf keeps running and is adopted by gh200_queue_parallel.sh
+[sched 2026-09-26T18:01:49Z] START scheduler pid=143116 max_par=3 cap=1600MiB need_free=2000MiB repo=a130fe0
+[sched 2026-09-26T18:01:49Z] ADOPT d5_s0 (already running) -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s0_20260926T174023Z
+[sched 2026-09-26T18:01:49Z] FAIL  d5_s0 (adopted): container ended without COMPLETE
+[sched 2026-09-26T18:01:49Z] RUN   d7_s0 d=7 seed=0 extra=[43] n=[5000000] cap=1600MiB -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s0_20260926T180149Z
+[sched 2026-09-26T18:02:17Z] CORRECTION: the FAIL d5_s0 (adopted) line above is wrong - podman ps truncates the command, so the check missed container bf0ae523ffbf, which is still running. Re-adopted by container ID in a separate ADOPT_ONLY process.
+[sched 2026-09-26T18:02:17Z] START scheduler pid=144173 max_par=3 cap=1600MiB need_free=2000MiB repo=cd5c2e7
+[sched 2026-09-26T18:02:17Z] ADOPT d5_s0 (container bf0ae523ffbf, already running) -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s0_20260926T174023Z
+[sched 2026-09-26T18:04:49Z] RUN   d5_s1 d=5 seed=1 extra=[43] n=[5000000] cap=1600MiB -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s1_20260926T180449Z
+[sched 2026-09-26T18:05:02Z] scheduler 143116 stopped and restarted to record code commits at job start (running jobs unaffected)
+[sched 2026-09-26T18:05:02Z] START scheduler pid=146377 max_par=3 cap=1600MiB need_free=2000MiB repo=243f8bc
+[sched 2026-09-26T20:38:19Z] RUN   d7_s0_50M d=7 seed=0 extra=[43,44] n=[5000000,30000000] cap=1600MiB -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s0_50M_20260926T203819Z
+[sched 2026-09-26T20:38:35Z] DONE  d5_s0 (adopted)
+[sched 2026-09-26T20:38:35Z] BEST  d5_s0 best epoch 60
+[sched 2026-09-26T20:39:07Z] RESCORE old d=5 seed=0 (TF32 off) -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/old_rescored_tf32off/d5_s0
+[sched 2026-09-26T20:39:08Z] PAIR  d5_s0 vs old ra0 d5 s0
+[sched 2026-09-26T20:39:29Z] C2B   done on /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s0_20260926T174023Z/seed0/ckpt/gru_d5_p004_u140_ext5000000_ra1_ur1_hard_seed0_ntr15000000_b10000.best.weights.h5 -> /home/kchey/FNAL-AI4QC-GRU/experiments/gru_check/c2b_20260926T203908Z
