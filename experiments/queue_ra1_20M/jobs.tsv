@@ -1,0 +1,7 @@
+# name	d	seed	extra_seeds	extra_ns	ready_marker	pair_with
+d5_s0	5	0	43	5000000	-	-
+d7_s0	7	0	43	5000000	-	-
+d7_s0_50M	7	0	43,44	5000000,30000000	/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/READY_50M	d7_s0
+d5_s1	5	1	43	5000000	-	-
+d7_s1	7	1	43	5000000	-	-
+d5_s2	5	2	43	5000000	-	-

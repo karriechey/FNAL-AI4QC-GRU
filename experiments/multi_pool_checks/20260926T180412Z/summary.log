@@ -1,0 +1,6 @@
+new code fb8d02f, old code cd5c2e7 (worktree /home/kchey/gru_worktree_cd5c2e7)
+[multi] PASS order: rows 28,000 = 20,000+5,000+3,000 -> True; labels in order FORMAL, 43, 44 -> True; inputs -> True; each segment matches its pool -> True
+[multi] full-size count for the 50M run: 15,000,000 + 5,000,000 + 30,000,000 available -> 50,000,000
+[multi] PASS dupe: same file twice refused -> True ([gru] the same extension pool is listed twice. STOP.); same seed via a second path refused -> True ([gru] two extension pools share gen_seed 43; their shots would be duplicates. STOP.)
+[multi] PASS one-pool old (cd5c2e7) vs new: loss/val_loss/val_ler identical -> True [0.5080313086509705, 0.4159539043903351] ; best weights bit-identical -> True
+[multi] done

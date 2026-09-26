@@ -1,0 +1,40 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+2026-09-26 18:04:12.932883: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 18:04:12.932918: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 18:04:12.933532: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[gru] tf32=on (TensorFlow default)
+[gru] TF 2.15.0  GPUs: []
+[gru] hard-label control arm: teacher column unused (alpha=1).
+[gru] extra pool gen_seed=43 flips_sha=83122704a44ae6b5
+[gru] training set extended by 5,000 shots from data_d7_p0.004_r7_TRAINONLY_seed43.npz; total 25,000
+[gru] extra pool gen_seed=44 flips_sha=b8a202961bc0dbe2
+[gru] training set extended by 3,000 shots from data_d7_p0.004_r7_TRAINONLY_seed44.npz; total 28,000
+[gru] provenance: pool=pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz flips_sha= teacher_sha= code_sha=a89f2a97b3fdc938
+[gru] scoring shots [15,200,000, 15,220,000)
+[gru] partitions: train [0, 20,000) of the primary pool + 8,000 augmentation shots  validation [15,000,000, 15,020,000)  (validation_split disabled)
+[gru] 3 steps/epoch x 1 epochs = 3 optimizer updates
+[gru] reset_after=True unroll=True
+[gru] gru inputs=evts params=79,941
+[gru] checkpoints -> /home/kchey/FNAL-AI4QC-GRU/experiments/multi_pool_checks/20260926T180412Z/order/order/ckpt/order.best.keras + .best.weights.h5 (lowest val LER, tiebreak val_loss; epoch in /home/kchey/FNAL-AI4QC-GRU/experiments/multi_pool_checks/20260926T180412Z/order/order/ckpt/order.best.json) and /home/kchey/FNAL-AI4QC-GRU/experiments/multi_pool_checks/20260926T180412Z/order/order/ckpt/order.lastepoch.weights.h5
+[gru] callback order: ['ValLERCheckpoint', '_SaveLastEpoch']
+[multi] PASS order: rows 28,000 = 20,000+5,000+3,000 -> True; labels in order FORMAL, 43, 44 -> True; inputs -> True; each segment matches its pool -> True
+[multi] full-size count for the 50M run: 15,000,000 + 5,000,000 + 30,000,000 available -> 50,000,000

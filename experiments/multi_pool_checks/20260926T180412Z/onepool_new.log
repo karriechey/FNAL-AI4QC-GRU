@@ -1,0 +1,47 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+2026-09-26 18:08:32.708948: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 18:08:32.708996: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 18:08:32.709821: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[gru] tf32=on (TensorFlow default)
+[gru] TF 2.15.0  GPUs: []
+[gru] hard-label control arm: teacher column unused (alpha=1).
+[gru] extra pool gen_seed=43 flips_sha=705f765819feb00f
+[gru] training set extended by 100,000 shots from data_d5_p0.004_r5_TRAINONLY_seed43.npz; total 300,000
+[gru] provenance: pool=pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz flips_sha= teacher_sha= code_sha=a89f2a97b3fdc938
+[gru] scoring shots [15,200,000, 15,250,000)
+[gru] partitions: train [0, 200,000) of the primary pool + 100,000 augmentation shots  validation [15,000,000, 15,050,000)  (validation_split disabled)
+[gru] 30 steps/epoch x 2 epochs = 60 optimizer updates
+[gru] reset_after=True unroll=True
+[gru] gru inputs=evts params=69,861
+[gru] checkpoints -> /home/kchey/FNAL-AI4QC-GRU/experiments/multi_pool_checks/20260926T180412Z/onepool_new/ckpt/onepool.best.keras + .best.weights.h5 (lowest val LER, tiebreak val_loss; epoch in /home/kchey/FNAL-AI4QC-GRU/experiments/multi_pool_checks/20260926T180412Z/onepool_new/ckpt/onepool.best.json) and /home/kchey/FNAL-AI4QC-GRU/experiments/multi_pool_checks/20260926T180412Z/onepool_new/ckpt/onepool.lastepoch.weights.h5
+[gru] callback order: ['ValLERCheckpoint', '_SaveLastEpoch']
+[gru] input: host-memory uint8 tf.data, shuffle seed 0, batch 10000, prefetch to GPU
+Epoch 1/2
+[gru] epoch 1: val_loss=0.43569 val_ler=0.203220 (10,161/50,000 errors)  <- new best
+30/30 - 14s - loss: 0.5080 - hard_accuracy: 0.7968 - val_loss: 0.4357 - val_hard_accuracy: 0.7968 - val_ler: 0.2032 - val_errors: 10161.0000 - 14s/epoch - 454ms/step
+Epoch 2/2
+[gru] epoch 2: val_loss=0.39473 val_ler=0.210460 (10,523/50,000 errors)
+30/30 - 1s - loss: 0.4160 - hard_accuracy: 0.7926 - val_loss: 0.3947 - val_hard_accuracy: 0.7895 - val_ler: 0.2105 - val_errors: 10523.0000 - 1s/epoch - 46ms/step
+[gru] --test-pool given: suppressing the stored MWPM ratio (baselines are tail-specific). Decode MWPM on THIS tail to compare.
+[gru] onepool  p_L=0.21380  base_rate=0.195  agree_ambiguous=  <-- fails: p_L >= base rate (class collapse)  (2 ep, 15s)
+[gru] wrote -> /home/kchey/FNAL-AI4QC-GRU/experiments/multi_pool_checks/20260926T180412Z/onepool_new/runs/onepool.csv  (+ history, weights)
+[loader] train: error=None (no GPU)
