@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-09-26 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input)
+# Last modified: 2026-09-26 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -353,6 +353,8 @@ def run():
     ap.add_argument('--units', type=int, default=64, help='GRU hidden state size')
     ap.add_argument('--reset-after', action='store_true',
                     help='GRU with reset_after=True (cuDNN form); default False as before')
+    ap.add_argument('--unroll', action='store_true',
+                    help='unroll the GRU timesteps (generic kernel, no cuDNN); default False')
     ap.add_argument('--weight-bits', type=int, default=None,
                     help='Phase-3 QAT weight word length; None/>=32 => float weights '
                          '(the Phase-2 distillation setting)')
@@ -690,8 +692,8 @@ def run():
     model = build_student(args.student, d=d, rounds=r, inputs=args.inputs,
                           hidden=tuple(args.hidden), units=args.units,
                           weight_bits=args.weight_bits, act_bits=args.act_bits,
-                          reset_after=args.reset_after)
-    print(f"{LOG} reset_after={args.reset_after}", flush=True)
+                          reset_after=args.reset_after, unroll=args.unroll)
+    print(f"{LOG} reset_after={args.reset_after} unroll={args.unroll}", flush=True)
     optimizer = (tf.keras.optimizers.Adam(learning_rate=args.lr) if args.lr is not None
                  else 'adam')
     model.compile(optimizer=optimizer,
@@ -840,7 +842,7 @@ def run():
     fields = ['architecture', 'student', 'inputs', 'd', 'p', 'rounds', 'seed', 'n_train',
               'n_test', 'alpha', 'temperature', 'lr', 'weight_bits', 'act_bits',
               # architecture size, so a row is interpretable without parsing its tag
-              'hidden', 'units', 'n_params',
+              'hidden', 'units', 'n_params', 'reset_after', 'unroll',
               'epochs', 'epochs_ran', 'batch_size', 'p_L', 'mwpm_p_L', 'ratio_vs_mwpm',
               'base_rate', 'beats_base_rate', 'teacher_tail_p_L',
               # agreement: the raw rate is dominated by the ~80% of shots where this
@@ -860,7 +862,8 @@ def run():
             act_bits=('' if args.act_bits is None else args.act_bits),
             hidden='-'.join(str(h) for h in args.hidden) if args.hidden else '',
             units=(args.units if args.student == 'gru' else ''),
-            n_params=n_params, epochs=args.epochs, epochs_ran=epochs_ran,
+            n_params=n_params, reset_after=int(args.reset_after), unroll=int(args.unroll),
+            epochs=args.epochs, epochs_ran=epochs_ran,
             batch_size=args.batch_size, p_L=round(pL, 6),
             mwpm_p_L=('' if mwpm is None else round(mwpm, 6)),
             ratio_vs_mwpm=('' if mwpm is None else round(pL / mwpm, 4)),

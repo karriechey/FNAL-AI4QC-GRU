@@ -39,11 +39,12 @@ sys.path.insert(0, os.path.join(ROOT, 'src'))
 D, N_SHOTS, PRECISION = 5, 500, 'ap_fixed<32,16>'
 
 
-def build(tf, units, reset_after, seed):
+def build(tf, units, reset_after, seed, unroll=False):
     tf.keras.utils.set_random_seed(seed)
     KL = tf.keras.layers
     x = KL.Input(shape=(D + 1, D * D - 1), name='syndrome_sequence')
-    h = KL.GRU(units, return_sequences=False, reset_after=reset_after, name='gru')(x)
+    h = KL.GRU(units, return_sequences=False, reset_after=reset_after, unroll=unroll,
+               name='gru')(x)
     y = KL.Dense(1, name='logit')(h)
     return tf.keras.Model(x, y)
 
@@ -60,6 +61,7 @@ def main():
                     help='check this d=5 .weights.h5 instead of the random-weight models')
     ap.add_argument('--trained-units', type=int, default=140)
     ap.add_argument('--trained-reset-after', action='store_true')
+    ap.add_argument('--trained-unroll', action='store_true')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
 
@@ -92,7 +94,8 @@ def main():
                 ('_trained_' + os.path.basename(ckpt).split('.')[0]) if ckpt else '')
             rec = dict(units=units, reset_after=reset_after, weights=ckpt or f'random, seed {units}')
             try:
-                model = build(tf, units, reset_after, seed=units)
+                model = build(tf, units, reset_after, seed=units,
+                              unroll=bool(ckpt) and a.trained_unroll)
                 if ckpt:
                     model.load_weights(ckpt)
                 rec['params'] = int(model.count_params())

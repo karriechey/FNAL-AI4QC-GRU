@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input)
+# Last modified: 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll)
 """Score a saved student on a fixed partition and run the paired McNemar test vs MWPM.
 
 Why a separate script from eval_on_tail.py
@@ -51,6 +51,7 @@ def run():
     ap.add_argument('--units', type=int, default=140, help='GRU hidden state size')
     ap.add_argument('--reset-after', action='store_true',
                     help='the checkpoint was trained with reset_after=True')
+    ap.add_argument('--unroll', action='store_true', help='build the GRU with unroll=True')
     ap.add_argument('--weight-bits', type=int, default=None)
     ap.add_argument('--act-bits', type=int, default=None)
     ap.add_argument('--d', type=int, default=5)
@@ -118,7 +119,7 @@ def run():
         model = build_gru_student(d=d, rounds=r, inputs=args.inputs, units=args.units,
                                   hidden=tuple(args.hidden), p=p,
                                   weight_bits=args.weight_bits, act_bits=args.act_bits,
-                                  reset_after=args.reset_after)
+                                  reset_after=args.reset_after, unroll=args.unroll)
     else:
         model = build_student('mlp', d=d, rounds=r, inputs=args.inputs,
                               hidden=tuple(args.hidden) or (209, 209),

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-09-26
-# Last updated: 2026-09-26 (also treat 'Dst tensor is not initialized' as out of GPU memory)
+# Last updated: 2026-09-26 (also treat 'Dst tensor is not initialized' as out of GPU memory; UNROLL=1)
 #
 # Overnight GPU queue (approved by Karrie 2026-09-26): the u140 GRU with reset_after=True,
 # trained exactly like the old d=5 / d=7 "20M augmented" runs except for reset_after.
@@ -14,6 +14,8 @@
 #                       then McNemar vs the old reset_after=False checkpoint of the same
 #                       d and seed (pair_two_decoders.py), b / c / n_discordant
 #   GPU                 3.5 GB cap per run (sglang holds ~91.5 GB)
+#   GRU layer           reset_after=True, unroll=True: the generic kernel, as in every old
+#                       run. TF 2.15's cuDNN GRU call fails under the image's cuDNN 9.
 #
 # A failed run is logged and the queue moves on. If a run fails by running out of GPU
 # memory, the remaining runs of that distance are skipped (same configuration, same
@@ -62,7 +64,7 @@ for job in "${JOBS[@]}"; do
     -v "$HOME:$HOME" -e HOME="$HOME" -w "$REPO/src" "$IMG" \
     env D="$D" ROUNDS="$D" SEEDS="$SEED" UNITS=140 NTRAIN=15000000 \
         EXTRA_POOL="$EXTRA" EXTRA_N=5000000 BATCH=10000 EPOCHS=200 LR=0.003 \
-        EARLY_STOP=0 RESET_AFTER=1 GPU_MEM_MIB="$GPU_MEM_MIB" MIN_FREE_MIB="$GPU_MEM_MIB" \
+        EARLY_STOP=0 RESET_AFTER=1 UNROLL=1 GPU_MEM_MIB="$GPU_MEM_MIB" MIN_FREE_MIB="$GPU_MEM_MIB" \
         OUT="$OUT" STAMP="$STAMP" \
     bash gh200_run_student_scaling.sh > "$OUT/podman.log" 2>&1
   rc=$?
@@ -90,7 +92,7 @@ for job in "${JOBS[@]}"; do
       podman run --rm --security-opt=label=disable -v "$HOME:$HOME" -e HOME="$HOME" \
         -e TF_CPP_MIN_LOG_LEVEL=3 -w "$REPO" "$IMG" \
         python3 tests/c2_hls4ml_gru_check.py --out "$C2B" --trained-weights "$BEST" \
-          --trained-units 140 --trained-reset-after --table-size 65536 \
+          --trained-units 140 --trained-reset-after --trained-unroll --table-size 65536 \
           --table-precision "ap_fixed<32,16>" > "$C2B/run.log" 2>&1 \
         && log "C2B   done on $BEST -> $C2B" || log "C2B   FAILED (see $C2B/run.log)"
     fi

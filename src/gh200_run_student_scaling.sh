@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-09-26 (partitions and pool path read from configs/*.yaml; RESET_AFTER)
+# Last updated: 2026-09-26 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -39,6 +39,9 @@ W_BITS="${W_BITS:-}"
 # RESET_AFTER=1 trains and evaluates the GRU with reset_after=True and adds _ra1 to the tag,
 # so its outputs never share a name with the reset_after=False runs. Default 0 = as before.
 RESET_AFTER="${RESET_AFTER:-0}"
+# UNROLL=1 builds the GRU with unroll=True (generic kernel, no cuDNN; needed for
+# reset_after=True under the image's cuDNN 9) and adds _ur1 to the tag. Default 0.
+UNROLL="${UNROLL:-0}"
 A_BITS="${A_BITS:-}"
 
 # Independent training-only extension, appended to the training prefix. Its pool must come
@@ -251,6 +254,7 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "$GEOMETRY"
   echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=1.0 hard labels"
   echo "             : batch=$BATCH lr=$LR epochs=$EPOCHS early_stop=$EARLY_STOP"
+  echo "gru layer    : reset_after=$RESET_AFTER unroll=$UNROLL"
   echo "gpu cap      : ${GPU_MEM_MIB:-none} MiB per process"
   echo "quantization : weights=${W_BITS:-float32} activations=${A_BITS:-float32}"
   echo "extension    : ${EXTRA_POOL:-none} n=${EXTRA_N:-all}"
@@ -293,6 +297,7 @@ fi
 
 if [ -n "$W_BITS" ]; then ARCH+=(--weight-bits "$W_BITS"); fi
 if [ "$RESET_AFTER" = "1" ]; then ARCH+=(--reset-after); fi
+if [ "$UNROLL" = "1" ]; then ARCH+=(--unroll); fi
 if [ -n "$A_BITS" ]; then ARCH+=(--act-bits "$A_BITS"); fi
 
 if [ "$EARLY_STOP" = "1" ]; then
@@ -311,6 +316,7 @@ run_seed () {
   [ -n "$W_BITS$A_BITS" ] && QTAG="_w${W_BITS:-f32}_a${A_BITS:-f32}"
   [ -n "$EXTRA_POOL" ] && QTAG="${QTAG}_ext${EXTRA_N:-all}"
   [ "$RESET_AFTER" = "1" ] && QTAG="${QTAG}_ra1"
+  [ "$UNROLL" = "1" ] && QTAG="${QTAG}_ur1"
   local TAG="${STUDENT}_d${D}_p004_${SIZE}${QTAG}_hard_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
   local SEEDDIR="$OUT/seed${SEED}"
   local SRUNS="$SEEDDIR/runs"
