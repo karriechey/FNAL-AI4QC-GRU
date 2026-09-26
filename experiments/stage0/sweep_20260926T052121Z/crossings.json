@@ -1,0 +1,11 @@
+{
+ "d5_d7": {
+  "per_shot": 0.00784052593158777,
+  "per_round": null
+ },
+ "d7_d9": {
+  "per_shot": 0.007706226236593128,
+  "per_round": null
+ },
+ "fowler_reference": 0.0057
+}
