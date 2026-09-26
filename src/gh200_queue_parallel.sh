@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-09-26
-# Last updated: 2026-09-26 (adoption matched by container ID; ADOPT_ONLY mode)
+# Last updated: 2026-09-26 (adoption matched by container ID; ADOPT_ONLY mode; code commit recorded at start)
 #
 # Parallel GPU scheduler for the reset_after=True queue (Karrie, 2026-09-26). Replaces the
 # sequential gh200_queue_ra1_20M.sh, whose running d5 s0 job it adopts without restarting.
@@ -51,9 +51,7 @@ free_mib () { nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits |
 postprocess () {   # postprocess <name> <d> <seed> <out> <pair_with>
   local name="$1" D="$2" SEED="$3" OUT="$4" PAIRW="$5"
   local SEEDDIR="$OUT/seed$SEED"
-  { echo "repo_head $(git -C "$REPO" rev-parse HEAD)"
-    echo "train_student_last_commit $(git -C "$REPO" log -1 --format=%H -- src/train_student.py)"
-  } > "$OUT/code_commit.txt"
+  echo "at_postprocess repo_head $(git -C "$REPO" rev-parse HEAD)" >> "$OUT/code_commit.txt"
   local BJ BEST_EP
   BJ=$(ls "$SEEDDIR"/ckpt/*.best.json 2>/dev/null | head -1)
   BEST_EP=$([ -n "$BJ" ] && python3 -c "import json;print(json.load(open('$BJ'))['best_epoch'])" || echo "?")
@@ -125,6 +123,11 @@ run_job () {       # run_job <name> <d> <seed> <extra_seeds> <extra_ns> <pair_wi
   STAMP=$(date -u +%Y%m%dT%H%M%SZ)
   OUT="$QROOT/${name}_${STAMP}"
   mkdir -p "$OUT"; echo "$OUT" > "$STATE/$name.out"
+  # Code the run starts with (the checkout can move on while runs are in flight).
+  { echo "at_start repo_head $(git -C "$REPO" rev-parse HEAD)"
+    echo "at_start train_student_last_commit $(git -C "$REPO" log -1 --format=%H -- src/train_student.py)"
+    echo "at_start train_student_sha256 $(sha256sum "$REPO/src/train_student.py" | cut -d' ' -f1)"
+  } > "$OUT/code_commit.txt"
   EXTRA_POOL=""; for s in ${XS//,/ }; do
     EXTRA_POOL="$EXTRA_POOL $HOME/pools_d${D}_p004_19M/data_d${D}_p0.004_r${D}_TRAINONLY_seed${s}.npz"; done
   EXTRA_POOL="${EXTRA_POOL# }"; EXTRA_N="${XN//,/ }"
