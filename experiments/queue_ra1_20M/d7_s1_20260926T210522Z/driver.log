@@ -1,0 +1,50 @@
+name, memory.used [MiB], memory.free [MiB], memory.total [MiB], utilization.gpu [%]
+NVIDIA GH200 480GB, 94563 MiB, 2718 MiB, 97871 MiB, 12 %
+pid, process_name, used_gpu_memory [MiB]
+[gru] 2718 MiB free: card available
+2026-09-26 21:05:23.207602: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 21:05:23.207631: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 21:05:23.208232: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[gru] TensorFlow 2.15.0  GPUs: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+[gru] GPU matmul ok
+[gru] stim 1.16.0  numpy 1.24.4  pymatching ok
+[gru] pool /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz
+[gru] shots=19,000,000  det_evts(19000000, 336)  measurements(19000000, 385)
+[gru] train [0, 15,000,000)  val [15,000,000, 15,200,000)  eval [15,200,000, 17,000,000)  sealed [17,000,000, 19,000,000)  all disjoint
+[gru] pool gen_seed=42  flips_sha=b49fbe40786da9e6  n_total=19,000,000
+[gru] extension gen_seed=43 flips_sha=83122704a44ae6b5 purpose=training_only using [0, 5,000,000) of 5,000,000
+2026-09-26 21:05:49.333278: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 21:05:49.333310: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 21:05:49.333920: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-09-26 21:05:50.671223: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:274] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+2026-09-26 21:05:50.671251: I external/local_xla/xla/stream_executor/cuda/cuda_diagnostics.cc:129] retrieving CUDA diagnostic information for host: d65e125a866b
+2026-09-26 21:05:50.671258: I external/local_xla/xla/stream_executor/cuda/cuda_diagnostics.cc:136] hostname: d65e125a866b
+2026-09-26 21:05:50.671302: I external/local_xla/xla/stream_executor/cuda/cuda_diagnostics.cc:159] libcuda reported version is: 595.71.5
+2026-09-26 21:05:50.671328: I external/local_xla/xla/stream_executor/cuda/cuda_diagnostics.cc:163] kernel reported version is: NOT_FOUND: could not find kernel module information in driver version file contents: "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  595.71.05  Release Build  (mockbuild@)  Tue May 26 05:27:22 UTC 2026
+GCC version:  gcc version 14.3.1 20251022 (Red Hat 14.3.1-4) (GCC) 
+"
+[gru] sequence layout: 8 timesteps x 48 positions
+[gru] gru units=140 hidden=()  params=79,521
+experiment   : gru distance scaling, d=7 r=7 p=0.004 (grace1 GH200)
+launched     : 2026-09-26T21:05:51Z  on d65e125a866b
+pool         : /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz
+pool prov    : gen_seed=42 flips_sha=b49fbe40786da9e62b84ffb2c1937e17855f798b3d7edb1917d0d165880b166e n_total=19000000
+train        : [0, 15000000)
+validation   : [15000000, 15200000)
+evaluation   : [15200000, 17000000)
+sealed test  : [17000000, 19000000)   not read
+recipe       : gru units=140 hidden=() inputs=evts alpha=1.0 hard labels
+             : batch=10000 lr=0.003 epochs=200 early_stop=0
+gru layer    : reset_after=1 unroll=1
+tf32         : training on, evaluation off
+gpu cap      : 1600 MiB per process
+quantization : weights=float32 activations=float32
+extension    : /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz n=5000000
+selection    : min val_loss checkpoint, scored once on the evaluation block
+seeds        : 1
+determinism  : TF_DETERMINISTIC_OPS=1  TF_CUDNN_DETERMINISTIC=1
+code sha     : a89f2a97b3fdc938  train_student.py
+             : 7078646310398978  StudentModels.py
+             : 36d946779b8c7d3a  gh200_run_student_scaling.sh
+
+[gru] seed 1 -> log /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s1_20260926T210522Z/seed1/run.log
