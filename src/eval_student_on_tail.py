@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll)
+# Last modified: 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
 """Score a saved student on a fixed partition and run the paired McNemar test vs MWPM.
 
 Why a separate script from eval_on_tail.py
@@ -52,6 +52,8 @@ def run():
     ap.add_argument('--reset-after', action='store_true',
                     help='the checkpoint was trained with reset_after=True')
     ap.add_argument('--unroll', action='store_true', help='build the GRU with unroll=True')
+    ap.add_argument('--no-tf32', action='store_true',
+                    help='disable TensorFloat-32 matmuls on the GPU (full FP32). Default: the TensorFlow default, TF32 on, as in every earlier run')
     ap.add_argument('--weight-bits', type=int, default=None)
     ap.add_argument('--act-bits', type=int, default=None)
     ap.add_argument('--d', type=int, default=5)
@@ -75,6 +77,10 @@ def run():
     import tensorflow as tf
     assert tf.__version__.startswith('2.15'), (
         f'need TF 2.15.x (Keras 2); got TF {tf.__version__}.')
+    if args.no_tf32:
+        tf.config.experimental.enable_tensor_float_32_execution(False)
+    print(f"[student-eval] tf32={'off' if args.no_tf32 else 'on (TensorFlow default)'} "
+          f"reset_after={args.reset_after} unroll={args.unroll}", flush=True)
     if args.cpu:
         tf.config.set_visible_devices([], 'GPU')
     elif args.gpu_mem_mib:
@@ -177,7 +183,8 @@ def run():
         cols = ['weights', 'student', 'd', 'p', 'rounds', 'eval_start', 'n_test',
                 'n_params', 'p_L', 'mwpm_p_L', 'ratio', 'base_rate',
                 'both_right', 'student_only', 'mwpm_only', 'both_wrong', 'n_discordant',
-                'net_student_wins', 'mcnemar_chi2_cc', 'p_chi2', 'p_exact']
+                'net_student_wins', 'mcnemar_chi2_cc', 'p_chi2', 'p_exact',
+                'reset_after', 'unroll', 'tf32']
         new = not os.path.exists(args.out_csv)
         with open(args.out_csv, 'a', newline='') as f:
             w = csv.writer(f)
@@ -189,7 +196,9 @@ def run():
                         round(base_rate, 5),
                         mc['both_right'], mc['rcnn_only'], mc['mwpm_only'],
                         mc['both_wrong'], mc['n_discordant'], mc['net_rcnn_wins'],
-                        round(mc['mcnemar_chi2_cc'], 3), mc['p_chi2'], mc['p_exact']])
+                        round(mc['mcnemar_chi2_cc'], 3), mc['p_chi2'], mc['p_exact'],
+                        int(args.reset_after), int(args.unroll),
+                        'off' if args.no_tf32 else 'on'])
         print(f"[student-eval] appended -> {args.out_csv}", flush=True)
 
 

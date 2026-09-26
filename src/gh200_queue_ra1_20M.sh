@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-09-26
-# Last updated: 2026-09-26 (also treat 'Dst tensor is not initialized' as out of GPU memory; UNROLL=1)
+# Last updated: 2026-09-26 (also treat 'Dst tensor is not initialized' as out of GPU memory; UNROLL=1; TF32 on for training, off for evaluation; old checkpoints re-scored)
 #
 # Overnight GPU queue (approved by Karrie 2026-09-26): the u140 GRU with reset_after=True,
 # trained exactly like the old d=5 / d=7 "20M augmented" runs except for reset_after.
@@ -16,6 +16,10 @@
 #   GPU                 3.5 GB cap per run (sglang holds ~91.5 GB)
 #   GRU layer           reset_after=True, unroll=True: the generic kernel, as in every old
 #                       run. TF 2.15's cuDNN GRU call fails under the image's cuDNN 9.
+#   TF32                on for training (TensorFlow default, as in every old run); OFF for every
+#                       evaluation: the new best checkpoint (launcher EVAL_NO_TF32=1) and the
+#                       old reset_after=False checkpoint of the same d and seed, which is
+#                       re-scored here with --no-tf32 on the same eval block before pairing.
 #
 # A failed run is logged and the queue moves on. If a run fails by running out of GPU
 # memory, the remaining runs of that distance are skipped (same configuration, same
@@ -64,7 +68,7 @@ for job in "${JOBS[@]}"; do
     -v "$HOME:$HOME" -e HOME="$HOME" -w "$REPO/src" "$IMG" \
     env D="$D" ROUNDS="$D" SEEDS="$SEED" UNITS=140 NTRAIN=15000000 \
         EXTRA_POOL="$EXTRA" EXTRA_N=5000000 BATCH=10000 EPOCHS=200 LR=0.003 \
-        EARLY_STOP=0 RESET_AFTER=1 UNROLL=1 GPU_MEM_MIB="$GPU_MEM_MIB" MIN_FREE_MIB="$GPU_MEM_MIB" \
+        EARLY_STOP=0 RESET_AFTER=1 UNROLL=1 EVAL_NO_TF32=1 GPU_MEM_MIB="$GPU_MEM_MIB" MIN_FREE_MIB="$GPU_MEM_MIB" \
         OUT="$OUT" STAMP="$STAMP" \
     bash gh200_run_student_scaling.sh > "$OUT/podman.log" 2>&1
   rc=$?
@@ -74,7 +78,24 @@ for job in "${JOBS[@]}"; do
     log "DONE  d=$D seed=$SEED in ${dt}s"
     printf '%s\t%s\tdone\t%s\t%s\n' "$D" "$SEED" "$dt" "$OUT" >> "$STATUS"
     NEW=$(ls "$SEEDDIR"/per_shot_*.npz | head -1)
-    OLD=$(ls "$HOME/rcnn_threshold/results/${OLDRUN[$D]}/seed$SEED"/per_shot_*.npz 2>/dev/null | head -1)
+    # Re-score the old reset_after=False checkpoint with TF32 off, same eval block.
+    OLDCK="$HOME/rcnn_threshold/results/${OLDRUN[$D]}/seed$SEED/ckpt/gru_d${D}_p004_u140_ext5000000_hard_seed${SEED}_ntr15000000_b10000.best.weights.h5"
+    RES="$QROOT/old_rescored_tf32off/d${D}_s${SEED}"
+    OLD=""
+    if [ -f "$OLDCK" ]; then
+      mkdir -p "$RES"
+      eval "$("$PYH" "$REPO/src/partitions.py" --shell --d "$D")"
+      podman run --rm --security-opt=label=disable --device nvidia.com/gpu=all \
+        -v "$HOME:$HOME" -e HOME="$HOME" -w "$REPO/src" "$IMG" \
+        python3 eval_student_on_tail.py --student gru --inputs evts --hidden --units 140 \
+          --no-tf32 --gpu-mem-mib "$GPU_MEM_MIB" --weights "$OLDCK" \
+          --d "$D" --p 0.004 --rounds "$D" --pool "$POOL" \
+          --eval-start "$EVAL_START" --n-test "$EVAL_N" --batch-size 10000 \
+          --dump-per-shot "$RES/per_shot_old_ra0.npz" --out-csv "$RES/eval_old_ra0.csv" \
+          > "$RES/rescore.log" 2>&1 \
+        && OLD="$RES/per_shot_old_ra0.npz" && log "RESCORE old d=$D seed=$SEED (TF32 off) -> $RES" \
+        || log "RESCORE old d=$D seed=$SEED FAILED (see $RES/rescore.log)"
+    fi
     if [ -n "$OLD" ]; then
       ( cd "$REPO/src" && "$PYH" pair_two_decoders.py --a "$NEW" --b "$OLD" \
           --a-name "ra1_d${D}_s${SEED}" --b-name "ra0_d${D}_s${SEED}" \
@@ -83,7 +104,7 @@ for job in "${JOBS[@]}"; do
         && log "PAIR  d=$D seed=$SEED vs ${OLDRUN[$D]}/seed$SEED -> mcnemar_vs_reset_after_false.csv" \
         || log "PAIR  d=$D seed=$SEED FAILED (see pair_vs_old.log)"
     else
-      log "PAIR  d=$D seed=$SEED: no old per-shot dump for this seed; not paired"
+      log "PAIR  d=$D seed=$SEED: no old checkpoint re-scored for this seed; not paired"
     fi
     if [ "$D" = 5 ] && [ "$SEED" = 0 ]; then
       C2B="$REPO/experiments/gru_check/c2b_$(date -u +%Y%m%dT%H%M%SZ)"
@@ -92,7 +113,7 @@ for job in "${JOBS[@]}"; do
       podman run --rm --security-opt=label=disable -v "$HOME:$HOME" -e HOME="$HOME" \
         -e TF_CPP_MIN_LOG_LEVEL=3 -w "$REPO" "$IMG" \
         python3 tests/c2_hls4ml_gru_check.py --out "$C2B" --trained-weights "$BEST" \
-          --trained-units 140 --trained-reset-after --trained-unroll --table-size 65536 \
+          --trained-units 140 --trained-reset-after --trained-unroll --no-tf32 --table-size 65536 \
           --table-precision "ap_fixed<32,16>" > "$C2B/run.log" 2>&1 \
         && log "C2B   done on $BEST -> $C2B" || log "C2B   FAILED (see $C2B/run.log)"
     fi

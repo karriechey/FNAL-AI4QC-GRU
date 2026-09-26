@@ -62,11 +62,15 @@ def main():
     ap.add_argument('--trained-units', type=int, default=140)
     ap.add_argument('--trained-reset-after', action='store_true')
     ap.add_argument('--trained-unroll', action='store_true')
+    ap.add_argument('--no-tf32', action='store_true',
+                    help='Keras reference logits with TF32 off (no effect on a CPU-only run)')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
 
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '3')
     import tensorflow as tf
+    if a.no_tf32:
+        tf.config.experimental.enable_tensor_float_32_execution(False)
     import hls4ml
     import partitions as P
     from StudentModels import to_sequence
@@ -78,6 +82,8 @@ def main():
                    table_size=a.table_size or 'default 1024',
                    table_precision=a.table_precision or 'default fixed<18,8>',
                    inputs=f'first {N_SHOTS} shots of the d={D} eval block [{e0}, ...)',
+                   keras_reference=('CPU' if not tf.config.list_physical_devices('GPU') else 'GPU')
+                   + (', TF32 off' if a.no_tf32 else ''),
                    models={})
 
     cases = [(u, ra, None) for u in a.units for ra in (True, False)]

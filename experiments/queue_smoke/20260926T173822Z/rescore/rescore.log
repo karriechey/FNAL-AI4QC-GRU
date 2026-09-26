@@ -1,0 +1,34 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+2026-09-26 17:39:34.779185: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 17:39:34.779217: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 17:39:34.779825: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[student-eval] tf32=off reset_after=False unroll=False
+[gpu] per-process limit 3500 MiB on 1 device(s)
+[student-eval] scoring shots [15,200,000, 17,000,000) of data_d5_p0.004_r5_FORMAL.npz
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+[student-eval] gru params=69,441
+[student-eval] student p_L=0.007119  MWPM p_L=0.007571  ratio=0.9403x  base_rate=0.19430
+[mcnemar] 2x2 on 1,800,000 shared shots:
+[mcnemar]   both-right   = 1,780,897
+[mcnemar]   student-only = 6,289   (student wins these)
+[mcnemar]   MWPM-only    = 5,476   (MWPM wins these)
+[mcnemar]   both-wrong   = 7,338
+[mcnemar]   net student wins = +813  (= n_test x (p_L_MWPM - p_L_student) = +813)
+[mcnemar]   chi2(cc)=56.0  p_chi2=7.091e-14  p_exact=6.935e-14
+[student-eval] dumped per-shot -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_smoke/20260926T173822Z/rescore/per_shot_old_ra0.npz
+[student-eval] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_smoke/20260926T173822Z/rescore/eval_old_ra0.csv

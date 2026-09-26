@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-09-26 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll)
+# Last modified: 2026-09-26 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -355,6 +355,8 @@ def run():
                     help='GRU with reset_after=True (cuDNN form); default False as before')
     ap.add_argument('--unroll', action='store_true',
                     help='unroll the GRU timesteps (generic kernel, no cuDNN); default False')
+    ap.add_argument('--no-tf32', action='store_true',
+                    help='disable TensorFloat-32 matmuls on the GPU (full FP32). Default: the TensorFlow default, TF32 on, as in every earlier run')
     ap.add_argument('--weight-bits', type=int, default=None,
                     help='Phase-3 QAT weight word length; None/>=32 => float weights '
                          '(the Phase-2 distillation setting)')
@@ -494,6 +496,9 @@ def run():
     # are not, and a mixed-version result would be silently incomparable.
     assert tf.__version__.startswith('2.15'), (
         f'need TF 2.15.x (Keras 2); got TF {tf.__version__}. Activate the pinned env.')
+    if args.no_tf32:
+        tf.config.experimental.enable_tensor_float_32_execution(False)
+    print(f"{LOG} tf32={'off' if args.no_tf32 else 'on (TensorFlow default)'}", flush=True)
     if args.cpu:
         tf.config.set_visible_devices([], 'GPU')
     elif args.gpu_mem_mib:
@@ -842,7 +847,7 @@ def run():
     fields = ['architecture', 'student', 'inputs', 'd', 'p', 'rounds', 'seed', 'n_train',
               'n_test', 'alpha', 'temperature', 'lr', 'weight_bits', 'act_bits',
               # architecture size, so a row is interpretable without parsing its tag
-              'hidden', 'units', 'n_params', 'reset_after', 'unroll',
+              'hidden', 'units', 'n_params', 'reset_after', 'unroll', 'tf32',
               'epochs', 'epochs_ran', 'batch_size', 'p_L', 'mwpm_p_L', 'ratio_vs_mwpm',
               'base_rate', 'beats_base_rate', 'teacher_tail_p_L',
               # agreement: the raw rate is dominated by the ~80% of shots where this
@@ -863,6 +868,7 @@ def run():
             hidden='-'.join(str(h) for h in args.hidden) if args.hidden else '',
             units=(args.units if args.student == 'gru' else ''),
             n_params=n_params, reset_after=int(args.reset_after), unroll=int(args.unroll),
+            tf32=('off' if args.no_tf32 else 'on'),
             epochs=args.epochs, epochs_ran=epochs_ran,
             batch_size=args.batch_size, p_L=round(pL, 6),
             mwpm_p_L=('' if mwpm is None else round(mwpm, 6)),

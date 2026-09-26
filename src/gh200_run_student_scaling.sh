@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-09-26 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL)
+# Last updated: 2026-09-26 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -42,6 +42,12 @@ RESET_AFTER="${RESET_AFTER:-0}"
 # UNROLL=1 builds the GRU with unroll=True (generic kernel, no cuDNN; needed for
 # reset_after=True under the image's cuDNN 9) and adds _ur1 to the tag. Default 0.
 UNROLL="${UNROLL:-0}"
+# TF32: TensorFlow's default (on) unless disabled. TRAIN_NO_TF32=1 passes --no-tf32 to
+# training, EVAL_NO_TF32=1 to the evaluation of the best checkpoint. Defaults 0 = as before.
+TRAIN_NO_TF32="${TRAIN_NO_TF32:-0}"
+EVAL_NO_TF32="${EVAL_NO_TF32:-0}"
+TRAIN_TF32=(); [ "$TRAIN_NO_TF32" = "1" ] && TRAIN_TF32=(--no-tf32)
+EVAL_TF32=(); [ "$EVAL_NO_TF32" = "1" ] && EVAL_TF32=(--no-tf32)
 A_BITS="${A_BITS:-}"
 
 # Independent training-only extension, appended to the training prefix. Its pool must come
@@ -255,6 +261,7 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=1.0 hard labels"
   echo "             : batch=$BATCH lr=$LR epochs=$EPOCHS early_stop=$EARLY_STOP"
   echo "gru layer    : reset_after=$RESET_AFTER unroll=$UNROLL"
+  echo "tf32         : training $([ "$TRAIN_NO_TF32" = 1 ] && echo off || echo on), evaluation $([ "$EVAL_NO_TF32" = 1 ] && echo off || echo on)"
   echo "gpu cap      : ${GPU_MEM_MIB:-none} MiB per process"
   echo "quantization : weights=${W_BITS:-float32} activations=${A_BITS:-float32}"
   echo "extension    : ${EXTRA_POOL:-none} n=${EXTRA_N:-all}"
@@ -336,7 +343,7 @@ run_seed () {
     echo "pool prov    : $PROV"
     date -u '+%Y-%m-%dT%H:%M:%SZ start'
     # --tail-diagnostics stays off; it scores the evaluation block every epoch.
-    "$PY" train_student.py "${ARCH[@]}" "${STOPPING[@]}" "${TRAIN_ONLY[@]}" \
+    "$PY" train_student.py "${ARCH[@]}" "${STOPPING[@]}" "${TRAIN_ONLY[@]}" "${TRAIN_TF32[@]}" \
       --d "$D" --p "$P" --rounds "$ROUNDS" \
       --pool "$POOL" \
       --n-train "$NTRAIN" \
@@ -351,7 +358,7 @@ run_seed () {
     # Ratio of record: MWPM decoded on these shots, paired shot by shot.
     # train_student.py suppresses its own MWPM column under --eval-start.
     # Scores the min-val_loss checkpoint, never the final-epoch weights.
-    "$PY" eval_student_on_tail.py "${ARCH[@]}" \
+    "$PY" eval_student_on_tail.py "${ARCH[@]}" "${EVAL_TF32[@]}" \
       --weights "$SCKPT/$TAG.best.weights.h5" \
       --d "$D" --p "$P" --rounds "$ROUNDS" \
       --pool "$POOL" --eval-start "$EVAL_START" --n-test "$EVAL_N" \
