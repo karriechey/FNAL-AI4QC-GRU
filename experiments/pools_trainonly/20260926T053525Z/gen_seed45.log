@@ -1,0 +1,5 @@
+[ext] d=7 p=0.004 rounds=7: 336 detectors, 385 measurements, gen_seed=45
+[ext] sampled 50,000,000 shots in 3.0 min  meas(50000000, 385) det(50000000, 336)
+[ext] wrote /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed45.npz  (33.6 GB)
+[ext] flips sha256 136a297b372aba08  base_rate 0.30541
+[ext] every shot [0, 50,000,000) is training data; nothing is reserved here
