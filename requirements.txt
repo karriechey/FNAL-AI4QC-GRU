@@ -1,23 +1,17 @@
 # Created: 2026-09-25
-# Last updated: 2026-09-25
-# Package list taken from the old repo's pyproject.toml (@ d5ee86f), plus hls4ml and
-# PyYAML. Unpinned on purpose: the environment is built fresh on grace1 (aarch64) and the
-# versions that install and pass the checks there get pinned in step A6 (see ENV.md).
-numpy<2.0
-scipy
-scikit-learn
-pandas
-matplotlib
-awkward
-uproot
-stim
-pymatching
-sinter
-stimbposd
-tensorflow==2.15.*
-qkeras
-hls4ml
-pyyaml
-jupyterlab
-ipykernel
-pytest
+# Last updated: 2026-09-26
+# Pinned to the CPU environment on grace1 (~/tfenv, aarch64, Python 3.11.16), where every
+# package below installed and imported (tests/a6_env_check.py, 2026-09-26). The GPU image
+# is defined separately in env/Containerfile; see ENV.md for both.
+numpy==1.26.4
+scipy==1.17.1
+stim==1.16.0
+pymatching==2.4.0
+sinter==1.16.0
+tensorflow==2.15.1
+keras==2.15.0
+tensorflow-model-optimization==0.7.3
+qkeras==0.9.0
+hls4ml==1.3.0
+pyyaml==6.0.3
+pytest==9.1.1
