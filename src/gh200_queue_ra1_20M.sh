@@ -19,6 +19,10 @@
 # memory, the remaining runs of that distance are skipped (same configuration, same
 # memory need) and the skip is logged. The sealed partition is never read.
 #
+# C2b (Karrie, 2026-09-26): when d5 s0 completes, its best reset_after=True checkpoint is
+# converted with hls4ml in the image (65,536-entry ap_fixed<32,16> tables) and compared
+# with Keras on 500 eval-block inputs (tests/c2_hls4ml_gru_check.py, CPU only).
+#
 # Run detached on grace1 from the repo's src/ folder:
 #     setsid nohup bash gh200_queue_ra1_20M.sh > /dev/null 2>&1 < /dev/null &
 set -uo pipefail
@@ -78,6 +82,17 @@ for job in "${JOBS[@]}"; do
         || log "PAIR  d=$D seed=$SEED FAILED (see pair_vs_old.log)"
     else
       log "PAIR  d=$D seed=$SEED: no old per-shot dump for this seed; not paired"
+    fi
+    if [ "$D" = 5 ] && [ "$SEED" = 0 ]; then
+      C2B="$REPO/experiments/gru_check/c2b_$(date -u +%Y%m%dT%H%M%SZ)"
+      mkdir -p "$C2B"
+      BEST=$(ls "$SEEDDIR"/ckpt/*.best.weights.h5 | head -1)
+      podman run --rm --security-opt=label=disable -v "$HOME:$HOME" -e HOME="$HOME" \
+        -e TF_CPP_MIN_LOG_LEVEL=3 -w "$REPO" "$IMG" \
+        python3 tests/c2_hls4ml_gru_check.py --out "$C2B" --trained-weights "$BEST" \
+          --trained-units 140 --trained-reset-after --table-size 65536 \
+          --table-precision "ap_fixed<32,16>" > "$C2B/run.log" 2>&1 \
+        && log "C2B   done on $BEST -> $C2B" || log "C2B   FAILED (see $C2B/run.log)"
     fi
   else
     if grep -qE "ResourceExhausted|OOM when allocating|out of memory|Dst tensor is not initialized" "$OUT/podman.log" "$SEEDDIR/run.log" 2>/dev/null; then

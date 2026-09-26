@@ -56,6 +56,10 @@ def main():
     ap.add_argument('--table-precision', default=None, help='GRU activation table type')
     ap.add_argument('--trained', action='store_true',
                     help='also check the d=5 u140 run-of-record best checkpoint')
+    ap.add_argument('--trained-weights', default=None,
+                    help='check this d=5 .weights.h5 instead of the random-weight models')
+    ap.add_argument('--trained-units', type=int, default=140)
+    ap.add_argument('--trained-reset-after', action='store_true')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
 
@@ -75,6 +79,8 @@ def main():
                    models={})
 
     cases = [(u, ra, None) for u in a.units for ra in (True, False)]
+    if a.trained_weights:
+        cases = [(a.trained_units, a.trained_reset_after, a.trained_weights)]
     if a.trained:
         paths = P._load('paths.yaml')
         ck = os.path.join(os.path.expanduser(paths['results_root']),
@@ -82,7 +88,8 @@ def main():
                           'gru_d5_p004_u140_hard_seed0_ntr10000000_b10000.best.weights.h5')
         cases.append((140, False, ck))
     for units, reset_after, ckpt in cases:
-            name = f'u{units}_reset_after_{reset_after}' + ('_trained_run_of_record' if ckpt else '')
+            name = f'u{units}_reset_after_{reset_after}' + (
+                ('_trained_' + os.path.basename(ckpt).split('.')[0]) if ckpt else '')
             rec = dict(units=units, reset_after=reset_after, weights=ckpt or f'random, seed {units}')
             try:
                 model = build(tf, units, reset_after, seed=units)
