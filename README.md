@@ -1,6 +1,10 @@
 <!-- Created: 2026-09-25 | Last updated: 2026-09-25 -->
 # FNAL-AI4QC-GRU
 
-Code for the GRU surface-code decoder paper: Stim circuits,
-MWPM baseline, GRU training and evaluation, and the hls4ml FPGA path.
+Code for the GRU surface-code decoder paper (Fermilab SQMS): a single-layer GRU that reads
+Stim detection events one detector layer per timestep, compared against MWPM on identical
+shots with paired McNemar tests, and taken toward an FPGA implementation through hls4ml.
+The GRU pipeline was carried over from `karriechey/FNAL-QCDecoding-FPGA` at commit
+`d5ee86f` (tag `pre-paper-2026-09`); `src/` files name their origin in a header line.
+Partition ranges live in `configs/partitions.yaml`, data locations in `configs/paths.yaml`.
 The manuscript is on Overleaf.
