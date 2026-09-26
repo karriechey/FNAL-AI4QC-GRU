@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-09-26
-# Last updated: 2026-09-26
+# Last updated: 2026-09-26 (adoption matched by container ID; ADOPT_ONLY mode)
 #
 # Parallel GPU scheduler for the reset_after=True queue (Karrie, 2026-09-26). Replaces the
 # sequential gh200_queue_ra1_20M.sh, whose running d5 s0 job it adopts without restarting.
@@ -155,11 +155,12 @@ run_job () {       # run_job <name> <d> <seed> <extra_seeds> <extra_ns> <pair_wi
   fi
 }
 
-adopt_running () {  # adopt_running <name> <d> <seed> <out>  (job started by the old driver)
-  local name="$1" D="$2" SEED="$3" OUT="$4"
+adopt_running () {  # adopt_running <name> <d> <seed> <out> <container id>  (started by the old driver)
+  local name="$1" D="$2" SEED="$3" OUT="$4" CID="$5"
   echo "$OUT" > "$STATE/$name.out"
-  log "ADOPT $name (already running) -> $OUT"
-  until [ -f "$OUT/seed$SEED/COMPLETE" ] || ! podman ps --format '{{.Command}}' | grep -q "D=$D ROUNDS=$D SEEDS=$SEED"; do
+  log "ADOPT $name (container $CID, already running) -> $OUT"
+  # Matched by container ID: podman ps truncates the command, so a command match is unreliable.
+  until [ -f "$OUT/seed$SEED/COMPLETE" ] || [ -z "$(podman ps -q --filter id="$CID")" ]; do
     sleep 60; done
   if [ -f "$OUT/seed$SEED/COMPLETE" ]; then
     log "DONE  $name (adopted)"
@@ -173,10 +174,13 @@ adopt_running () {  # adopt_running <name> <d> <seed> <out>  (job started by the
 }
 
 log "START scheduler pid=$$ max_par=$MAX_PAR cap=${CAP_MIB}MiB need_free=${NEED_FREE_MIB}MiB repo=$(git -C "$REPO" rev-parse --short HEAD)"
-if [ -n "${ADOPT:-}" ]; then     # ADOPT="name d seed out"
-  read -r an ad as ao <<< "$ADOPT"
+if [ -n "${ADOPT:-}" ]; then     # ADOPT="name d seed out container_id"
+  read -r an ad as ao acid <<< "$ADOPT"
   touch "$STATE/$an.started"
-  adopt_running "$an" "$ad" "$as" "$ao" &
+  if [ -n "${ADOPT_ONLY:-}" ]; then   # only watch and post-process the adopted job, then exit
+    adopt_running "$an" "$ad" "$as" "$ao" "$acid"; exit 0
+  fi
+  adopt_running "$an" "$ad" "$as" "$ao" "$acid" &
 fi
 declare -A PIDS=()
 while :; do
