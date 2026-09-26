@@ -1,0 +1,36 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+2026-09-26 21:23:58.349324: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 21:23:58.349372: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 21:23:58.350221: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[student-eval] tf32=off reset_after=False unroll=False
+[student-eval] scoring shots [15,200,000, 17,000,000) of data_d5_p0.004_r5_FORMAL.npz
+[student-eval] gru params=69,441
+[student-eval] student p_L=0.007247  MWPM p_L=0.007571  ratio=0.9573x  base_rate=0.19430
+[mcnemar] 2x2 on 1,800,000 shared shots:
+[mcnemar]   both-right   = 1,780,828
+[mcnemar]   student-only = 6,127   (student wins these)
+[mcnemar]   MWPM-only    = 5,545   (MWPM wins these)
+[mcnemar]   both-wrong   = 7,500
+[mcnemar]   net student wins = +582  (= n_test x (p_L_MWPM - p_L_student) = +582)
+[mcnemar]   chi2(cc)=28.9  p_chi2=7.541e-08  p_exact=7.496e-08
+[student-eval] dumped per-shot -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/old_rescored_tf32off/d5_s2/per_shot_old_ra0.npz
+[student-eval] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/old_rescored_tf32off/d5_s2/eval_old_ra0.csv
