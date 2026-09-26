@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-09-26
-# Last updated: 2026-09-26 (RA=0 runs (b)/(c) with reset_after=False; SKIP_A=1 skips (a))
+# Last updated: 2026-09-26 (RA=0 runs (b)/(c) with reset_after=False; SKIP_A=1 skips (a); UR=1 adds --unroll and step (d))
 #
 # Runs the three host-memory pipeline checks in the qdec:tf215 image on grace1, with the
 # launcher's determinism variables and the 3,500 MiB GPU cap. Writes everything to $OUT.
@@ -23,6 +23,7 @@ run () {    # run <name> <command...>   (inside the image, GPU visible)
 common () {  # common <d> <n_train> <epochs> <tag> [extra args...]
   local d="$1" ntr="$2" ep="$3" tag="$4"; shift 4
   local raflag=""; [ "${RA:-1}" = "1" ] && raflag="--reset-after"
+  [ "${UR:-0}" = "1" ] && raflag="$raflag --unroll"
   echo --student gru --inputs evts --hidden --units 140 $raflag \
        --d "$d" --p 0.004 --rounds "$d" \
        --pool "$HOME/pools_d${d}_p004_19M/data_d${d}_p0.004_r${d}_FORMAL.npz" \
@@ -44,4 +45,19 @@ for d in 5 7; do
            --extra-train-pool "$HOME/pools_d${d}_p004_19M/data_d${d}_p0.004_r${d}_TRAINONLY_seed43.npz" \
            --extra-train-n 5000000)
 done
+# (d) GPU vs CPU logits of each (c) checkpoint on 10,000 val shots (same model, same weights).
+if [ "${UR:-0}" = "1" ]; then
+  flags="--unroll"; [ "${RA:-1}" = "1" ] && flags="--reset-after $flags"
+  for d in 5 7; do
+    W=$(ls "$OUT/c_peak_d$d/ckpt/"*.best.weights.h5 | head -1)
+    run "d_logits_gpu_d$d" python3 tests/gpu_cpu_logits.py --weights "$W" --d $d $flags --out "$OUT/d_gpu_d$d.npz"
+    podman run --rm --security-opt=label=disable -v "$HOME:$HOME" -e HOME="$HOME" -e TF_CPP_MIN_LOG_LEVEL=2 \
+      -w "$REPO" qdec:tf215 python3 tests/gpu_cpu_logits.py --weights "$W" --d $d $flags \
+      --out "$OUT/d_cpu_d$d.npz" > "$OUT/d_logits_cpu_d$d.log" 2>&1
+    echo "[checks] d_logits_cpu_d$d rc=$?" | tee -a "$OUT/summary.log"
+    podman run --rm --security-opt=label=disable -v "$HOME:$HOME" -e HOME="$HOME" -w "$REPO" qdec:tf215 \
+      python3 tests/gpu_cpu_logits.py --compare "$OUT/d_gpu_d$d.npz" "$OUT/d_cpu_d$d.npz" 2>/dev/null \
+      | grep "^\[gpu-cpu\]" | tee -a "$OUT/summary.log"
+  done
+fi
 echo "[checks] done" | tee -a "$OUT/summary.log"
