@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last updated: 2026-09-25
+# Last updated: 2026-09-26
 #
 # The single definition of the data partitions. Launchers and scripts read this file
 # (through src/partitions.py); no other file may write these ranges as literals.
@@ -37,3 +37,18 @@ trainonly:
   flips_sha256:
     5: 705f765819feb00f876eca5bd41bd1e95860502550d6237753ae4a4dd4db8c57
     7: 83122704a44ae6b5a42b1e5c420fd5429d88efb8464271a92c42cb43256e8d5d
+
+# Additional d=7 TRAINONLY pools, generated on grace1 2026-09-26 with
+# src/gen_train_extension.py (same circuit_generators.build_circuit, p=0.004, r=7).
+# Training only; no validation, evaluation or sealed region exists in them. Seeds 44 and
+# 45 were unused anywhere before this (FORMAL 42, TRAINONLY 43). Not trained on yet.
+# File: ~/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed<gen_seed>.npz
+trainonly_d7_extra:
+  - gen_seed: 44
+    n_total: 30000000
+    purpose: training_only
+    flips_sha256: b8a202961bc0dbe295220aa3f62097ea26b25559d886fe132ea8df8533a35eae
+  - gen_seed: 45
+    n_total: 50000000
+    purpose: training_only
+    flips_sha256: 136a297b372aba08bdba18fc53d5be9151f65ea41d7f3a256c4b40f85d77e88c
