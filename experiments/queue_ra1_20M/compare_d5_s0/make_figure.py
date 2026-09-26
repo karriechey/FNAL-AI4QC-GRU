@@ -1,6 +1,6 @@
 # Created: 2026-09-26
-# Last modified: 2026-09-26
-"""Figure for Giuseppe: d=5 GRU decoder, reset_after=False vs reset_after=True.
+# Last modified: 2026-09-26 (three panels; evaluation-block panel removed)
+"""Figure: d=5 GRU decoder, reset_after=False vs reset_after=True.
 
 Every number is read from the run records on grace1 (histories, best-checkpoint JSONs,
 evaluation CSVs, the MWPM validation-block JSON); nothing is typed in by hand.
@@ -61,8 +61,7 @@ plt.rcParams.update({'font.size': 12, 'axes.titlesize': 13, 'axes.labelsize': 12
                      'axes.edgecolor': MUTED, 'axes.labelcolor': INK, 'text.color': INK,
                      'xtick.color': MUTED, 'ytick.color': MUTED, 'axes.spines.top': False,
                      'axes.spines.right': False})
-fig, axs = plt.subplots(2, 2, figsize=(13.5, 9.5))
-(a, b), (c, dd) = axs
+fig, (a, b, c) = plt.subplots(1, 3, figsize=(19, 6.2))
 ep = list(range(1, 201))
 lab_old = 'reset_after=False, 3 seeds (seed 0, seed 1, seed 2)'
 lab_new = f"reset_after=True, {len(new)} seed{'s' if len(new) != 1 else ''} (" + \
@@ -116,36 +115,12 @@ for ax in (a, b, c):
     ax.set_xlim(0, 202)
     ax.grid(alpha=.25)
 handles, labels = a.get_legend_handles_labels()
-fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 0.955), ncol=2,
+fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 0.93), ncol=2,
            frameon=False, fontsize=12, handlelength=2.5)
-
-# (d) final evaluation-block LER, one dot per seed
-groups = [('reset_after=False', old, BLUE), ('reset_after=True', new, RED)]
-offs = {0: -0.16, 1: 0.0, 2: 0.16}
-for gx, (name, runs, col) in enumerate(groups):
-    for s, r in sorted(runs.items()):
-        x = gx + offs[s]
-        dd.plot(x, r['eval'], 'o', ms=10, color=col, mec='white', mew=1.5, zorder=5)
-        left = s == 0
-        dd.annotate(f'seed {s}', (x, r['eval']), xytext=(-10 if left else 10, -4),
-                    textcoords='offset points', ha='right' if left else 'left',
-                    fontsize=11, color=INK)
-    mean = sum(r['eval'] for r in runs.values()) / len(runs)
-    top = max(r['eval'] for r in runs.values())
-    dd.text(gx, top + 0.00012, f'mean {mean / mwpm_eval:.2f}× MWPM', ha='center', va='bottom',
-            fontsize=12, color=INK, fontweight='bold')
-dd.axhline(mwpm_eval, color=GREEN, ls='--', lw=1.6)
-dd.text(0.5, mwpm_eval + 0.00002, 'MWPM (same shots)', color=INK, ha='center', va='bottom', fontsize=11)
-dd.set_xticks([0, 1], [g[0] for g in groups], fontsize=12)
-dd.set_xlim(-0.5, 1.5)
-dd.set_ylim(0.0068, 0.0084)
-dd.set_title('(d)  Evaluation-block logical error rate (selected checkpoint)', loc='left')
-dd.set_ylabel('logical error rate per shot')
-dd.grid(alpha=.25, axis='y')
 
 fig.suptitle('d=5 GRU decoder: reset_after=False vs reset_after=True', fontsize=15,
              fontweight='bold', color=INK)
-fig.tight_layout(rect=(0, 0, 1, 0.93))
+fig.tight_layout(rect=(0, 0, 1, 0.89))
 for ext, kw in (('png', dict(dpi=200)), ('pdf', {})):
     fig.savefig(f'{HERE}/d5_reset_after_comparison.{ext}', **kw)
 

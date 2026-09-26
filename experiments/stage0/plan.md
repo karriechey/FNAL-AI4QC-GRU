@@ -47,4 +47,4 @@ Whole sweep ~100 core-seconds: under a minute of wall time. Timing data:
 
 A Stage 4 physical error rate p is usable only if it lies clearly below both crossings
 (d=5/7 and d=7/9). What counts as "clearly below", and which p values Stage 4 uses, is
-Karrie's decision after B4; this plan does not change them.
+a decision taken after B4; this plan does not change them.

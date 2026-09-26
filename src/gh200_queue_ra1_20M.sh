@@ -2,7 +2,7 @@
 # Created: 2026-09-26
 # Last updated: 2026-09-26 (also treat 'Dst tensor is not initialized' as out of GPU memory; UNROLL=1; TF32 on for training, off for evaluation; old checkpoints re-scored)
 #
-# Overnight GPU queue (approved by Karrie 2026-09-26): the u140 GRU with reset_after=True,
+# Overnight GPU queue (approved 2026-09-26): the u140 GRU with reset_after=True,
 # trained exactly like the old d=5 / d=7 "20M augmented" runs except for reset_after.
 #
 #   order (sequential)  d5 s0 -> d7 s0 -> d5 s1 -> d7 s1 -> d5 s2
@@ -25,7 +25,7 @@
 # memory, the remaining runs of that distance are skipped (same configuration, same
 # memory need) and the skip is logged. The sealed partition is never read.
 #
-# C2b (Karrie, 2026-09-26): when d5 s0 completes, its best reset_after=True checkpoint is
+# C2b (2026-09-26): when d5 s0 completes, its best reset_after=True checkpoint is
 # converted with hls4ml in the image (65,536-entry ap_fixed<32,16> tables) and compared
 # with Keras on 500 eval-block inputs (tests/c2_hls4ml_gru_check.py, CPU only).
 #

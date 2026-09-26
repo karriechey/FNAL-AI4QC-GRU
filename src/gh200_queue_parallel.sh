@@ -2,7 +2,7 @@
 # Created: 2026-09-26
 # Last updated: 2026-09-26 (adoption matched by container ID; ADOPT_ONLY mode; code commit recorded at start)
 #
-# Parallel GPU scheduler for the reset_after=True queue (Karrie, 2026-09-26). Replaces the
+# Parallel GPU scheduler for the reset_after=True queue (2026-09-26). Replaces the
 # sequential gh200_queue_ra1_20M.sh, whose running d5 s0 job it adopts without restarting.
 #
 #   jobs         read from $QROOT/jobs.tsv every minute, in file order, so jobs can be
