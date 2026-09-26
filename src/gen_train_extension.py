@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/gen_train_extension.py @ d5ee86f
 # Created: 2026-08-21
-# Last updated: 2026-08-21
+# Last modified: 2026-09-25 (build_circuit from circuit_generators)
 """Generate a training-only pool: every shot is training data, no reserved partitions.
 
 For augmenting a training set past what a primary pool's clean prefix holds. The primary
@@ -26,7 +26,7 @@ import time
 
 import numpy as np
 
-from eval_on_tail import build_circuit
+from circuit_generators import build_circuit
 from generate_pools import sample_pool
 
 

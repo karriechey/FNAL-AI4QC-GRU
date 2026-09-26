@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/gen_pool_r5.py @ d5ee86f
 # Created: 2026-08-03
-# Last modified: 2026-08-04
+# Last modified: 2026-09-25 (build_circuit from circuit_generators)
 """Generate the formal d=5, r=5 pool with three disjoint partitions.
 
 Partitions (Option A -- validation is its own block, not carved from training):
@@ -39,7 +39,7 @@ import time
 
 import numpy as np
 
-from eval_on_tail import build_circuit
+from circuit_generators import build_circuit
 from generate_pools import sample_pool
 
 

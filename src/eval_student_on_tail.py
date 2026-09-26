@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-08-05
+# Last modified: 2026-09-25 (imports from helpers / circuit_generators)
 """Score a saved student on a fixed partition and run the paired McNemar test vs MWPM.
 
 Why a separate script from eval_on_tail.py
@@ -36,7 +36,8 @@ import numpy as np
 
 # Reuse the statistics and circuit construction, so there is exactly one implementation of
 # the 2x2 and one definition of the noise model.
-from eval_on_tail import mcnemar_from_correct, build_circuit
+from helpers import mcnemar_from_correct
+from circuit_generators import build_circuit
 
 
 def run():

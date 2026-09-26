@@ -1,4 +1,5 @@
 # from FNAL-QCDecoding-FPGA/circuit_generators.py @ d5ee86f
+# Last modified: 2026-09-25 (added build_circuit, the single noise-model definition)
 """
 These are a bunch of example functions to generate circuits.
 Add more as needed.
@@ -124,3 +125,20 @@ def get_custom_circuit(circuit):
   """
   return circuit
 
+
+def build_circuit(d, p, rounds):
+  """
+  The one noise-model definition for this repo: Stim's rotated surface-code Z-memory
+  circuit with all four noise channels set to the same p.
+  Moved from FNAL-QCDecoding-FPGA/eval_on_tail.py @ d5ee86f (body unchanged). Every other
+  file that needs the circuit calls this, so the noise model cannot drift between
+  pool generation, the detector scatter, and the MWPM baseline.
+  - Arguments:
+    d: code distance; p: physical error rate; rounds: stabilizer rounds (r = d here).
+  - Return type:
+    stim.Circuit
+  """
+  return get_builtin_circuit(
+    'surface_code:rotated_memory_z', distance=d, rounds=rounds,
+    before_round_data_depolarization=p, after_reset_flip_probability=p,
+    after_clifford_depolarization=p, before_measure_flip_probability=p)

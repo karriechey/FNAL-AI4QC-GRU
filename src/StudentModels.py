@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/StudentModels.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-07-31
+# Last modified: 2026-09-25 (detector layout uses circuit_generators.build_circuit)
 """hls4ml-native student architectures for distillation from the custom RCNN teacher.
 
 Why train a student model?
@@ -96,11 +96,8 @@ def detector_sequence_layout(d, rounds, p):
     if key in _LAYOUT_CACHE:
         return _LAYOUT_CACHE[key]
 
-    from circuit_generators import get_builtin_circuit
-    circ = get_builtin_circuit(
-        'surface_code:rotated_memory_z', distance=d, rounds=rounds,
-        before_round_data_depolarization=p, after_reset_flip_probability=p,
-        after_clifford_depolarization=p, before_measure_flip_probability=p)
+    from circuit_generators import build_circuit
+    circ = build_circuit(d, p, rounds)
     coords = circ.get_detector_coordinates()
     n_det = circ.num_detectors
 

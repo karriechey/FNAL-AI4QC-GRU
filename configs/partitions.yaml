@@ -1,0 +1,39 @@
+# Created: 2026-09-25
+# Last updated: 2026-09-25
+#
+# The single definition of the data partitions. Launchers and scripts read this file
+# (through src/partitions.py); no other file may write these ranges as literals.
+#
+# FORMAL pools: one 19,000,000-shot Stim pool per distance at p=0.004, rounds = d,
+# generated on grace1 (aarch64) with gen_seed 42. Ranges are half-open shot indices.
+# The sealed block is defined here so its definition can be checked; nothing in
+# Stages 0-1 reads its contents.
+#
+# TRAINONLY pools: independent 5,000,000-shot training-only extensions, gen_seed 43.
+# Different seed from the FORMAL pools, so they share no sampled shot with any FORMAL
+# partition. They contribute training shots only.
+#
+# flips_sha256 values are copied from each pool's .fingerprint.json on grace1 (2026-09-25).
+
+p: 0.004
+
+formal:
+  gen_seed: 42
+  n_total: 19000000
+  ranges:
+    train:  [0, 15000000]
+    val:    [15000000, 15200000]
+    eval:   [15200000, 17000000]
+    sealed: [17000000, 19000000]
+  flips_sha256:
+    5: 1c22b8a5960584162e21a833e622707c7d30d337435894ac6d973d1ddadfc79b
+    7: b49fbe40786da9e62b84ffb2c1937e17855f798b3d7edb1917d0d165880b166e
+    9: 4ff74414c88cf5a75e3a195a8da83d9137e81785ef36c053ec231db4438a8ca3
+
+trainonly:
+  gen_seed: 43
+  n_total: 5000000
+  purpose: training_only
+  flips_sha256:
+    5: 705f765819feb00f876eca5bd41bd1e95860502550d6237753ae4a4dd4db8c57
+    7: 83122704a44ae6b5a42b1e5c420fd5429d88efb8464271a92c42cb43256e8d5d

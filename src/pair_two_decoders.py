@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/pair_two_decoders.py @ d5ee86f
 # Created: 2026-08-06
-# Last modified: 2026-08-06
+# Last modified: 2026-09-25 (mcnemar_from_correct from helpers)
 """Paired McNemar between any two decoders, from their per-shot dumps.
 
 Why this exists
@@ -31,7 +31,7 @@ import csv
 import os
 import numpy as np
 
-from eval_on_tail import mcnemar_from_correct   # one implementation of the 2x2
+from helpers import mcnemar_from_correct   # one implementation of the 2x2
 
 
 # Each dump names its columns after the model that produced it, so there is no single

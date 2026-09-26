@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/mwpm_on_block.py @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-08-19
+# Last modified: 2026-09-25 (build_circuit from circuit_generators)
 """Decode MWPM on one shot block of a pool and record the baseline.
 
 Gives the evaluation-block denominator before any model is trained. Baselines are
@@ -26,7 +26,7 @@ import time
 
 import numpy as np
 
-from eval_on_tail import build_circuit   # shared noise-model definition
+from circuit_generators import build_circuit   # shared noise-model definition
 
 
 def main():

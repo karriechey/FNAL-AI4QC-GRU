@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/gru_distill_20m_preflight.py @ d5ee86f
 # Created: 2026-09-22
-# Last modified: 2026-09-22
+# Last modified: 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml)
 """Preflight and teacher gate for the 20M GRU distillation study (d=5, r=5, p=0.004).
 
 Run twice by eaf_run_gru_distill_20m.sh, before any student trains.
@@ -140,7 +140,8 @@ def stage_caches(a, record):
 
     # --- teacher gate on the exact evaluation block -----------------------------------
     import pymatching
-    from eval_on_tail import build_circuit, mcnemar_from_correct
+    from circuit_generators import build_circuit
+    from helpers import mcnemar_from_correct
     truth = fm[e0:e1]
     det = zm['det_evts'][e0:e1].astype(np.int8)
     dem = build_circuit(a.d, a.p, a.rounds).detector_error_model(decompose_errors=True)
@@ -182,13 +183,17 @@ def main():
     ap.add_argument('--p', type=float, default=0.004)
     ap.add_argument('--main-pool', required=True)
     ap.add_argument('--extra-pool', required=True)
-    ap.add_argument('--main-n-train', type=int, default=15_000_000)
-    ap.add_argument('--extra-n', type=int, default=5_000_000)
-    ap.add_argument('--val-start', type=int, default=15_000_000)
-    ap.add_argument('--val-n', type=int, default=200_000)
-    ap.add_argument('--eval-start', type=int, default=15_200_000)
-    ap.add_argument('--eval-n', type=int, default=1_800_000)
-    ap.add_argument('--sealed-start', type=int, default=17_000_000)
+    # Partition defaults come from configs/partitions.yaml (the single source).
+    from partitions import load as _load_partitions, block as _block
+    _pc = _load_partitions()
+    _tr, _va, _ev, _se = (_block(b, _pc) for b in ('train', 'val', 'eval', 'sealed'))
+    ap.add_argument('--main-n-train', type=int, default=_tr[1])
+    ap.add_argument('--extra-n', type=int, default=int(_pc['trainonly']['n_total']))
+    ap.add_argument('--val-start', type=int, default=_va[0])
+    ap.add_argument('--val-n', type=int, default=_va[1] - _va[0])
+    ap.add_argument('--eval-start', type=int, default=_ev[0])
+    ap.add_argument('--eval-n', type=int, default=_ev[1] - _ev[0])
+    ap.add_argument('--sealed-start', type=int, default=_se[0])
     ap.add_argument('--teacher-weights', required=True)
     ap.add_argument('--teacher-units', type=int, default=140)
     ap.add_argument('--teacher-sha256', default='')

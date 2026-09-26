@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-08-19
+# Last updated: 2026-09-25 (partitions and pool path read from configs/*.yaml)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -50,15 +50,14 @@ EXTRA_N="${EXTRA_N:-}"
 EARLY_STOP="${EARLY_STOP:-0}"
 PATIENCE="${PATIENCE:-5}"
 
-# Pools sit in $HOME on grace1; pass POOL explicitly from the podman mount.
-POOL="${POOL:-$HOME/pools_d${D}_p004_19M/data_d${D}_p0.004_r${ROUNDS}_FORMAL.npz}"
-
-# Experiment 13 partitions. Changing these breaks comparability with the p=0.004 corpus.
-VAL_START="${VAL_START:-15000000}"        # early stopping, checkpoint selection
-VAL_N="${VAL_N:-200000}"
-EVAL_START="${EVAL_START:-15200000}"      # scored once from the best checkpoint
-EVAL_N="${EVAL_N:-1800000}"
-SEALED_START="${SEALED_START:-17000000}"  # [17M, 19M) sealed
+# Partitions and the default pool path come from configs/partitions.yaml and
+# configs/paths.yaml through partitions.py, the single source of the ranges. Nothing here
+# may override the ranges. POOL can still be overridden, because inside the podman
+# container the pools are mounted at a different path (e.g. /pools/...).
+_POOL_ENV="${POOL:-}"
+eval "$(${PY:-python3} partitions.py --shell --d "$D")"
+[ -n "$_POOL_ENV" ] && POOL="$_POOL_ENV"
+[ "$ROUNDS" = "$D" ] || { echo "[gru] ROUNDS=$ROUNDS but the FORMAL pools are rounds = d. STOP."; exit 1; }
 
 # PARALLEL=1 runs every seed at once on the one GPU. Each process holds ~45 GB host RAM at
 # 10M shots, so three concurrent seeds need ~135 GB of the box's 572 GB.

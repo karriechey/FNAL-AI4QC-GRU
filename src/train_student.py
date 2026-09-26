@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-07-31
+# Last modified: 2026-09-25 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -39,7 +39,7 @@ import os
 import time
 import numpy as np
 
-from train_one import set_seeds, learning_rate_scheduler, lookup_mwpm  # reuse the recipe
+from helpers import set_seeds, learning_rate_scheduler, lookup_mwpm  # reuse the recipe
 
 # Prefix on every log line; set to '[mlp]' or '[gru]' once args are parsed, so a saved log
 # names the architecture that produced it. Module-level so helper functions can use it
@@ -717,11 +717,25 @@ def run():
                 self.model.save_weights(_ck + '.lastepoch.weights.h5')
 
         callbacks.insert(0, _SaveLastEpoch())
-        callbacks.append(tf.keras.callbacks.ModelCheckpoint(
-            _ck + '.best.weights.h5', monitor='val_loss', mode='min',
-            save_best_only=True, save_weights_only=True, verbose=0))
-        print(f"{LOG} checkpoints -> {_ck}.best.weights.h5 (min val_loss) and "
-              f"{_ck}.lastepoch.weights.h5", flush=True)
+        if val_data is not None:
+            # Checkpoint rule: keep the epoch with the lowest LER on the explicit
+            # validation block (tiebreak: lower val_loss), saved as a full .keras model
+            # plus .weights.h5. Inserted first so it scores the weights this epoch
+            # actually ended with, before EarlyStopping can restore older ones.
+            from helpers import make_val_ler_checkpoint
+            callbacks.insert(0, make_val_ler_checkpoint(tf, x_va, f_va, _ck,
+                                                        args.batch_size, LOG))
+            print(f"{LOG} checkpoints -> {_ck}.best.keras + .best.weights.h5 "
+                  f"(lowest val LER, tiebreak val_loss; epoch in {_ck}.best.json) and "
+                  f"{_ck}.lastepoch.weights.h5", flush=True)
+        else:
+            # No explicit validation block (validation_split mode): there are no
+            # validation labels to score LER on, so the old val_loss selection is kept.
+            callbacks.append(tf.keras.callbacks.ModelCheckpoint(
+                _ck + '.best.weights.h5', monitor='val_loss', mode='min',
+                save_best_only=True, save_weights_only=True, verbose=0))
+            print(f"{LOG} WARNING: no --val-start block, so the checkpoint is chosen by "
+                  f"min val_loss, not val LER -> {_ck}.best.weights.h5", flush=True)
     # Printed, not asserted: EarlyStopping(restore_best_weights=True) swaps weights during
     # its own on_epoch_end, so anything that must observe the true final epoch has to
     # appear before it. Logging the constructed order makes that checkable by inspection.

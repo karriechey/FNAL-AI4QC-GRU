@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_gru_distillation_20m.py @ d5ee86f
 # Created: 2026-09-22
-# Last modified: 2026-09-22
+# Last modified: 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml; best checkpoint chosen by val LER, saved as full .keras)
 """Train one reduced GRU student from the 20M-shot u140 GRU teacher, d=5 r=5 p=0.004.
 
 Purpose
@@ -280,17 +280,21 @@ def run():
     ap.add_argument('--main-pool', required=True,
                     help='primary pool npz; supplies training prefix, validation and '
                          'evaluation blocks')
-    ap.add_argument('--main-n-train', type=int, default=15_000_000,
+    # Partition defaults come from configs/partitions.yaml (the single source).
+    from partitions import load as _load_partitions, block as _block
+    _pc = _load_partitions()
+    _tr, _va, _ev, _se = (_block(b, _pc) for b in ('train', 'val', 'eval', 'sealed'))
+    ap.add_argument('--main-n-train', type=int, default=_tr[1],
                     help='training prefix [0, N) of the primary pool')
     ap.add_argument('--extra-train-pool', default=None,
                     help='training-only extension pool npz (different generation seed)')
-    ap.add_argument('--extra-n', type=int, default=5_000_000,
+    ap.add_argument('--extra-n', type=int, default=int(_pc['trainonly']['n_total']),
                     help='shots [0, N) taken from the extension pool')
-    ap.add_argument('--val-start', type=int, default=15_000_000)
-    ap.add_argument('--val-n', type=int, default=200_000)
-    ap.add_argument('--eval-start', type=int, default=15_200_000)
-    ap.add_argument('--eval-n', type=int, default=1_800_000)
-    ap.add_argument('--sealed-start', type=int, default=17_000_000,
+    ap.add_argument('--val-start', type=int, default=_va[0])
+    ap.add_argument('--val-n', type=int, default=_va[1] - _va[0])
+    ap.add_argument('--eval-start', type=int, default=_ev[0])
+    ap.add_argument('--eval-n', type=int, default=_ev[1] - _ev[0])
+    ap.add_argument('--sealed-start', type=int, default=_se[0],
                     help='first shot of the sealed test block; only used to assert that '
                          'nothing reaches it')
     # --- teacher ---
@@ -381,7 +385,7 @@ def run():
     print(f"{LOG} TF {tf.__version__}  GPUs: {tf.config.list_physical_devices('GPU')}  "
           f"host {socket.gethostname()}", flush=True)
 
-    from train_one import set_seeds
+    from helpers import set_seeds
     from StudentModels import build_gru_student, detector_sequence_layout, \
         student_pred_and_correct
 
@@ -539,7 +543,7 @@ def run():
     print(f"{LOG} recipe: Adam lr={args.lr} constant  batch={args.batch_size}  "
           f"epochs={args.epochs}  early_stopping="
           f"{'patience ' + str(args.patience) if args.patience > 0 else 'off'}  "
-          f"selection=min val_loss", flush=True)
+          f"selection=min val LER (tiebreak val_loss)", flush=True)
 
     ck = os.path.join(args.out_dir, args.tag)
     best_path, last_path = ck + '.best.weights.h5', ck + '.lastepoch.weights.h5'
@@ -554,9 +558,11 @@ def run():
     if args.patience > 0:
         callbacks.append(tf.keras.callbacks.EarlyStopping(
             monitor='val_loss', patience=args.patience, restore_best_weights=True))
-    callbacks.append(tf.keras.callbacks.ModelCheckpoint(
-        best_path, monitor='val_loss', mode='min', save_best_only=True,
-        save_weights_only=True, verbose=0))
+    # Checkpoint rule: lowest LER on the validation block, tiebreak val_loss; writes
+    # <ck>.best.keras (full model), <ck>.best.weights.h5 (= best_path) and <ck>.best.json.
+    # First in the list so it scores the weights this epoch ended with.
+    from helpers import make_val_ler_checkpoint
+    callbacks.insert(0, make_val_ler_checkpoint(tf, x_va, f_va, ck, args.batch_size, LOG))
 
     steps = int(np.ceil(n_train / args.batch_size))
     print(f"{LOG} {steps} steps/epoch x {args.epochs} epochs = {steps * args.epochs:,} "
@@ -571,12 +577,15 @@ def run():
     with open(ck + '.history.json', 'w') as fh:
         json.dump(h, fh)
     epochs_ran = len(h['val_loss'])
-    best_epoch = int(np.argmin(h['val_loss'])) + 1
-    best_val = float(min(h['val_loss']))
+    with open(ck + '.best.json') as fh:
+        _best = json.load(fh)
+    best_epoch = int(_best['best_epoch'])
+    best_val = float(_best['val_loss'])      # val_loss at the val-LER-selected epoch
     print(f"{LOG} trained {epochs_ran} epochs in {train_time:.0f}s; best val_loss "
-          f"{best_val:.6f} at epoch {best_epoch}", flush=True)
+          f"{best_val:.6f} at the selected epoch {best_epoch} (val LER {_best['val_ler']:.6f}, "
+          f"{_best['val_errors']:,}/{_best['val_n']:,} errors)", flush=True)
 
-    # --- score the min-val_loss checkpoint once on the evaluation block ---------------
+    # --- score the selected (min val LER) checkpoint once on the evaluation block ----
     # First read of the evaluation block in this process.
     if not os.path.exists(best_path):
         raise SystemExit(f"{LOG} best checkpoint {best_path} was not written. STOP.")
@@ -593,7 +602,8 @@ def run():
 
     # MWPM decoded on these exact shots, never read from a stored baseline.
     import pymatching
-    from eval_on_tail import build_circuit, mcnemar_from_correct
+    from circuit_generators import build_circuit
+    from helpers import mcnemar_from_correct
     dem = build_circuit(d, p, r).detector_error_model(decompose_errors=True)
     m_pred = pymatching.Matching.from_detector_error_model(dem).decode_batch(
         det_te, bit_packed_predictions=False, bit_packed_shots=False).astype(np.int8).reshape(-1)

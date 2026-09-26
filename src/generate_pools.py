@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/generate_pools.py @ d5ee86f
+# Last modified: 2026-09-25 (build_circuit delegates to circuit_generators.build_circuit)
 """Generate the 8 CORE dataset pools for the across-threshold RCNN-vs-MWPM study,
 and compute the deterministic MWPM p_L baseline ONCE per (d,p) at generation time.
 
@@ -23,7 +24,7 @@ import csv
 import os
 import time
 import numpy as np
-from circuit_generators import get_builtin_circuit  # verified wrapper over stim.Circuit.generated
+from circuit_generators import build_circuit as _build_circuit  # the single noise-model definition
 
 # --- CONFIG -----------------------------------------------------------------------------
 # DATA_ROOT: where the ~10 GB of pools land.
@@ -51,10 +52,7 @@ POOLS = [
 
 def build_circuit(d, p):
     """The 4-channel rotated_memory_z circuit at rounds=d (identical to gen + decode)."""
-    return get_builtin_circuit(
-        "surface_code:rotated_memory_z", distance=d, rounds=d,
-        before_round_data_depolarization=p, after_reset_flip_probability=p,
-        after_clifford_depolarization=p, before_measure_flip_probability=p)
+    return _build_circuit(d, p, rounds=d)
 
 
 def sample_pool(circ, n_total, seed):

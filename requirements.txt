@@ -1,0 +1,23 @@
+# Created: 2026-09-25
+# Last updated: 2026-09-25
+# Package list taken from the old repo's pyproject.toml (@ d5ee86f), plus hls4ml and
+# PyYAML. Unpinned on purpose: the environment is built fresh on grace1 (aarch64) and the
+# versions that install and pass the checks there get pinned in step A6 (see ENV.md).
+numpy<2.0
+scipy
+scikit-learn
+pandas
+matplotlib
+awkward
+uproot
+stim
+pymatching
+sinter
+stimbposd
+tensorflow==2.15.*
+qkeras
+hls4ml
+pyyaml
+jupyterlab
+ipykernel
+pytest

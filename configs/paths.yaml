@@ -1,0 +1,37 @@
+# Created: 2026-09-25
+# Last updated: 2026-09-25
+#
+# Where existing data and checkpoints live on grace1. Nothing here is copied into the
+# repo; these are read in place. "~" is the grace1 home directory (/home/kchey).
+
+pools:
+  formal:    "~/pools_d{d}_p004_19M/data_d{d}_p0.004_r{d}_FORMAL.npz"
+  trainonly: "~/pools_d{d}_p004_19M/data_d{d}_p0.004_r{d}_TRAINONLY_seed43.npz"
+
+# Old repo checkout on grace1, used only by the equivalence tests (read-only).
+old_repo: "~/FNAL-QCDecoding-FPGA"
+
+results_root: "~/rcnn_threshold/results"
+
+# Reference runs (old code, reset_after=False, best checkpoint = lowest val_loss).
+# Reference only: new runs are trained in this repo.
+runs_of_record:
+  d5_u140_10M: "gh200_gru_d5_e200_20260819T185011Z"
+  d5_u140_15M: "d5_u140_ntr15M_20260821T003354Z"
+  d5_u140_20M_aug: "d5_u140_ntr20M_aug_20260821T154820Z"   # distillation teacher = seed1
+  d7_u140_10M: "gh200_gru_d7_e200_20260819T192524Z"
+  d7_u140_15M: "d7_u140_ntr15M_20260821T003354Z"
+  d7_u140_20M_aug: "d7_u140_ntr20M_aug_20260821T193446Z"   # seeds 0,1 only
+  d9_u140_10M: "gh200_gru_d9_e200_20260819T213532Z"
+
+# Stage 3 (2x width) reference only; not the d=9 base.
+stage3_reference:
+  d9_u280_10M_seed0: "gh200_gru_d9_e200_u280_20260820T180357Z"
+  d9_u280_10M_seed1_2: "d9_u280_ntr10M_rep_20260821T013455Z"
+
+# Superseded or incomplete; do not use.
+superseded:
+  - "gh200_gru_d7_p004_b10000_20260819T162340Z"       # epochs 50, early stopping
+  - "gh200_gru_d7_p004_b10000_e200_20260819T172211Z"  # early stopping on
+incomplete:
+  - "gh200_gru_d7_e200_ntr5000000_20260820T175948Z"   # no final weights
