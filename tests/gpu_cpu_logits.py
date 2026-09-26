@@ -30,6 +30,8 @@ def main():
     ap.add_argument('--n', type=int, default=10_000)
     ap.add_argument('--out')
     ap.add_argument('--compare', nargs=2)
+    ap.add_argument('--no-tf32', action='store_true',
+                    help='disable TensorFloat-32 matmuls on the GPU (diagnostic)')
     a = ap.parse_args()
     if a.compare:
         g, c = (np.load(f) for f in a.compare)
@@ -44,6 +46,8 @@ def main():
     import partitions as P
     from StudentModels import build_gru_student, to_sequence
     from host_data import make_dataset, to_host_uint8
+    if a.no_tf32:
+        tf.config.experimental.enable_tensor_float_32_execution(False)
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
         tf.config.set_logical_device_configuration(
@@ -55,7 +59,7 @@ def main():
                           reset_after=a.reset_after, unroll=a.unroll)
     m.load_weights(a.weights)
     logits = m.predict(make_dataset(tf, x, None, 10_000), verbose=0).reshape(-1)
-    dev = 'GPU' if gpus else 'CPU'
+    dev = ('GPU' + (' (TF32 off)' if a.no_tf32 else '')) if gpus else 'CPU'
     np.savez(a.out, logits=logits, device=dev)
     print(f"[gpu-cpu] {dev}: {len(logits):,} logits -> {a.out}", flush=True)
 
