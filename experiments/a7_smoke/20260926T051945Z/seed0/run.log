@@ -1,0 +1,59 @@
+=============== d=5 r=5 seed 0  (gru_d5_p004_u140_hard_seed0_ntr500000_b10000) ===============
+train        : [0, 500000)
+validation   : [15000000, 15200000)
+evaluation   : [15200000, 17000000)
+sealed test  : [17000000, 19000000)   not read
+pool         : /home/kchey/pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz
+pool prov    : gen_seed=42 flips_sha=1c22b8a5960584162e21a833e622707c7d30d337435894ac6d973d1ddadfc79b n_total=19000000
+2026-09-26T05:19:56Z start
+[env] TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1 present before import
+[gpu] per-process limit 3500 MiB on 1 device(s)
+[gru] TF 2.15.0  GPUs: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+[gru] hard-label control arm: teacher column unused (alpha=1).
+[gru] provenance: pool=pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz flips_sha= teacher_sha= code_sha=21048a3783374a17
+[gru] scoring shots [15,200,000, 17,000,000)
+[gru] partitions: train [0, 500,000) of the primary pool  validation [15,000,000, 15,200,000)  (validation_split disabled)
+[gru] 50 steps/epoch x 6 epochs = 300 optimizer updates
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+[gru] gru inputs=evts params=69,441
+[gru] checkpoints -> /home/kchey/FNAL-AI4QC-GRU/experiments/a7_smoke/20260926T051945Z/seed0/ckpt/gru_d5_p004_u140_hard_seed0_ntr500000_b10000.best.keras + .best.weights.h5 (lowest val LER, tiebreak val_loss; epoch in /home/kchey/FNAL-AI4QC-GRU/experiments/a7_smoke/20260926T051945Z/seed0/ckpt/gru_d5_p004_u140_hard_seed0_ntr500000_b10000.best.json) and /home/kchey/FNAL-AI4QC-GRU/experiments/a7_smoke/20260926T051945Z/seed0/ckpt/gru_d5_p004_u140_hard_seed0_ntr500000_b10000.lastepoch.weights.h5
+[gru] callback order: ['ValLERCheckpoint', '_SaveLastEpoch']
+Epoch 1/6
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790400028.309599    1084 device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+[gru] epoch 1: val_loss=0.40286 val_ler=0.207060 (41,412/200,000 errors)  <- new best
+50/50 - 10s - loss: 0.4736 - hard_accuracy: 0.7952 - val_loss: 0.4029 - val_hard_accuracy: 0.7929 - val_ler: 0.2071 - val_errors: 41412.0000 - 10s/epoch - 191ms/step
+Epoch 2/6
+[gru] epoch 2: val_loss=0.33502 val_ler=0.164930 (32,986/200,000 errors)  <- new best
+50/50 - 1s - loss: 0.3746 - hard_accuracy: 0.8048 - val_loss: 0.3350 - val_hard_accuracy: 0.8351 - val_ler: 0.1649 - val_errors: 32986.0000 - 501ms/epoch - 10ms/step
+Epoch 3/6
+[gru] epoch 3: val_loss=0.25488 val_ler=0.110550 (22,110/200,000 errors)  <- new best
+50/50 - 0s - loss: 0.2991 - hard_accuracy: 0.8633 - val_loss: 0.2549 - val_hard_accuracy: 0.8895 - val_ler: 0.1105 - val_errors: 22110.0000 - 481ms/epoch - 10ms/step
+Epoch 4/6
+[gru] epoch 4: val_loss=0.21181 val_ler=0.088600 (17,720/200,000 errors)  <- new best
+50/50 - 0s - loss: 0.2325 - hard_accuracy: 0.9026 - val_loss: 0.2118 - val_hard_accuracy: 0.9114 - val_ler: 0.0886 - val_errors: 17720.0000 - 488ms/epoch - 10ms/step
+Epoch 5/6
+[gru] epoch 5: val_loss=0.19090 val_ler=0.082920 (16,584/200,000 errors)  <- new best
+50/50 - 1s - loss: 0.2028 - hard_accuracy: 0.9151 - val_loss: 0.1909 - val_hard_accuracy: 0.9171 - val_ler: 0.0829 - val_errors: 16584.0000 - 553ms/epoch - 11ms/step
+Epoch 6/6
+[gru] epoch 6: val_loss=0.17664 val_ler=0.075855 (15,171/200,000 errors)  <- new best
+50/50 - 1s - loss: 0.1865 - hard_accuracy: 0.9214 - val_loss: 0.1766 - val_hard_accuracy: 0.9241 - val_ler: 0.0759 - val_errors: 15171.0000 - 572ms/epoch - 11ms/step
+[gru] --test-pool given: suppressing the stored MWPM ratio (baselines are tail-specific). Decode MWPM on THIS tail to compare.
+[gru] gru_d5_p004_u140_hard_seed0_ntr500000_b10000  p_L=0.07598  base_rate=0.194  agree_ambiguous=  (6 ep, 12s)
+[gru] wrote -> /home/kchey/FNAL-AI4QC-GRU/experiments/a7_smoke/20260926T051945Z/seed0/runs/gru_d5_p004_u140_hard_seed0_ntr500000_b10000.csv  (+ history, weights)
+[gpu] per-process limit 3500 MiB on 1 device(s)
+[student-eval] scoring shots [15,200,000, 17,000,000) of data_d5_p0.004_r5_FORMAL.npz
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+[student-eval] gru params=69,441
+[student-eval] student p_L=0.075979  MWPM p_L=0.007571  ratio=10.0362x  base_rate=0.19430
+[mcnemar] 2x2 on 1,800,000 shared shots:
+[mcnemar]   both-right   = 1,656,705
+[mcnemar]   student-only = 6,532   (student wins these)
+[mcnemar]   MWPM-only    = 129,668   (MWPM wins these)
+[mcnemar]   both-wrong   = 7,095
+[mcnemar]   net student wins = -123,136  (= n_test x (p_L_MWPM - p_L_student) = -123136)
+[mcnemar]   chi2(cc)=111323.3  p_chi2=0.000e+00  p_exact=0.000e+00
+[student-eval] dumped per-shot -> /home/kchey/FNAL-AI4QC-GRU/experiments/a7_smoke/20260926T051945Z/seed0/per_shot_gru_d5_p004_u140_hard_seed0_ntr500000_b10000.npz
+[student-eval] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/a7_smoke/20260926T051945Z/seed0/eval_best_ckpt.csv
+[complete] all artifacts present -> COMPLETE
+2026-09-26T05:20:58Z end

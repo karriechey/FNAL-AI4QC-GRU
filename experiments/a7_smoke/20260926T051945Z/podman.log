@@ -1,0 +1,69 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+name, memory.used [MiB], memory.free [MiB], memory.total [MiB], utilization.gpu [%]
+NVIDIA GH200 480GB, 92264 MiB, 5017 MiB, 97871 MiB, 0 %
+pid, process_name, used_gpu_memory [MiB]
+[gru] 5017 MiB free: card available
+2026-09-26 05:19:45.833744: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 05:19:45.833773: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 05:19:45.834395: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[gru] TensorFlow 2.15.0  GPUs: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+[gru] GPU matmul ok
+[gru] stim 1.16.0  numpy 1.24.4  pymatching ok
+[gru] pool /home/kchey/pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz
+[gru] shots=19,000,000  det_evts(19000000, 120)  measurements(19000000, 145)
+[gru] train [0, 500,000)  val [15,000,000, 15,200,000)  eval [15,200,000, 17,000,000)  sealed [17,000,000, 19,000,000)  all disjoint
+[gru] pool gen_seed=42  flips_sha=1c22b8a596058416  n_total=19,000,000
+2026-09-26 05:19:54.700753: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 05:19:54.700784: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 05:19:54.701390: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-09-26 05:19:55.894799: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:274] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+2026-09-26 05:19:55.894827: I external/local_xla/xla/stream_executor/cuda/cuda_diagnostics.cc:129] retrieving CUDA diagnostic information for host: 07836a9f1b29
+2026-09-26 05:19:55.894834: I external/local_xla/xla/stream_executor/cuda/cuda_diagnostics.cc:136] hostname: 07836a9f1b29
+2026-09-26 05:19:55.894873: I external/local_xla/xla/stream_executor/cuda/cuda_diagnostics.cc:159] libcuda reported version is: 595.71.5
+2026-09-26 05:19:55.894900: I external/local_xla/xla/stream_executor/cuda/cuda_diagnostics.cc:163] kernel reported version is: NOT_FOUND: could not find kernel module information in driver version file contents: "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  595.71.05  Release Build  (mockbuild@)  Tue May 26 05:27:22 UTC 2026
+GCC version:  gcc version 14.3.1 20251022 (Red Hat 14.3.1-4) (GCC) 
+"
+[gru] sequence layout: 6 timesteps x 24 positions
+[gru] gru units=140 hidden=()  params=69,441
+experiment   : gru distance scaling, d=5 r=5 p=0.004 (grace1 GH200)
+launched     : 2026-09-26T05:19:56Z  on 07836a9f1b29
+pool         : /home/kchey/pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz
+pool prov    : gen_seed=42 flips_sha=1c22b8a5960584162e21a833e622707c7d30d337435894ac6d973d1ddadfc79b n_total=19000000
+train        : [0, 500000)
+validation   : [15000000, 15200000)
+evaluation   : [15200000, 17000000)
+sealed test  : [17000000, 19000000)   not read
+recipe       : gru units=140 hidden=() inputs=evts alpha=1.0 hard labels
+             : batch=10000 lr=0.003 epochs=6 early_stop=0
+gpu cap      : 3500 MiB per process
+quantization : weights=float32 activations=float32
+extension    : none n=all
+selection    : min val_loss checkpoint, scored once on the evaluation block
+seeds        : 0
+determinism  : TF_DETERMINISTIC_OPS=1  TF_CUDNN_DETERMINISTIC=1
+code sha     : 21048a3783374a17  train_student.py
+             : 23e56e2fa65b7ebe  StudentModels.py
+             : c9a13d816446cb39  gh200_run_student_scaling.sh
+
+[gru] seed 0 -> log /home/kchey/FNAL-AI4QC-GRU/experiments/a7_smoke/20260926T051945Z/seed0/run.log
+[gru] every requested seed completed -> /home/kchey/FNAL-AI4QC-GRU/experiments/a7_smoke/20260926T051945Z/COMPLETE
+
+[gru] done  d=5 r=5  seeds: 0  parallel=0  wall 62s
+[gru]   per-seed output -> /home/kchey/FNAL-AI4QC-GRU/experiments/a7_smoke/20260926T051945Z/seed<N>/{runs,ckpt,run.log,eval_best_ckpt.csv}
+gru_d5_p004_u140_hard_seed0_ntr500000_b10000.best.weights.h5,gru,5,0.004,5,15200000,1800000,69441,0.075979,0.007571,10.0362,0.1943,1656705,6532,129668,7095,136200,-123136,111323.262,0.0,0.0
+weights,student,d,p,rounds,eval_start,n_test,n_params,p_L,mwpm_p_L,ratio,base_rate,both_right,student_only,mwpm_only,both_wrong,n_discordant,net_student_wins,mcnemar_chi2_cc,p_chi2,p_exact

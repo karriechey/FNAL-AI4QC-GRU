@@ -1,0 +1,258 @@
+[sweep] 27 tasks  d=[5, 7, 9]  p=[0.003, 0.004, 0.005, 0.0055, 0.006, 0.0065, 0.007, 0.008, 0.009]  workers=64  stop at 1,000,000,000 errors or 200,000 shots
+[31mStarting 64 workers...[0m
+[31m27 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        3 pymatching   ?     200000  1000000000 d=5,p=0.003,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching   ?     200000  1000000000 d=5,p=0.004,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     195631   999999951 d=5,p=0.005,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching   ?     200000  1000000000 d=5,p=0.0055,r=5,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching   ?     200000  1000000000 d=5,p=0.006,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching   ?     200000  1000000000 d=5,p=0.0065,r=5,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching   ?     200000  1000000000 d=5,p=0.007,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching   ?     200000  1000000000 d=5,p=0.008,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching   ?     200000  1000000000 d=5,p=0.009,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching   ?     200000  1000000000 d=7,p=0.003,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=7,p=0.004,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=7,p=0.005,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=7,p=0.0055,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching   ?     200000  1000000000 d=7,p=0.006,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=7,p=0.0065,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching   ?     200000  1000000000 d=7,p=0.007,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=9,p=0.003,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching   ?     200000  1000000000 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching   ?     200000  1000000000 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m27 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        3 pymatching <1m     133333   999999783 d=5,p=0.003,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     155695   999999658 d=5,p=0.004,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     163887   999999489 d=5,p=0.005,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     166959   999999432 d=5,p=0.0055,r=5,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     170031   999999274 d=5,p=0.006,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     172079   999999228 d=5,p=0.0065,r=5,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     174127   999999114 d=5,p=0.007,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     176175   999998885 d=5,p=0.008,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     187439   999999186 d=5,p=0.009,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     187439   999999988 d=7,p=0.003,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     190511   999999950 d=7,p=0.004,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     192559   999999932 d=7,p=0.005,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     193583   999999902 d=7,p=0.0055,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     193583   999999876 d=7,p=0.006,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     193583   999999816 d=7,p=0.0065,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     194607   999999788 d=7,p=0.007,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     196655   999999807 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     196655   999999738 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     196655   999999997 d=9,p=0.003,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     196655   999999993 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     198703   999999990 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching   ?     200000  1000000000 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching   ?     200000  1000000000 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching   ?     200000  1000000000 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     199727   999999989 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     199454   999999955 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m27 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        3 pymatching <1m     133333   999999783 d=5,p=0.003,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     133333   999999475 d=5,p=0.004,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     133333   999999045 d=5,p=0.005,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     133333   999998839 d=5,p=0.0055,r=5,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     133333   999998387 d=5,p=0.006,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     133333   999998089 d=5,p=0.0065,r=5,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     141359   999997989 d=5,p=0.007,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     147503   999997477 d=5,p=0.008,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     154671   999997074 d=5,p=0.009,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     169007   999999968 d=7,p=0.003,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     176175   999999884 d=7,p=0.004,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     173854   999999751 d=7,p=0.005,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     183343   999999754 d=7,p=0.0055,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     184367   999999691 d=7,p=0.006,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     185391   999999620 d=7,p=0.0065,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     184094   999999435 d=7,p=0.007,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     184094   999999102 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     188463   999999097 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     177950   999999984 d=9,p=0.003,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     188190   999999974 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     189214   999999943 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     191262   999999899 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     191262   999999857 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     191262   999999810 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     193310   999999781 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     194334   999999698 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     193310   999999396 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m27 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        3 pymatching <1m        449   999999318 d=5,p=0.003,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m       3309   999998479 d=5,p=0.004,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m      72371   999998157 d=5,p=0.005,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m      90803   999998014 d=5,p=0.0055,r=5,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m      93875   999997475 d=5,p=0.006,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m      87731   999996750 d=5,p=0.0065,r=5,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m      81587   999995861 d=5,p=0.007,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m      95923   999994962 d=5,p=0.008,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     118451   999994685 d=5,p=0.009,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     100019   999999878 d=7,p=0.003,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     140062   999999710 d=7,p=0.004,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     141086   999999438 d=7,p=0.005,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     168734   999999558 d=7,p=0.0055,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     170782   999999408 d=7,p=0.006,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     172830   999999331 d=7,p=0.0065,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     168734   999998893 d=7,p=0.007,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     169758   999998303 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     181022   999998546 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     161566   999999976 d=9,p=0.003,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     169758   999999927 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     176926   999999864 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     181022   999999780 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     182046   999999700 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     185118   999999683 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     185118   999999545 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     187166   999999307 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     189214   999999047 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m23 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        3 pymatching <1m          1   999998455 d=5,p=0.004,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m         15   999997188 d=5,p=0.005,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching   ?          0   999994226 d=5,p=0.0065,r=5,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m      32435   999991853 d=5,p=0.008,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m      82326   999992379 d=5,p=0.009,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m      70323   999999849 d=7,p=0.003,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     125726   999999623 d=7,p=0.004,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     131870   999999331 d=7,p=0.005,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     147230   999999258 d=7,p=0.0055,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     151326   999999030 d=7,p=0.006,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     154398   999998848 d=7,p=0.0065,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     154398   999998434 d=7,p=0.007,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     157470   999997677 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     169758   999997718 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     145182   999999966 d=9,p=0.003,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     157470   999999897 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     167710   999999801 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     172830   999999670 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     178974   999999651 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     178974   999999545 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        2 pymatching <1m     178974   999999334 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     185118   999999195 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        2 pymatching <1m     185118   999998688 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m18 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        4 pymatching <1m        272   999986940 d=5,p=0.009,r=5,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m      23416   999999180 d=7,p=0.004,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m      78076   999998819 d=7,p=0.005,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m      90364   999998450 d=7,p=0.0055,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        4 pymatching <1m     107772   999998192 d=7,p=0.006,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     115964   999997867 d=7,p=0.0065,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        4 pymatching <1m     126204   999997533 d=7,p=0.007,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     132348   999996418 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     146684   999996054 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     114189   999999943 d=9,p=0.003,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     134669   999999848 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     151053   999999676 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     159245   999999516 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     161293   999999402 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     168461   999999315 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     168461   999998988 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     173581   999998580 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     176380   999997937 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m17 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        4 pymatching <1m          1   999999101 d=7,p=0.004,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m        485   999998075 d=7,p=0.005,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m      50428   999997885 d=7,p=0.0055,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        4 pymatching <1m      63740   999997365 d=7,p=0.006,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m      66812   999996620 d=7,p=0.0065,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        4 pymatching <1m      82172   999996071 d=7,p=0.007,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     110844   999995299 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     133372   999995059 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m      77052   999999929 d=9,p=0.003,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     120060   999999808 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     138765   999999597 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     139789   999999313 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     151053   999999225 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     154125   999998984 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        3 pymatching <1m     154125   999998531 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        3 pymatching <1m     166413   999998189 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     164092   999996879 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m14 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        5 pymatching <1m        146   999996105 d=7,p=0.006,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m      11100   999995125 d=7,p=0.0065,r=7,basis=Z,circuit=surface_code:rotated_memory_z
+        5 pymatching <1m      33515   999994462 d=7,p=0.007,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m      62716   999992892 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m      93436   999992040 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m      24440   999999909 d=9,p=0.003,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m      75004   999999721 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m     107772   999999410 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     121084   999999116 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        4 pymatching <1m     131597   999998951 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     133372   999998508 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        4 pymatching <1m     148732   999998362 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     148732   999997241 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        4 pymatching <1m     155900   999996201 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m12 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        6 pymatching   ?          0   999993333 d=7,p=0.007,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        6 pymatching <1m      30443   999991207 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        6 pymatching <1m      64491   999989864 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m         26   999999888 d=9,p=0.003,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m      47442   999999671 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m      93163   999999297 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m     103676   999998932 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        5 pymatching <1m     126204   999998875 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m     125180   999998327 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        5 pymatching <1m     128252   999997715 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        5 pymatching <1m     143612   999996961 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        6 pymatching <1m     145660   999995333 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m10 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        7 pymatching   ?          0   999989658 d=7,p=0.008,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        7 pymatching <1m       8891   999985647 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        6 pymatching <1m        886   999999550 d=9,p=0.004,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        6 pymatching <1m      41468   999998953 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        6 pymatching <1m      67290   999998536 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        6 pymatching <1m      83674   999998224 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        6 pymatching <1m      88794   999997477 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        7 pymatching <1m     114667   999997266 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        7 pymatching <1m     123883   999995845 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        6 pymatching <1m     136922   999994526 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m8 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+        8 pymatching <1m          1   999984999 d=7,p=0.009,r=7,basis=Z,circuit=surface_code:rotated_memory_z 
+        8 pymatching <1m         94   999998675 d=9,p=0.005,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        8 pymatching <1m      22751   999998035 d=9,p=0.0055,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        8 pymatching <1m      60873   999997859 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        8 pymatching <1m      68041   999996989 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+        8 pymatching <1m      82377   999996258 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        8 pymatching <1m     104905   999994822 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+        8 pymatching <1m     107704   999991998 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m5 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+       13 pymatching <1m       1365   999996883 d=9,p=0.006,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+       13 pymatching <1m      12211   999995741 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+       13 pymatching <1m      36173   999994806 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+       13 pymatching <1m      66832   999992881 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+       12 pymatching <1m      85174   999990047 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m4 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                 
+       16 pymatching <1m          1   999995431 d=9,p=0.0065,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+       16 pymatching <1m        183   999993652 d=9,p=0.007,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+       16 pymatching <1m       4649   999989541 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z 
+       16 pymatching <1m      40190   999986239 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z [0m
+[31m2 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                
+       32 pymatching <1m          6   999989289 d=9,p=0.008,r=9,basis=Z,circuit=surface_code:rotated_memory_z
+       32 pymatching <1m       5567   999983353 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z[0m
+[31m1 tasks left:
+  workers    decoder eta shots_left errors_left json_metadata                                                
+       64 pymatching <1m        377   999982888 d=9,p=0.009,r=9,basis=Z,circuit=surface_code:rotated_memory_z[0m
+[31m0 tasks left:
+[0m
+[sweep] done -> /home/kchey/FNAL-AI4QC-GRU/experiments/stage0/timing_20260926T052106Z/timing.csv
+wall 3.50 s

@@ -1,0 +1,6 @@
+[A7] PASS  loss_decreases  loss 0.47358 -> 0.18648 over 6 epochs
+[A7] PASS  val_logged  val_ler per epoch: 0.20706, 0.16493, 0.11055, 0.08860, 0.08292, 0.07586
+[A7] PASS  best_json  chosen epoch 6 (recomputed 6; last epoch 6); val_ler 0.075855 = 15,171/200,000 errors
+[A7] PASS  keras_reload  max abs diff 0, params 69,441
+[A7] PASS  eval_report  weights=gru_d5_p004_u140_hard_seed0_ntr500000_b10000.best.weights.h5; n_test=1800000; p_L=0.075979; mwpm_p_L=0.007571; student_only=6532; mwpm_only=129668; n_discordant=136200
+[A7] ALL PASS
