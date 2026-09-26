@@ -1,0 +1,22 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+[C2f] u140_run_of_record: {"weights": "/home/kchey/rcnn_threshold/results/gh200_gru_d5_e200_20260819T185011Z/seed0/ckpt/gru_d5_p004_u140_hard_seed0_ntr10000000_b10000.best.weights.h5", "ranges": {"bias_abs_max": 1.550715684890747, "bias_abs_mean": 0.3536381081585811, "xW_plus_b": 26.094100040383637, "hU_zr": 25.631814784586595, "candidate_preact": 19.730523732830548, "h": 0.9999999999512835, "logit": 15.082617799970055, "numpy_vs_keras_max_diff": 4.7692522358033784e-06}, "trained_default_tables": {"max_abs_diff": 23.61349868774414, "mean_abs_diff": 9.370413780212402, "sign_agreement": 0.634, "keras_logit_std": 7.835958480834961}, "zero_bias_default_tables": {"max_abs_diff": 14.009571075439453, "mean_abs_diff": 3.545976161956787, "sign_agreement": 0.634, "keras_logit_std": 2.6501593589782715}, "trained_tables65536": {"max_abs_diff": 23.70592498779297, "mean_abs_diff": 9.385987281799316, "sign_agreement": 0.63, "keras_logit_std": 7.835958480834961}, "zero_bias_tables65536": {"max_abs_diff": 14.096284866333008, "mean_abs_diff": 3.556272029876709, "sign_agreement": 0.628, "keras_logit_std": 2.6501593589782715}}
+[C2f] u70_gkd20m_hard_seed0: {"weights": "/home/kchey/reference_ckpts/gkd20m_u70_hard_seed0/gkd20m_u70_hard_seed0.best.weights.h5", "ranges": {"bias_abs_max": 8.654623985290527, "bias_abs_mean": 1.638136342176724, "xW_plus_b": 49.83143109828234, "hU_zr": 22.944052608251518, "candidate_preact": 73.01336134471231, "h": 1.0, "logit": 14.643593105143426, "numpy_vs_keras_max_diff": 8.082220827709818e-06}, "trained_default_tables": {"max_abs_diff": 37.843727111816406, "mean_abs_diff": 17.561464309692383, "sign_agreement": 0.196, "keras_logit_std": 7.640643119812012}, "zero_bias_default_tables": {"max_abs_diff": 40.54110336303711, "mean_abs_diff": 10.588244438171387, "sign_agreement": 0.608, "keras_logit_std": 7.1842570304870605}, "trained_tables65536": {"max_abs_diff": 37.91958236694336, "mean_abs_diff": 17.608434677124023, "sign_agreement": 0.194, "keras_logit_std": 7.640643119812012}, "zero_bias_tables65536": {"max_abs_diff": 40.95574951171875, "mean_abs_diff": 10.60241985321045, "sign_agreement": 0.608, "keras_logit_std": 7.1842570304870605}}

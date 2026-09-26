@@ -1,0 +1,5 @@
+[queue 2026-09-26T05:35:23Z] START queue pid=101708 jobs=5 image=qdec:tf215 gpu_cap=3500MiB repo=b990f75
+[queue 2026-09-26T05:35:23Z] RUN   d=5 seed=0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s0_20260926T053523Z
+[queue 2026-09-26T05:36:47Z] FAIL  d=5 seed=0 rc=2 after 84s (COMPLETE absent); continuing
+[queue 2026-09-26T05:36:47Z] RUN   d=7 seed=0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s0_20260926T053647Z
+[queue 2026-09-26T05:37:12Z] STOPPED by operator: d5 s0 failed copying the training array to the GPU under the 3500 MiB cap (Dst tensor is not initialized); every remaining run needs more memory, so the queue was stopped instead of running them to failure
