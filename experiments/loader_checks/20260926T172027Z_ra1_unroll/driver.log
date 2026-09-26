@@ -1,0 +1,11 @@
+[checks] b_det_run1 rc=0
+[checks] b_det_run2 rc=0
+[checks] c_peak_d5 rc=0
+[checks] c_peak_d7 rc=0
+[checks] d_logits_gpu_d5 rc=0
+[checks] d_logits_cpu_d5 rc=0
+[gpu-cpu] GPU vs CPU: max |logit diff| 0.00997, sign agreement 1.000000, n=10,000  CHECK (target ~1e-5)
+[checks] d_logits_gpu_d7 rc=0
+[checks] d_logits_cpu_d7 rc=0
+[gpu-cpu] GPU vs CPU: max |logit diff| 0.0143, sign agreement 1.000000, n=10,000  CHECK (target ~1e-5)
+[checks] done

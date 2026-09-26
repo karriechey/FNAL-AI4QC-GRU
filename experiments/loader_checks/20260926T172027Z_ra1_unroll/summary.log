@@ -1,0 +1,45 @@
+[checks] b_det_run1 rc=0
+[checks] b_det_run2 rc=0
+[checks] c_peak_d5 rc=0
+[checks] c_peak_d7 rc=0
+[checks] d_logits_gpu_d5 rc=0
+[checks] d_logits_cpu_d5 rc=0
+[gpu-cpu] GPU vs CPU: max |logit diff| 0.00997, sign agreement 1.000000, n=10,000  CHECK (target ~1e-5)
+[checks] d_logits_gpu_d7 rc=0
+[checks] d_logits_cpu_d7 rc=0
+[gpu-cpu] GPU vs CPU: max |logit diff| 0.0143, sign agreement 1.000000, n=10,000  CHECK (target ~1e-5)
+[checks] done
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+[gpu-cpu] GPU (TF32 off) vs CPU: max |logit diff| 4.77e-06, sign agreement 1.000000, n=10,000  PASS (target ~1e-5)
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+[gpu-cpu] GPU (TF32 off) vs CPU: max |logit diff| 5.6e-06, sign agreement 1.000000, n=10,000  PASS (target ~1e-5)
