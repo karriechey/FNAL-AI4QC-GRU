@@ -473,7 +473,7 @@ def run():
         # variables. The setdefault calls below would otherwise mask a launcher that
         # forgot, which is fine for this script alone but hides a broken launcher from
         # every other entry point in the same sweep.
-        from slice_guard_r5 import assert_deterministic_env
+        from helpers import assert_deterministic_env
         assert_deterministic_env()
 
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')

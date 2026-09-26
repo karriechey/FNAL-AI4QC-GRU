@@ -9,6 +9,9 @@ code has to come across with them:
       from FNAL-QCDecoding-FPGA/train_one.py @ d5ee86f
   mcnemar_from_correct
       from FNAL-QCDecoding-FPGA/eval_on_tail.py @ d5ee86f
+  assert_deterministic_env (+ REQUIRED_ENV)
+      from FNAL-QCDecoding-FPGA/slice_guard_r5.py @ d5ee86f (the rest of that file,
+      including its separate r5 partition layout, is not carried over)
 
 Their bodies are unchanged; tests/ proves they give the same results as the originals.
 (eval_on_tail.py has its own copy of lookup_mwpm with an identical body; the train_one.py
@@ -23,6 +26,7 @@ model-building code) and as .weights.h5 (what the existing eval scripts load).
 import csv
 import json
 import os
+import sys
 
 import numpy as np
 
@@ -110,6 +114,38 @@ def mcnemar_from_correct(rcnn_correct, mwpm_correct):
     return dict(both_right=both_right, rcnn_only=rcnn_only, mwpm_only=mwpm_only,
                 both_wrong=both_wrong, n_discordant=n_disc, net_rcnn_wins=b - c,
                 mcnemar_chi2_cc=chi2_cc, p_chi2=p_chi2, p_exact=p_exact)
+
+
+# ---------------------------------------------------------------------------------------
+# from FNAL-QCDecoding-FPGA/slice_guard_r5.py:192-217 @ d5ee86f
+# ---------------------------------------------------------------------------------------
+REQUIRED_ENV = {'TF_DETERMINISTIC_OPS': '1', 'TF_CUDNN_DETERMINISTIC': '1'}
+
+
+def assert_deterministic_env():
+    """Fail unless the launcher exported the determinism variables BEFORE this process.
+
+    Must be called before `import tensorflow`. TensorFlow reads both variables during its
+    own import, so a script that sets them afterwards gets no determinism and no warning.
+    This function refuses to set them itself for exactly that reason: if they are missing,
+    the process was started wrong and cannot be repaired in place.
+    """
+    if 'tensorflow' in sys.modules:
+        raise AssertionError(
+            "assert_deterministic_env() was called after TensorFlow was already imported. "
+            "The determinism variables are read at import time, so this ordering gives no "
+            "determinism. Move the call above the import.")
+    missing = [k for k, v in REQUIRED_ENV.items() if os.environ.get(k) != v]
+    if missing:
+        raise SystemExit(
+            "[env] MISSING required determinism variables: "
+            + ', '.join(f"{k}={REQUIRED_ENV[k]}" for k in missing)
+            + ". Export them in the launcher, before the Python process starts:\n"
+              "    export TF_DETERMINISTIC_OPS=1\n"
+              "    export TF_CUDNN_DETERMINISTIC=1")
+    print("[env] TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1 present before import",
+          flush=True)
+    return True
 
 
 # ---------------------------------------------------------------------------------------

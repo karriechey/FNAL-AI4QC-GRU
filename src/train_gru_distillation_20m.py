@@ -370,7 +370,7 @@ def run():
     # --- determinism, before TensorFlow is imported ----------------------------------
     # The launcher exports both variables; this refuses to run if it did not, because
     # setting them after `import tensorflow` has no effect.
-    from slice_guard_r5 import assert_deterministic_env
+    from helpers import assert_deterministic_env
     assert_deterministic_env()
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
     import tensorflow as tf
