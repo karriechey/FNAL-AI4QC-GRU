@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-09-26
-# Last updated: 2026-09-26
+# Last updated: 2026-09-26 (RA=0 runs (b)/(c) with reset_after=False; SKIP_A=1 skips (a))
 #
 # Runs the three host-memory pipeline checks in the qdec:tf215 image on grace1, with the
 # launcher's determinism variables and the 3,500 MiB GPU cap. Writes everything to $OUT.
@@ -22,7 +22,8 @@ run () {    # run <name> <command...>   (inside the image, GPU visible)
 }
 common () {  # common <d> <n_train> <epochs> <tag> [extra args...]
   local d="$1" ntr="$2" ep="$3" tag="$4"; shift 4
-  echo --student gru --inputs evts --hidden --units 140 --reset-after \
+  local raflag=""; [ "${RA:-1}" = "1" ] && raflag="--reset-after"
+  echo --student gru --inputs evts --hidden --units 140 $raflag \
        --d "$d" --p 0.004 --rounds "$d" \
        --pool "$HOME/pools_d${d}_p004_19M/data_d${d}_p0.004_r${d}_FORMAL.npz" \
        --n-train "$ntr" --val-start 15000000 --val-n 200000 \
@@ -32,7 +33,7 @@ common () {  # common <d> <n_train> <epochs> <tag> [extra args...]
        --ckpt-dir "$OUT/$tag/ckpt" --out-dir "$OUT/$tag/runs" --tag "$tag" --run-tag "$tag" "$@"
 }
 
-run a_coverage python3 tests/loader_checks.py coverage
+[ "${SKIP_A:-0}" = "1" ] || run a_coverage python3 tests/loader_checks.py coverage
 for rep in 1 2; do
   run "b_det_run$rep" python3 tests/loader_checks.py train --out "$OUT/b_det_run$rep.json" \
       -- $(common 5 200000 3 "b_det_run$rep")
