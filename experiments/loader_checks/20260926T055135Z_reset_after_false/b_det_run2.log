@@ -1,0 +1,48 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+[env] TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1 present before import
+2026-09-26 05:52:12.121974: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 05:52:12.122004: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 05:52:12.122579: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[gpu] per-process limit 3500 MiB on 1 device(s)
+[gru] TF 2.15.0  GPUs: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+[gru] hard-label control arm: teacher column unused (alpha=1).
+[gru] provenance: pool=pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz flips_sha= teacher_sha= code_sha=87074cdc2e1c7293
+[gru] scoring shots [15,200,000, 17,000,000)
+[gru] partitions: train [0, 200,000) of the primary pool  validation [15,000,000, 15,200,000)  (validation_split disabled)
+[gru] 20 steps/epoch x 3 epochs = 60 optimizer updates
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+[gru] reset_after=False
+[gru] gru inputs=evts params=69,441
+[gru] checkpoints -> /home/kchey/FNAL-AI4QC-GRU/experiments/loader_checks/20260926T055135Z_reset_after_false/b_det_run2/ckpt/b_det_run2.best.keras + .best.weights.h5 (lowest val LER, tiebreak val_loss; epoch in /home/kchey/FNAL-AI4QC-GRU/experiments/loader_checks/20260926T055135Z_reset_after_false/b_det_run2/ckpt/b_det_run2.best.json) and /home/kchey/FNAL-AI4QC-GRU/experiments/loader_checks/20260926T055135Z_reset_after_false/b_det_run2/ckpt/b_det_run2.lastepoch.weights.h5
+[gru] callback order: ['ValLERCheckpoint', '_SaveLastEpoch']
+[gru] input: host-memory uint8 tf.data, shuffle seed 0, batch 10000, prefetch to GPU
+Epoch 1/3
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790401964.118079     412 device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+[gru] epoch 1: val_loss=0.47064 val_ler=0.192445 (38,489/200,000 errors)  <- new best
+20/20 - 10s - loss: 0.5402 - hard_accuracy: 0.7943 - val_loss: 0.4706 - val_hard_accuracy: 0.8076 - val_ler: 0.1924 - val_errors: 38489.0000 - 10s/epoch - 488ms/step
+Epoch 2/3
+[gru] epoch 2: val_loss=0.41730 val_ler=0.202555 (40,511/200,000 errors)
+20/20 - 1s - loss: 0.4425 - hard_accuracy: 0.7971 - val_loss: 0.4173 - val_hard_accuracy: 0.7974 - val_ler: 0.2026 - val_errors: 40511.0000 - 525ms/epoch - 26ms/step
+Epoch 3/3
+[gru] epoch 3: val_loss=0.39349 val_ler=0.210585 (42,117/200,000 errors)
+20/20 - 1s - loss: 0.4081 - hard_accuracy: 0.7922 - val_loss: 0.3935 - val_hard_accuracy: 0.7894 - val_ler: 0.2106 - val_errors: 42117.0000 - 520ms/epoch - 26ms/step
+[gru] --test-pool given: suppressing the stored MWPM ratio (baselines are tail-specific). Decode MWPM on THIS tail to compare.
+[gru] b_det_run2  p_L=0.21131  base_rate=0.194  agree_ambiguous=  <-- fails: p_L >= base rate (class collapse)  (3 ep, 11s)
+[gru] wrote -> /home/kchey/FNAL-AI4QC-GRU/experiments/loader_checks/20260926T055135Z_reset_after_false/b_det_run2/runs/b_det_run2.csv  (+ history, weights)
+[loader] train: error=None peak GPU memory 271 MiB

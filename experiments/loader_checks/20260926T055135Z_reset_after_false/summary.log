@@ -1,0 +1,5 @@
+[checks] b_det_run1 rc=0
+[checks] b_det_run2 rc=0
+[checks] c_peak_d5 rc=0
+[checks] c_peak_d7 rc=0
+[checks] done

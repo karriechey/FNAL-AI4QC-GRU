@@ -1,0 +1,43 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+[env] TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1 present before import
+2026-09-26 05:52:48.248756: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-26 05:52:48.248785: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-26 05:52:48.249388: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[gpu] per-process limit 3500 MiB on 1 device(s)
+[gru] TF 2.15.0  GPUs: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+[gru] hard-label control arm: teacher column unused (alpha=1).
+[gru] extra pool gen_seed=43 flips_sha=705f765819feb00f
+[gru] training set extended by 5,000,000 shots from data_d5_p0.004_r5_TRAINONLY_seed43.npz; total 20,000,000
+[gru] provenance: pool=pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz flips_sha= teacher_sha= code_sha=87074cdc2e1c7293
+[gru] scoring shots [15,200,000, 17,000,000)
+[gru] partitions: train [0, 15,000,000) of the primary pool + 5,000,000 augmentation shots  validation [15,000,000, 15,200,000)  (validation_split disabled)
+[gru] 2000 steps/epoch x 1 epochs = 2,000 optimizer updates
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+[gru] reset_after=False
+[gru] gru inputs=evts params=69,441
+[gru] checkpoints -> /home/kchey/FNAL-AI4QC-GRU/experiments/loader_checks/20260926T055135Z_reset_after_false/c_peak_d5/ckpt/c_peak_d5.best.keras + .best.weights.h5 (lowest val LER, tiebreak val_loss; epoch in /home/kchey/FNAL-AI4QC-GRU/experiments/loader_checks/20260926T055135Z_reset_after_false/c_peak_d5/ckpt/c_peak_d5.best.json) and /home/kchey/FNAL-AI4QC-GRU/experiments/loader_checks/20260926T055135Z_reset_after_false/c_peak_d5/ckpt/c_peak_d5.lastepoch.weights.h5
+[gru] callback order: ['ValLERCheckpoint', '_SaveLastEpoch']
+[gru] input: host-memory uint8 tf.data, shuffle seed 0, batch 10000, prefetch to GPU
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790402042.307031     415 device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+[gru] epoch 1: val_loss=0.05364 val_ler=0.020095 (4,019/200,000 errors)  <- new best
+2000/2000 - 60s - loss: 0.1239 - hard_accuracy: 0.9488 - val_loss: 0.0536 - val_hard_accuracy: 0.9799 - val_ler: 0.0201 - val_errors: 4019.0000 - 60s/epoch - 30ms/step
+[gru] --test-pool given: suppressing the stored MWPM ratio (baselines are tail-specific). Decode MWPM on THIS tail to compare.
+[gru] c_peak_d5  p_L=0.02028  base_rate=0.194  agree_ambiguous=  (1 ep, 60s)
+[gru] wrote -> /home/kchey/FNAL-AI4QC-GRU/experiments/loader_checks/20260926T055135Z_reset_after_false/c_peak_d5/runs/c_peak_d5.csv  (+ history, weights)
+[loader] train: error=None peak GPU memory 276 MiB
