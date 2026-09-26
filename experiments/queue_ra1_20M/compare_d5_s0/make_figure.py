@@ -1,5 +1,5 @@
 # Created: 2026-09-26
-# Last modified: 2026-09-26 (three panels; old runs' validation LER at their two saved checkpoints)
+# Last modified: 2026-09-26 (three panels; panel (c) shows the best seed of each variant)
 """Figure: d=5 GRU decoder, reset_after=False vs reset_after=True.
 
 Every number is read from the run records on grace1 (histories, best-checkpoint JSONs,
@@ -100,26 +100,26 @@ b.text(0.98, 0.97, 'dots: selected checkpoint\n'
        bbox=dict(boxstyle='round,pad=0.4', fc='white', ec='#d9d8d4'))
 
 # (c) validation LER, reset_after=True only
-for i, (s, r) in enumerate(sorted(new.items())):
-    c.plot(ep, r['val_ler'], color=RED, lw=1.0, alpha=.85, label=lab_new if i == 0 else None)
-    c.plot(r['best'], r['val_ler'][r['best'] - 1], 'o', ms=8, color=RED, mec='white', mew=1.5, zorder=5)
-    c.annotate(f"seed {s}: epoch {r['best']}", (r['best'], r['val_ler'][r['best'] - 1]),
-               xytext=(0, 12), textcoords='offset points', ha='center', fontsize=11, color=INK,
-               bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='none', alpha=0.85))
-for s, r in sorted(old.items()):
-    c.plot(r['best'], r['val_ler_best'], 'o', ms=8, color=BLUE, mec='white', mew=1.5, zorder=5)
-    c.plot(200, r['val_ler_last'], 'o', ms=8, mfc='white', mec=BLUE, mew=1.8, zorder=5)
-    dx, dy, ha = {0: (0, 9, 'center'), 1: (9, -10, 'left'), 2: (-9, -4, 'right')}[s]
-    c.annotate(f"seed {s}", (r['best'], r['val_ler_best']), xytext=(dx, dy),
-               textcoords='offset points', ha=ha, fontsize=11, color=INK)
+# Best seed of each variant only (lowest validation LER at its selected checkpoint).
+nb = min(new, key=lambda s: new[s]['val_ler'][new[s]['best'] - 1])
+ob = min(old, key=lambda s: old[s]['val_ler_best'])
+rn, ro = new[nb], old[ob]
+yn = rn['val_ler'][rn['best'] - 1]
+c.plot(ep, rn['val_ler'], color=RED, lw=1.0, alpha=.85)
+c.plot(rn['best'], yn, 'o', ms=9, color=RED, mec='white', mew=1.5, zorder=5)
+c.annotate(f"epoch {rn['best']}: $p_L$ = {yn:.6f}", (rn['best'], yn), xytext=(0, 12),
+           textcoords='offset points', ha='center', fontsize=11, color=INK,
+           bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='none', alpha=0.85))
+c.plot(ro['best'], ro['val_ler_best'], 'o', ms=9, color=BLUE, mec='white', mew=1.5, zorder=5)
+c.annotate(f"epoch {ro['best']}: $p_L$ = {ro['val_ler_best']:.6f}", (ro['best'], ro['val_ler_best']),
+           xytext=(10, -4), textcoords='offset points', ha='left', fontsize=11, color=INK)
 c.axhline(mwpm_val, color=GREEN, ls='--', lw=1.6)
 c.text(185, mwpm_val - 0.00003, 'MWPM (same shots)', color=INK, ha='right', va='top', fontsize=11)
 c.set_ylim(0.0066, 0.0100)
 c.set_title('(c)  Validation logical error rate', loc='left')
 c.set_ylabel('logical error rate per shot')
-c.text(0.98, 0.97, 'red dots: selected checkpoint (lowest validation LER)\n'
-       'reset_after=False (not logged per epoch):\n'
-       'filled = selected checkpoint, open = epoch 200',
+c.text(0.98, 0.97, f'best seed of each variant; dots: selected checkpoint\n'
+       f'reset_after=False (seed {ob}): not logged per epoch',
        transform=c.transAxes, ha='right', va='top', fontsize=11, color=MUTED)
 
 for ax in (a, b, c):
