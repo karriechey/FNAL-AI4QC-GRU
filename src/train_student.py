@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-09-26 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
+# Last modified: 2026-09-26 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -441,14 +441,15 @@ def run():
     # --- io ---
     ap.add_argument('--data-dir', default=os.path.expanduser('~/rcnn_threshold/pools'))
     ap.add_argument('--pool', default=None, help='explicit training pool npz')
-    ap.add_argument('--extra-train-pool', default=None,
-                    help='second pool, TRAINING ONLY, appended to the training prefix. Its '
-                         'shots come from an independent generation seed, so they cannot '
-                         'overlap the validation, evaluation or sealed blocks of --pool. '
-                         'Use to train past a pool\'s clean prefix without touching the '
-                         'reserved regions.')
-    ap.add_argument('--extra-train-n', type=int, default=None,
-                    help='how many shots to take from --extra-train-pool (default: all)')
+    ap.add_argument('--extra-train-pool', nargs='*', default=[],
+                    help='one or more pools, TRAINING ONLY, appended to the training prefix '
+                         'in the order given. Their shots come from independent generation '
+                         'seeds, so they cannot overlap the validation, evaluation or sealed '
+                         'blocks of --pool. Use to train past a pool\'s clean prefix without '
+                         'touching the reserved regions.')
+    ap.add_argument('--extra-train-n', type=int, nargs='*', default=[],
+                    help='how many shots to take from each --extra-train-pool, same order '
+                         '(default: all of each)')
     ap.add_argument('--test-pool', default=None,
                     help='separate npz for a FRESH disjoint tail; strongly preferred')
     ap.add_argument('--eval-start', type=int, default=None,
@@ -569,13 +570,24 @@ def run():
     # shots from a different pool.
     ntr_primary = ntr
 
-    if args.extra_train_pool:
-        if not os.path.exists(args.extra_train_pool):
-            raise SystemExit(f"{LOG} MISSING extra pool {args.extra_train_pool}")
-        zex = np.load(args.extra_train_pool)
+    # Several extension pools are appended one after another, in the order given; one pool
+    # behaves exactly as before. Each must have its own generation seed (checked against
+    # the primary pool and against the other extensions) and no file may appear twice.
+    ext_pools = list(args.extra_train_pool or [])
+    ext_counts = list(args.extra_train_n or [])
+    if ext_counts and len(ext_counts) != len(ext_pools):
+        raise SystemExit(f"{LOG} --extra-train-n has {len(ext_counts)} values for "
+                         f"{len(ext_pools)} --extra-train-pool files. STOP.")
+    if len(set(map(os.path.abspath, ext_pools))) != len(ext_pools):
+        raise SystemExit(f"{LOG} the same extension pool is listed twice. STOP.")
+    ext_seeds = set()
+    for i_ex, ext_pool in enumerate(ext_pools):
+        if not os.path.exists(ext_pool):
+            raise SystemExit(f"{LOG} MISSING extra pool {ext_pool}")
+        zex = np.load(ext_pool)
         n_ex = zex['measurements'].shape[0]
-        take = min(args.extra_train_n or n_ex, n_ex)
-        fp = args.extra_train_pool.replace('.npz', '.fingerprint.json')
+        take = min((ext_counts[i_ex] if ext_counts else None) or n_ex, n_ex)
+        fp = ext_pool.replace('.npz', '.fingerprint.json')
         if os.path.exists(fp):
             meta_ex = json.load(open(fp))
             if meta_ex.get('gen_seed') == _primary_gen_seed(train_fn):
@@ -583,6 +595,11 @@ def run():
                     f"{LOG} extra pool shares gen_seed {meta_ex.get('gen_seed')} with the "
                     f"primary pool. Same seed means the same shot stream -- the extension "
                     f"would duplicate training data and could repeat evaluation shots.")
+            if meta_ex.get('gen_seed') in ext_seeds:
+                raise SystemExit(
+                    f"{LOG} two extension pools share gen_seed {meta_ex.get('gen_seed')}; "
+                    f"their shots would be duplicates. STOP.")
+            ext_seeds.add(meta_ex.get('gen_seed'))
             print(f"{LOG} extra pool gen_seed={meta_ex.get('gen_seed')} "
                   f"flips_sha={str(meta_ex.get('flips_sha256'))[:16]}", flush=True)
         m_ex = zex['measurements'][0:take].astype(binary_t)
@@ -598,7 +615,7 @@ def run():
         ntr = ntr + take
         del x_ex
         print(f"{LOG} training set extended by {take:,} shots from "
-              f"{os.path.basename(args.extra_train_pool)}; total {ntr:,}", flush=True)
+              f"{os.path.basename(ext_pool)}; total {ntr:,}", flush=True)
 
     prov = run_provenance(args, train_fn, teacher_npz)
     print(f"{LOG} provenance: pool={prov['train_pool_dir']}/{prov['train_pool']} "

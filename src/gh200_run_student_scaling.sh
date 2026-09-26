@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-09-26 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32)
+# Last updated: 2026-09-26 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -55,6 +55,10 @@ A_BITS="${A_BITS:-}"
 # validation, evaluation and sealed blocks are still read from POOL alone.
 EXTRA_POOL="${EXTRA_POOL:-}"
 EXTRA_N="${EXTRA_N:-}"
+# Several extension pools: space-separated, appended in this order; EXTRA_N gives one count
+# per pool in the same order. One pool behaves exactly as before.
+read -r -a EXTRA_POOLS <<< "$EXTRA_POOL"
+read -r -a EXTRA_NS <<< "$EXTRA_N"
 
 # Early stopping off by default. The full epoch budget runs and the reported model is the
 # minimum-val_loss checkpoint, so patience is not a tunable that moves the result.
@@ -195,8 +199,13 @@ PYPROV
 # Extension provenance, when the training set is augmented. Recorded beside the primary
 # pool's, with the exact range this run consumes, so the manifest states what was trained on
 # rather than what the file happens to contain.
-if [ -n "$EXTRA_POOL" ]; then
-  "$PY" - "$EXTRA_POOL" "$D" "$ROUNDS" "$P" "${EXTRA_N:-0}" "$OUT/extension_provenance.json" \
+EXT_I=0
+for EXT_POOL in "${EXTRA_POOLS[@]}"; do
+  EXT_TAKE="${EXTRA_NS[$EXT_I]:-0}"
+  EXT_PROV="$OUT/extension_provenance.json"
+  [ "${#EXTRA_POOLS[@]}" -gt 1 ] && EXT_PROV="$OUT/extension_provenance_$((EXT_I + 1)).json"
+  EXT_I=$((EXT_I + 1))
+  "$PY" - "$EXT_POOL" "$D" "$ROUNDS" "$P" "$EXT_TAKE" "$EXT_PROV" \
   <<'PYEXT'
 import json, os, sys
 pool, d, r = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
@@ -220,7 +229,7 @@ print(f"[gru] extension gen_seed={m['gen_seed']} flips_sha={m['flips_sha256'][:1
       f"purpose={m.get('purpose', 'unstated')} using [0, {used:,}) of {n:,}")
 PYEXT
   [ $? -eq 0 ] || exit 1
-fi
+done
 
 # Print the measured layout and parameter count
 "$PY" - "$STUDENT" "$UNITS" "$D" "$ROUNDS" "$P" $HIDDEN <<'PYPARAM'
@@ -298,8 +307,8 @@ fi
 # and eval_student_on_tail.py has no notion of a training-set extension.
 TRAIN_ONLY=()
 if [ -n "$EXTRA_POOL" ]; then
-  TRAIN_ONLY+=(--extra-train-pool "$EXTRA_POOL")
-  [ -n "$EXTRA_N" ] && TRAIN_ONLY+=(--extra-train-n "$EXTRA_N")
+  TRAIN_ONLY+=(--extra-train-pool "${EXTRA_POOLS[@]}")
+  [ -n "$EXTRA_N" ] && TRAIN_ONLY+=(--extra-train-n "${EXTRA_NS[@]}")
 fi
 
 if [ -n "$W_BITS" ]; then ARCH+=(--weight-bits "$W_BITS"); fi
@@ -321,7 +330,7 @@ run_seed () {
   # Float runs keep their original tag, so finished results still match the skip guard.
   local QTAG=""
   [ -n "$W_BITS$A_BITS" ] && QTAG="_w${W_BITS:-f32}_a${A_BITS:-f32}"
-  [ -n "$EXTRA_POOL" ] && QTAG="${QTAG}_ext${EXTRA_N:-all}"
+  [ -n "$EXTRA_POOL" ] && QTAG="${QTAG}_ext$(echo "${EXTRA_N:-all}" | tr ' ' '+')"
   [ "$RESET_AFTER" = "1" ] && QTAG="${QTAG}_ra1"
   [ "$UNROLL" = "1" ] && QTAG="${QTAG}_ur1"
   local TAG="${STUDENT}_d${D}_p004_${SIZE}${QTAG}_hard_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
