@@ -17,6 +17,10 @@ For units 140 and 70, reset_after True and False (4 models, d=5, input (6, 24)):
 
 The activation look-up tables still limit accuracy for the reset_after=True model, so its
 difference sets the floor that a correct conversion reaches at this precision.
+hls4ml's default GRU tables are 1,024 entries at fixed<18,8>; --table-size and
+--table-precision raise them so table error can be separated from wrong equations.
+--trained adds the d=5 u140 run-of-record checkpoint (reset_after=False, trained weights,
+realistic logits) to the models checked.
 
     ~/tfenv/bin/python tests/c2_hls4ml_gru_check.py --out experiments/gru_check/c2_<stamp>
 """
@@ -48,6 +52,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', required=True)
     ap.add_argument('--units', type=int, nargs='*', default=[140, 70])
+    ap.add_argument('--table-size', type=int, default=None, help='GRU activation table size')
+    ap.add_argument('--table-precision', default=None, help='GRU activation table type')
+    ap.add_argument('--trained', action='store_true',
+                    help='also check the d=5 u140 run-of-record best checkpoint')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
 
@@ -61,20 +69,34 @@ def main():
     det = np.load(P.pool_path(D, 'formal'))['det_evts'][e0:e0 + N_SHOTS]
     x = np.ascontiguousarray(to_sequence(det, D, D, P.load()['p']), dtype=np.float32)
     results = dict(hls4ml=hls4ml.__version__, tensorflow=tf.__version__, precision=PRECISION,
+                   table_size=a.table_size or 'default 1024',
+                   table_precision=a.table_precision or 'default fixed<18,8>',
                    inputs=f'first {N_SHOTS} shots of the d={D} eval block [{e0}, ...)',
                    models={})
 
-    for units in a.units:
-        for reset_after in (True, False):
-            name = f'u{units}_reset_after_{reset_after}'
-            rec = dict(units=units, reset_after=reset_after)
+    cases = [(u, ra, None) for u in a.units for ra in (True, False)]
+    if a.trained:
+        paths = P._load('paths.yaml')
+        ck = os.path.join(os.path.expanduser(paths['results_root']),
+                          paths['runs_of_record']['d5_u140_10M'], 'seed0', 'ckpt',
+                          'gru_d5_p004_u140_hard_seed0_ntr10000000_b10000.best.weights.h5')
+        cases.append((140, False, ck))
+    for units, reset_after, ckpt in cases:
+            name = f'u{units}_reset_after_{reset_after}' + ('_trained_run_of_record' if ckpt else '')
+            rec = dict(units=units, reset_after=reset_after, weights=ckpt or f'random, seed {units}')
             try:
                 model = build(tf, units, reset_after, seed=units)
+                if ckpt:
+                    model.load_weights(ckpt)
                 rec['params'] = int(model.count_params())
                 rec['bias_shape'] = list(model.get_layer('gru').cell.bias.shape)
                 y_keras = model.predict(x, batch_size=N_SHOTS, verbose=0).reshape(-1)
                 cfg = hls4ml.utils.config_from_keras_model(
                     model, granularity='name', default_precision=PRECISION, backend='Vivado')
+                if a.table_size:
+                    cfg['LayerName']['gru']['TableSize'] = a.table_size
+                if a.table_precision:
+                    cfg['LayerName']['gru']['Precision']['table'] = a.table_precision
                 hm = hls4ml.converters.convert_from_keras_model(
                     model, hls_config=cfg, output_dir=os.path.join(a.out, f'hls_{name}'),
                     backend='Vivado', io_type='io_parallel')
