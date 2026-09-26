@@ -1,0 +1,12 @@
+# Copied from ~/qdec/Containerfile on grace1, 2026-09-26. Build: podman build -t qdec:tf215 <dir>
+FROM nvcr.io/nvidia/tensorflow:24.03-tf2-py3
+RUN pip install --no-cache-dir stim pymatching
+RUN pip install --no-cache-dir --no-deps qkeras==0.9.0 tensorflow-model-optimization==0.8.1
+RUN pip install --no-cache-dir networkx keras-tuner scikit-learn tqdm pyparsing dm-tree
+# tensorflow-model-optimization (imported by qkeras) sets TF_USE_LEGACY_KERAS=1,
+# so tf.keras resolves to tf_keras. Set it image-wide so every process uses the
+# same Keras regardless of import order. --no-deps keeps NVIDIA's TF build.
+RUN pip install --no-cache-dir --no-deps tf_keras==2.15.1
+ENV TF_USE_LEGACY_KERAS=1
+# Sweep (sinter), hls4ml check (C2), tests. Constrain numpy so TF 2.15 isn't broken.
+RUN printf "numpy==1.24.4\n" > /tmp/c.txt && pip install --no-cache-dir -c /tmp/c.txt sinter==1.16.0 hls4ml==1.3.0 pytest

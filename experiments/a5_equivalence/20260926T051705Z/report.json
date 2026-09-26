@@ -1,0 +1,237 @@
+{
+ "1_circuits": {
+  "passed": true,
+  "d5_distinct_versions": 1,
+  "d7_distinct_versions": 1,
+  "d9_distinct_versions": 1
+ },
+ "2a_ranges_match_old_literals": {
+  "passed": true,
+  "yaml": {
+   "train": [
+    0,
+    15000000
+   ],
+   "val": [
+    15000000,
+    15200000
+   ],
+   "eval": [
+    15200000,
+    17000000
+   ],
+   "sealed": [
+    17000000,
+    19000000
+   ]
+  },
+  "old_launcher": {
+   "val": [
+    15000000,
+    15200000
+   ],
+   "eval": [
+    15200000,
+    17000000
+   ],
+   "sealed_start": 17000000
+  },
+  "old_distill": {
+   "train_stop": 15000000,
+   "val": [
+    15000000,
+    15200000
+   ],
+   "eval": [
+    15200000,
+    17000000
+   ],
+   "sealed_start": 17000000
+  }
+ },
+ "2b_pool_identity_formal_d5": {
+  "passed": true,
+  "flips_sha": "1c22b8a596058416",
+  "gen_seed": 42,
+  "n": 19000000,
+  "fingerprint_partitions": {
+   "partition_train": [
+    0,
+    15000000
+   ],
+   "partition_val": [
+    15000000,
+    17000000
+   ],
+   "partition_test_SEALED": [
+    17000000,
+    19000000
+   ]
+  }
+ },
+ "2c_regenerate_first_1000000_d5": {
+  "passed": true
+ },
+ "2b_pool_identity_formal_d7": {
+  "passed": true,
+  "flips_sha": "b49fbe40786da9e6",
+  "gen_seed": 42,
+  "n": 19000000,
+  "fingerprint_partitions": {
+   "partition_train": [
+    0,
+    15000000
+   ],
+   "partition_val": [
+    15000000,
+    17000000
+   ],
+   "partition_test_SEALED": [
+    17000000,
+    19000000
+   ]
+  }
+ },
+ "2c_regenerate_first_1000000_d7": {
+  "passed": true
+ },
+ "2b_pool_identity_formal_d9": {
+  "passed": true,
+  "flips_sha": "4ff74414c88cf5a7",
+  "gen_seed": 42,
+  "n": 19000000,
+  "fingerprint_partitions": {
+   "partition_train": [
+    0,
+    15000000
+   ],
+   "partition_val": [
+    15000000,
+    17000000
+   ],
+   "partition_test_SEALED": [
+    17000000,
+    19000000
+   ]
+  }
+ },
+ "2c_regenerate_first_1000000_d9": {
+  "passed": true
+ },
+ "2b_pool_identity_trainonly_d5": {
+  "passed": true,
+  "flips_sha": "705f765819feb00f",
+  "gen_seed": 43,
+  "n": 5000000,
+  "fingerprint_partitions": {
+   "partition_train": [
+    0,
+    5000000
+   ],
+   "partition_val": null,
+   "partition_test_SEALED": null
+  }
+ },
+ "2b_pool_identity_trainonly_d7": {
+  "passed": true,
+  "flips_sha": "83122704a44ae6b5",
+  "gen_seed": 43,
+  "n": 5000000,
+  "fingerprint_partitions": {
+   "partition_train": [
+    0,
+    5000000
+   ],
+   "partition_val": null,
+   "partition_test_SEALED": null
+  }
+ },
+ "2d_block_hashes": {
+  "5": {
+   "val_det": "cceb44372b81d3f4efc2d7e7a05518e42df3da81b90d2b191d485ca9011b3e5e",
+   "val_flips": "ffad6c69508c99459cfe65f04af876d9a6368ebe0b555320dc1ae789a9b1f292",
+   "eval_det": "20cafc9a85903dc93d6bfcbc961becd5b16cffb0c2d8b63b298b83a20f0711b6",
+   "eval_flips": "0d97debb6911a47def7f986536f396f267a62a5ede08d6bc55176c2f0e36c233",
+   "sealed_flips_hash_only": "a55287825fec5e70b3b22b2790ce94dc6a96b002117f34fb28e6a2b35f4490bb"
+  },
+  "7": {
+   "val_det": "bbcd4a5221a6814699f619f3f35d1ede7d86d739be43d95a390ee5f67669b0a3",
+   "val_flips": "ab30179a1a1624ae1b50cacb0cecc8acf969b5f043defede058027d61233d1cf",
+   "eval_det": "24fe290cba476422371045549a119f30dd6db95fd3bc406b36ccc78e2d68c797",
+   "eval_flips": "b4634de267d7bf1140b676b14f06dcb15c6137a2ad4d91ff9c86f07709d9ceba",
+   "sealed_flips_hash_only": "6d2bf6ffa65214afd7f5405b2357921679d67e7500cfe28143e74932abcf9586"
+  },
+  "9": {
+   "val_det": "887f2f039924fdfa45c72fd189cfaf4cd99f9664c3c263624897cea0552f5099",
+   "val_flips": "8df9e5227f77b66b4cf4a78b2249f35a6e060a8b778694e7ffaa4ce0ec102e0e",
+   "eval_det": "bfd39f4ea77df12543f5001dde2502f31bbd0f1f119e9a94050e849b3b2f991a",
+   "eval_flips": "ed7d0ae57b5b20eee5a85dee99535d2dcf8baa2232ecac87851f12f8aeaa0ea3",
+   "sealed_flips_hash_only": "a7c53a4cf3568881734f58e996641a6f1c3a78839f45325d638eb01f098aa451"
+  }
+ },
+ "2_partitions": {
+  "passed": true
+ },
+ "3_disjointness": {
+  "passed": true,
+  "launcher_ntrain_default": 10000000,
+  "val_start": 15000000,
+  "seeds": {
+   "formal": 42,
+   "trainonly": 43
+  }
+ },
+ "4_mwpm_d5": {
+  "passed": true,
+  "old_failures": 767,
+  "new_failures": 767,
+  "shots": 100000,
+  "start": 15200000
+ },
+ "5_scatter_d5": {
+  "passed": true,
+  "shape": [
+   6,
+   24
+  ],
+  "detectors": 120,
+  "each_once": true
+ },
+ "5_scatter_d7": {
+  "passed": true,
+  "shape": [
+   8,
+   48
+  ],
+  "detectors": 336,
+  "each_once": true
+ },
+ "5_scatter_d9": {
+  "passed": true,
+  "shape": [
+   10,
+   80
+  ],
+  "detectors": 720,
+  "each_once": true
+ },
+ "5_scatter": {
+  "passed": true
+ },
+ "6_model_logits_d5_u140": {
+  "passed": true,
+  "max_abs_diff": 0.0,
+  "params": 69441,
+  "checkpoint": "gh200_gru_d5_e200_20260819T185011Z/seed0"
+ },
+ "_env": {
+  "host": "fa8cf429738c",
+  "machine": "aarch64",
+  "python": "3.10.12",
+  "stim": "1.16.0",
+  "pymatching": "2.4.0",
+  "tensorflow": "2.15.0",
+  "old_repo_head": "d5ee86f9da1e1a9065815d66f794567092917fcf",
+  "new_repo_head": "c19264294ee1a5c4e8aaebcb2fd6760d7893f03e"
+ }
+}

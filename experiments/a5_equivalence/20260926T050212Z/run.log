@@ -1,0 +1,29 @@
+[A5] old repo /home/kchey/FNAL-QCDecoding-FPGA at d5ee86f9da1e
+[A5] PASS  1_circuits  d5_distinct_versions=1  d7_distinct_versions=1  d9_distinct_versions=1
+[A5] PASS  2a_ranges_match_old_literals  
+[A5] PASS  2b_pool_identity_formal_d5  flips_sha=1c22b8a596058416  gen_seed=42  n=19000000
+[A5] PASS  2c_regenerate_first_1000000_d5  
+[A5] PASS  2b_pool_identity_formal_d7  flips_sha=b49fbe40786da9e6  gen_seed=42  n=19000000
+[A5] PASS  2c_regenerate_first_1000000_d7  
+[A5] PASS  2b_pool_identity_formal_d9  flips_sha=4ff74414c88cf5a7  gen_seed=42  n=19000000
+[A5] PASS  2c_regenerate_first_1000000_d9  
+[A5] PASS  2b_pool_identity_trainonly_d5  flips_sha=705f765819feb00f  gen_seed=43  n=5000000
+[A5] PASS  2b_pool_identity_trainonly_d7  flips_sha=83122704a44ae6b5  gen_seed=43  n=5000000
+[A5] PASS  2_partitions  
+[A5] PASS  3_disjointness  launcher_ntrain_default=10000000  val_start=15000000
+[mwpm] pool /home/kchey/pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz  shots=19,000,000  det_evts(19000000, 120)
+[mwpm] block [15,200,000, 15,300,000)  d=5 r=5 p=0.004
+[mwpm] p_L=0.007670 +/- 0.000276  (767 residual errors of 100,000)  base_rate=0.19507  decode 0.0 min
+[mwpm] wrote /tmp/a5_lroq58rx/mwpm_old.json
+[mwpm] pool /home/kchey/pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz  shots=19,000,000  det_evts(19000000, 120)
+[mwpm] block [15,200,000, 15,300,000)  d=5 r=5 p=0.004
+[mwpm] p_L=0.007670 +/- 0.000276  (767 residual errors of 100,000)  base_rate=0.19507  decode 0.0 min
+[mwpm] wrote /tmp/a5_lroq58rx/mwpm_new.json
+[A5] PASS  4_mwpm_d5  old_failures=767  new_failures=767  shots=100000  start=15200000
+[A5] PASS  5_scatter_d5  shape=(6, 24)  detectors=120  each_once=True
+[A5] PASS  5_scatter_d7  shape=(8, 48)  detectors=336  each_once=True
+[A5] PASS  5_scatter_d9  shape=(10, 80)  detectors=720  each_once=True
+[A5] PASS  5_scatter  
+[A5] PASS  6_model_logits_d5_u140  max_abs_diff=0.0  params=69441  checkpoint=gh200_gru_d5_e200_20260819T185011Z/seed0
+[A5] report -> /home/kchey/FNAL-AI4QC-GRU/experiments/a5_equivalence/20260926T050212Z/report.json
+[A5] ALL PASS

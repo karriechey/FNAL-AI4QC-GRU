@@ -1,0 +1,34 @@
+{
+ "env": "tfenv",
+ "host": "grace1.fnal.gov",
+ "machine": "aarch64",
+ "cpu_count": 72,
+ "python": "3.11.16",
+ "cpu_model": "Neoverse-V2",
+ "gpu": "NVIDIA GH200 480GB, 97871 MiB, 595.71.05",
+ "cuda_driver": "CUDA Version: 13.2",
+ "nvcc": "Build cuda_13.2.r13.2/compiler.37668154_0",
+ "packages": {
+  "numpy": "1.26.4",
+  "scipy": "1.17.1",
+  "stim": "1.16.0",
+  "pymatching": "2.4.0",
+  "sinter": "1.16.0",
+  "tensorflow": "2.15.1",
+  "qkeras": "0.9.0",
+  "hls4ml": "1.3.0",
+  "pyyaml": "6.0.3",
+  "pytest": "9.1.1"
+ },
+ "d3_decode": {
+  "ok": true,
+  "shots": 100000,
+  "mwpm_ler": 0.01176,
+  "detectors": 24
+ },
+ "tf": {
+  "gpus": [],
+  "built_with_cuda": false,
+  "build_info": {}
+ }
+}

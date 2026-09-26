@@ -1,0 +1,39 @@
+{
+ "env": "qdec-tf215",
+ "host": "ca73456ff8f2",
+ "machine": "aarch64",
+ "cpu_count": 72,
+ "python": "3.10.12",
+ "cpu_model": "",
+ "gpu": "NVIDIA GH200 480GB, 97871 MiB, 595.71.05",
+ "cuda_driver": "CUDA Version: 13.2",
+ "nvcc": "Build cuda_12.4.r12.4/compiler.33961263_0",
+ "packages": {
+  "numpy": "1.24.4",
+  "scipy": "1.12.0",
+  "stim": "1.16.0",
+  "pymatching": "2.4.0",
+  "sinter": "NOT INSTALLED",
+  "tensorflow": "2.15.0+nv24.3",
+  "qkeras": "0.9.0 IMPORT FAILED: ImportError: Keras cannot be imported. Check that it is installed.",
+  "hls4ml": "NOT INSTALLED",
+  "pyyaml": "6.0.1",
+  "pytest": "NOT INSTALLED"
+ },
+ "d3_decode": {
+  "ok": true,
+  "shots": 100000,
+  "mwpm_ler": 0.01176,
+  "detectors": 24
+ },
+ "tf": {
+  "gpus": [
+   "/physical_device:GPU:0"
+  ],
+  "built_with_cuda": true,
+  "build_info": {
+   "cuda_version": "12.4",
+   "cudnn_version": "9"
+  }
+ }
+}
