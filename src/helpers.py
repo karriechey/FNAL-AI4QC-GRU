@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last modified: 2026-09-25
+# Last modified: 2026-09-26 (val-LER callback accepts a tf.data dataset)
 """Small shared helpers for the GRU pipeline.
 
 The first four functions are moved verbatim from the old repo's RCNN files so that no RCNN
@@ -182,7 +182,8 @@ def make_val_ler_checkpoint(tf, x_val, flips_val, ckpt_prefix, batch_size, log_p
 
         def on_epoch_end(self, epoch, logs=None):
             logs = logs if logs is not None else {}
-            logits = self.model.predict(x_val, batch_size=batch_size, verbose=0)
+            kw = {} if hasattr(x_val, 'element_spec') else dict(batch_size=batch_size)
+            logits = self.model.predict(x_val, verbose=0, **kw)
             pred = (np.asarray(logits).reshape(-1) > 0.0).astype(np.int8)
             n_err = int((pred != flips_val).sum())
             ler = n_err / n_val

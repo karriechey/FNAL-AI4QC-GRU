@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-09-26 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after)
+# Last modified: 2026-09-26 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -39,7 +39,8 @@ import os
 import time
 import numpy as np
 
-from helpers import set_seeds, learning_rate_scheduler, lookup_mwpm  # reuse the recipe
+from helpers import set_seeds, learning_rate_scheduler, lookup_mwpm
+from host_data import to_host_uint8, make_dataset  # reuse the recipe
 
 # Prefix on every log line; set to '[mlp]' or '[gru]' once args are parsed, so a saved log
 # names the architecture that produced it. Module-level so helper functions can use it
@@ -148,8 +149,8 @@ class TailDiagnostics:
         class _CB(tf.keras.callbacks.Callback):
             def on_epoch_end(self, epoch, logs=None):
                 logs = logs if logs is not None else {}
-                logits = self.model.predict(outer.x, batch_size=outer.batch_size,
-                                            verbose=0).reshape(-1)
+                kw = {} if hasattr(outer.x, 'element_spec') else dict(batch_size=outer.batch_size)
+                logits = self.model.predict(outer.x, verbose=0, **kw).reshape(-1)
                 pred = (logits > 0.0).astype(np.int8)
                 p_L = float((pred != outer.y).mean())
                 ppr = float(pred.mean())
@@ -525,8 +526,9 @@ def run():
     e_tr = ztr['det_evts'][0:ntr].astype(binary_t)
     f_tr = ztr['flips'][0:ntr].astype(binary_t).reshape(-1)
     b_tr, _, _ = split_measurements(m_tr, d, idx_t)
-    x_tr = assemble_features(b_tr, e_tr, args.inputs, student=args.student,
-                             d=d, rounds=r, p=p)
+    # Host-memory uint8 (see host_data.py): the features are 0/1, so this is exact.
+    x_tr = to_host_uint8(assemble_features(b_tr, e_tr, args.inputs, student=args.student,
+                                           d=d, rounds=r, p=p))
     del m_tr, b_tr, e_tr
 
     # --- targets: pack [hard_label, teacher_logit] ----------------------------------
@@ -580,8 +582,8 @@ def run():
         e_ex = zex['det_evts'][0:take].astype(binary_t)
         f_ex = zex['flips'][0:take].astype(binary_t).reshape(-1)
         b_ex, _, _ = split_measurements(m_ex, d, idx_t)
-        x_ex = assemble_features(b_ex, e_ex, args.inputs, student=args.student,
-                                 d=d, rounds=r, p=p)
+        x_ex = to_host_uint8(assemble_features(b_ex, e_ex, args.inputs, student=args.student,
+                                               d=d, rounds=r, p=p))
         del m_ex, b_ex, e_ex
         x_tr = np.concatenate([x_tr, x_ex], axis=0)
         f_tr = np.concatenate([f_tr, f_ex], axis=0)
@@ -613,8 +615,8 @@ def run():
     e_te = zte['det_evts'][te].astype(binary_t)
     f_te = zte['flips'][te].astype(binary_t).reshape(-1)
     b_te, _, _ = split_measurements(m_te, d, idx_t)
-    x_te = assemble_features(b_te, e_te, args.inputs, student=args.student,
-                             d=d, rounds=r, p=p)
+    x_te = to_host_uint8(assemble_features(b_te, e_te, args.inputs, student=args.student,
+                                           d=d, rounds=r, p=p))
     del m_te, b_te, e_te
 
     # --- explicit validation block --------------------------------------------------
@@ -635,8 +637,8 @@ def run():
         e_va = zte['det_evts'][v0:v1].astype(binary_t)
         f_va = zte['flips'][v0:v1].astype(binary_t).reshape(-1)
         b_va, _, _ = split_measurements(m_va, d, idx_t)
-        x_va = assemble_features(b_va, e_va, args.inputs, student=args.student,
-                                 d=d, rounds=r, p=p)
+        x_va = to_host_uint8(assemble_features(b_va, e_va, args.inputs, student=args.student,
+                                               d=d, rounds=r, p=p))
         del m_va, b_va, e_va
         # The loss expects the packed [hard_label, teacher_logit] target. With alpha=1 the
         # teacher column is unused, so zeros are honest filler. With alpha<1 they are not:
@@ -704,7 +706,8 @@ def run():
     if args.lr is None:
         callbacks.append(tf.keras.callbacks.LearningRateScheduler(learning_rate_scheduler))
     if args.tail_diagnostics:
-        callbacks.append(TailDiagnostics(x_te, f_te, args.batch_size).build())
+        callbacks.append(TailDiagnostics(make_dataset(tf, x_te, None, args.batch_size),
+                                         f_te, args.batch_size).build())
     if not args.no_early_stopping:
         callbacks.insert(0, tf.keras.callbacks.EarlyStopping(
             monitor='val_loss', patience=args.patience, restore_best_weights=True))
@@ -727,8 +730,9 @@ def run():
             # plus .weights.h5. Inserted first so it scores the weights this epoch
             # actually ended with, before EarlyStopping can restore older ones.
             from helpers import make_val_ler_checkpoint
-            callbacks.insert(0, make_val_ler_checkpoint(tf, x_va, f_va, _ck,
-                                                        args.batch_size, LOG))
+            callbacks.insert(0, make_val_ler_checkpoint(
+                tf, make_dataset(tf, x_va, None, args.batch_size), f_va, _ck,
+                args.batch_size, LOG))
             print(f"{LOG} checkpoints -> {_ck}.best.keras + .best.weights.h5 "
                   f"(lowest val LER, tiebreak val_loss; epoch in {_ck}.best.json) and "
                   f"{_ck}.lastepoch.weights.h5", flush=True)
@@ -746,17 +750,30 @@ def run():
     print(f"{LOG} callback order: "
           f"{[type(c).__name__ for c in callbacks]}", flush=True)
 
-    fit_kw = (dict(validation_data=val_data) if val_data is not None
-              else dict(validation_split=args.val_split))
     t0 = time.time()
-    hist = model.fit(x=x_tr, y=y_tr, batch_size=args.batch_size, epochs=args.epochs,
-                     shuffle=True, verbose=2, callbacks=callbacks, **fit_kw)
+    if val_data is not None:
+        # Host-memory pipelines (host_data.py): training batches are drawn from a seeded
+        # per-epoch shuffle of all training indices; validation in shot order. The shuffle
+        # order differs from Keras' numpy shuffle, so runs are not bit-for-bit comparable
+        # with runs from the old pipeline.
+        train_ds = make_dataset(tf, x_tr, y_tr, args.batch_size, shuffle_seed=seed)
+        val_ds = make_dataset(tf, x_va, y_va, args.batch_size)
+        print(f"{LOG} input: host-memory uint8 tf.data, shuffle seed {seed}, "
+              f"batch {args.batch_size}, prefetch to GPU", flush=True)
+        hist = model.fit(train_ds, epochs=args.epochs, verbose=2, callbacks=callbacks,
+                         validation_data=val_ds)
+    else:
+        # validation_split mode (no explicit val block) cannot split a tf.data pipeline;
+        # it keeps the old numpy path. Not used by the launchers.
+        hist = model.fit(x=x_tr.astype(np.float32), y=y_tr, batch_size=args.batch_size,
+                         epochs=args.epochs, shuffle=True, verbose=2, callbacks=callbacks,
+                         validation_split=args.val_split)
     train_time = time.time() - t0
     epochs_ran = len(hist.history['loss'])
     best_val = float(min(hist.history['val_loss']))
 
     # --- score on the tail ----------------------------------------------------------
-    logits = model.predict(x_te, batch_size=args.batch_size, verbose=0)
+    logits = model.predict(make_dataset(tf, x_te, None, args.batch_size), verbose=0)
     pred, correct = student_pred_and_correct(logits, f_te)
     pL = float((~correct).mean())
     base_rate = float(f_te.mean())

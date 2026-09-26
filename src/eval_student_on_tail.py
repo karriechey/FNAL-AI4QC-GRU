@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-09-26 (imports from helpers / circuit_generators; --reset-after)
+# Last modified: 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input)
 """Score a saved student on a fixed partition and run the paired McNemar test vs MWPM.
 
 Why a separate script from eval_on_tail.py
@@ -106,6 +106,7 @@ def run():
     e_te = z['det_evts'][te].astype(binary_t)
     truth = z['flips'][te].astype(np.int8).reshape(-1)
     b_te, _, _ = split_measurements(m_te, d, idx_t)
+    from host_data import to_host_uint8, make_dataset
     x_te = assemble_features(b_te, e_te, args.inputs, student=args.student,
                              d=d, rounds=r, p=p)
     det_evts_te = e_te            # kept for the MWPM decode below
@@ -125,7 +126,10 @@ def run():
     model.load_weights(args.weights)
     print(f"[student-eval] {args.student} params={model.count_params():,}", flush=True)
 
-    logits = model.predict(x_te, batch_size=args.batch_size, verbose=0)
+    # Host-memory uint8 + tf.data (host_data.py), so the eval block never has to fit on
+    # the GPU in one piece. Shot order is preserved.
+    logits = model.predict(make_dataset(tf, to_host_uint8(x_te), None, args.batch_size),
+                           verbose=0)
     s_pred, s_correct = student_pred_and_correct(logits, truth)
     pL = float((~s_correct).mean())
     base_rate = float(truth.mean())
