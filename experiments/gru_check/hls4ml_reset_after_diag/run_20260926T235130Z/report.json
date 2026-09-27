@@ -1,0 +1,477 @@
+{
+ "env": {
+  "python": "3.10.12",
+  "tensorflow": "2.15.0",
+  "tf_keras_module": "tf_keras.api._v2.keras",
+  "hls4ml": "1.3.0",
+  "hls4ml_path": "/usr/local/lib/python3.10/dist-packages/hls4ml",
+  "TF_USE_LEGACY_KERAS": "1",
+  "devices": [
+   "/physical_device:CPU:0"
+  ]
+ },
+ "part1": {
+  "units4_reset_after_False_keras_default_zero_bias": {
+   "name": "units4_reset_after_False_keras_default_zero_bias",
+   "reset_after": false,
+   "bias_mode": "keras_default_zero_bias",
+   "gru_config": {
+    "units": 4,
+    "activation": "tanh",
+    "recurrent_activation": "sigmoid",
+    "reset_after": false,
+    "use_bias": true,
+    "unroll": false
+   },
+   "gru_weights": {
+    "gru/gru_cell/kernel:0": [
+     24,
+     12
+    ],
+    "gru/gru_cell/recurrent_kernel:0": [
+     4,
+     12
+    ],
+    "gru/gru_cell/bias:0": [
+     12
+    ]
+   },
+   "keras_inference": "PASS",
+   "hls_conversion": "PASS",
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [],
+   "ir_recurrent_bias_shape": [],
+   "hls_compile": "PASS",
+   "firmware_bias_arrays": {
+    "b2.h": {
+     "declared": "",
+     "values": 1
+    },
+    "b3.h": {
+     "declared": "1",
+     "values": 1
+    },
+    "br2.h": {
+     "declared": "",
+     "values": 1
+    }
+   },
+   "hls_prediction": "PASS",
+   "numpy_reset_after_True_equations_on_these_weights": [
+    -0.5761487578758052,
+    -0.6657881564816163,
+    -0.7883027586133695,
+    -0.7684643653171304,
+    -0.5779238474132344,
+    -0.581583721862634,
+    -0.6214932340659746,
+    -0.7246476739011428
+   ],
+   "numpy_reference_matches_keras_max_diff": 8.192313805110985e-08,
+   "keras_logits": [
+    -0.5890488624572754,
+    -0.6787819266319275,
+    -0.7727389335632324,
+    -0.7750205397605896,
+    -0.6034342646598816,
+    -0.6242417097091675,
+    -0.651261031627655,
+    -0.7159478664398193
+   ],
+   "hls_logits": [
+    -0.6272279024124146,
+    -0.6164659261703491,
+    -0.7504720091819763,
+    -0.7048775553703308,
+    -0.647736132144928,
+    -0.5872634649276733,
+    -0.668836236000061,
+    -0.7331944108009338
+   ],
+   "max_abs_tf_minus_hls": 0.07014298439025879,
+   "max_abs_hls_minus_numpy_reset_after_True": 0.06981228473169354
+  },
+  "units4_reset_after_True_keras_default_zero_bias": {
+   "name": "units4_reset_after_True_keras_default_zero_bias",
+   "reset_after": true,
+   "bias_mode": "keras_default_zero_bias",
+   "gru_config": {
+    "units": 4,
+    "activation": "tanh",
+    "recurrent_activation": "sigmoid",
+    "reset_after": true,
+    "use_bias": true,
+    "unroll": false
+   },
+   "gru_weights": {
+    "gru/gru_cell/kernel:0": [
+     24,
+     12
+    ],
+    "gru/gru_cell/recurrent_kernel:0": [
+     4,
+     12
+    ],
+    "gru/gru_cell/bias:0": [
+     2,
+     12
+    ]
+   },
+   "keras_inference": "PASS",
+   "hls_conversion": "PASS",
+   "ir_apply_reset_gate": "after",
+   "ir_bias_shape": [
+    12
+   ],
+   "ir_recurrent_bias_shape": [
+    12
+   ],
+   "hls_compile": "PASS",
+   "firmware_bias_arrays": {
+    "b2.h": {
+     "declared": "12",
+     "values": 12
+    },
+    "b3.h": {
+     "declared": "1",
+     "values": 1
+    },
+    "br2.h": {
+     "declared": "12",
+     "values": 12
+    }
+   },
+   "hls_prediction": "PASS",
+   "numpy_reference_matches_keras_max_diff": 6.908262284444078e-08,
+   "keras_logits": [
+    -0.5761486887931824,
+    -0.6657881736755371,
+    -0.7883027195930481,
+    -0.7684643864631653,
+    -0.5779238939285278,
+    -0.5815836787223816,
+    -0.6214932799339294,
+    -0.7246477007865906
+   ],
+   "hls_logits": [
+    -0.5761939883232117,
+    -0.6659456491470337,
+    -0.7884770631790161,
+    -0.7687361240386963,
+    -0.5784668922424316,
+    -0.5819126963615417,
+    -0.6214380860328674,
+    -0.7248739004135132
+   ],
+   "max_abs_tf_minus_hls": 0.0005429983139038086
+  },
+  "units4_reset_after_False_random_nonzero_bias": {
+   "name": "units4_reset_after_False_random_nonzero_bias",
+   "reset_after": false,
+   "bias_mode": "random_nonzero_bias",
+   "gru_config": {
+    "units": 4,
+    "activation": "tanh",
+    "recurrent_activation": "sigmoid",
+    "reset_after": false,
+    "use_bias": true,
+    "unroll": false
+   },
+   "gru_weights": {
+    "gru/gru_cell/kernel:0": [
+     24,
+     12
+    ],
+    "gru/gru_cell/recurrent_kernel:0": [
+     4,
+     12
+    ],
+    "gru/gru_cell/bias:0": [
+     12
+    ]
+   },
+   "keras_inference": "PASS",
+   "hls_conversion": "PASS",
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [],
+   "ir_recurrent_bias_shape": [],
+   "hls_compile": "PASS",
+   "firmware_bias_arrays": {
+    "b2.h": {
+     "declared": "",
+     "values": 1
+    },
+    "b3.h": {
+     "declared": "1",
+     "values": 1
+    },
+    "br2.h": {
+     "declared": "",
+     "values": 1
+    }
+   },
+   "hls_prediction": "PASS",
+   "numpy_reset_after_True_equations_on_these_weights": [
+    -0.81508848181894,
+    -0.8281488209572455,
+    -0.934122476285451,
+    -1.0426908719533694,
+    -0.817653385723141,
+    -0.9257239193976451,
+    -0.9073804844833666,
+    -1.0323734190428517
+   ],
+   "numpy_reference_matches_keras_max_diff": 8.177005150766803e-08,
+   "keras_logits": [
+    -0.7437320947647095,
+    -0.7944755554199219,
+    -0.886402428150177,
+    -0.9637342691421509,
+    -0.7543882131576538,
+    -0.841746985912323,
+    -0.8329042196273804,
+    -0.9149277210235596
+   ],
+   "hls_logits": [
+    -0.6189599633216858,
+    -0.6126472353935242,
+    -0.7424288392066956,
+    -0.7021741271018982,
+    -0.6423319578170776,
+    -0.5873494148254395,
+    -0.6640878319740295,
+    -0.727826714515686
+   ],
+   "max_abs_tf_minus_hls": 0.2615601420402527,
+   "max_abs_hls_minus_numpy_reset_after_True": 0.3405167448514712
+  },
+  "units4_reset_after_True_random_nonzero_bias": {
+   "name": "units4_reset_after_True_random_nonzero_bias",
+   "reset_after": true,
+   "bias_mode": "random_nonzero_bias",
+   "gru_config": {
+    "units": 4,
+    "activation": "tanh",
+    "recurrent_activation": "sigmoid",
+    "reset_after": true,
+    "use_bias": true,
+    "unroll": false
+   },
+   "gru_weights": {
+    "gru/gru_cell/kernel:0": [
+     24,
+     12
+    ],
+    "gru/gru_cell/recurrent_kernel:0": [
+     4,
+     12
+    ],
+    "gru/gru_cell/bias:0": [
+     2,
+     12
+    ]
+   },
+   "keras_inference": "PASS",
+   "hls_conversion": "PASS",
+   "ir_apply_reset_gate": "after",
+   "ir_bias_shape": [
+    12
+   ],
+   "ir_recurrent_bias_shape": [
+    12
+   ],
+   "hls_compile": "PASS",
+   "firmware_bias_arrays": {
+    "b2.h": {
+     "declared": "12",
+     "values": 12
+    },
+    "b3.h": {
+     "declared": "1",
+     "values": 1
+    },
+    "br2.h": {
+     "declared": "12",
+     "values": 12
+    }
+   },
+   "hls_prediction": "PASS",
+   "numpy_reference_matches_keras_max_diff": 5.794121471502933e-08,
+   "keras_logits": [
+    -0.7392188906669617,
+    -0.8638430833816528,
+    -0.9313674569129944,
+    -1.0093473196029663,
+    -0.768622875213623,
+    -0.8521273732185364,
+    -0.847557544708252,
+    -0.9333288073539734
+   ],
+   "hls_logits": [
+    -0.7397404909133911,
+    -0.8642447590827942,
+    -0.9319329857826233,
+    -1.0095568895339966,
+    -0.7686945199966431,
+    -0.8522822856903076,
+    -0.8480472564697266,
+    -0.9336832761764526
+   ],
+   "max_abs_tf_minus_hls": 0.0005655288696289062
+  }
+ },
+ "part2": {
+  "d5_u140_10M_run_of_record_reset_after_False": {
+   "name": "d5_u140_10M_run_of_record_reset_after_False",
+   "weights": "/home/kchey/rcnn_threshold/results/gh200_gru_d5_e200_20260819T185011Z/seed0/ckpt/gru_d5_p004_u140_hard_seed0_ntr10000000_b10000.best.weights.h5",
+   "gru_config": {
+    "units": 140,
+    "reset_after": false,
+    "unroll": false,
+    "activation": "tanh",
+    "recurrent_activation": "sigmoid"
+   },
+   "gru_weights": {
+    "gru/gru_cell/kernel:0": [
+     24,
+     420
+    ],
+    "gru/gru_cell/recurrent_kernel:0": [
+     140,
+     420
+    ],
+    "gru/gru_cell/bias:0": [
+     420
+    ]
+   },
+   "keras_inference": "PASS",
+   "hls_conversion": "PASS",
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [],
+   "ir_recurrent_bias_shape": [],
+   "hls_compile": "PASS",
+   "firmware_bias_arrays": {
+    "b2.h": {
+     "declared": "",
+     "values": 1
+    },
+    "b3.h": {
+     "declared": "1",
+     "values": 1
+    },
+    "br2.h": {
+     "declared": "",
+     "values": 1
+    }
+   },
+   "hls_prediction": "PASS",
+   "max_abs_tf_minus_hls": 24.87604522705078,
+   "mean_abs_tf_minus_hls": 8.834334373474121,
+   "sign_agreement": 0.648,
+   "keras_logit_std": 7.825949668884277
+  },
+  "d5_u140_20M_aug_seed0_reset_after_False": {
+   "name": "d5_u140_20M_aug_seed0_reset_after_False",
+   "weights": "/home/kchey/rcnn_threshold/results/d5_u140_ntr20M_aug_20260821T154820Z/seed0/ckpt/gru_d5_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.best.weights.h5",
+   "gru_config": {
+    "units": 140,
+    "reset_after": false,
+    "unroll": false,
+    "activation": "tanh",
+    "recurrent_activation": "sigmoid"
+   },
+   "gru_weights": {
+    "gru/gru_cell/kernel:0": [
+     24,
+     420
+    ],
+    "gru/gru_cell/recurrent_kernel:0": [
+     140,
+     420
+    ],
+    "gru/gru_cell/bias:0": [
+     420
+    ]
+   },
+   "keras_inference": "PASS",
+   "hls_conversion": "PASS",
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [],
+   "ir_recurrent_bias_shape": [],
+   "hls_compile": "PASS",
+   "firmware_bias_arrays": {
+    "b2.h": {
+     "declared": "",
+     "values": 1
+    },
+    "b3.h": {
+     "declared": "1",
+     "values": 1
+    },
+    "br2.h": {
+     "declared": "",
+     "values": 1
+    }
+   },
+   "hls_prediction": "PASS",
+   "max_abs_tf_minus_hls": 22.225412368774414,
+   "mean_abs_tf_minus_hls": 8.33010196685791,
+   "sign_agreement": 0.604,
+   "keras_logit_std": 7.266559600830078
+  },
+  "d5_u140_20M_aug_seed0_reset_after_True_unroll": {
+   "name": "d5_u140_20M_aug_seed0_reset_after_True_unroll",
+   "weights": "/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s0_20260926T174023Z/seed0/ckpt/gru_d5_p004_u140_ext5000000_ra1_ur1_hard_seed0_ntr15000000_b10000.best.weights.h5",
+   "gru_config": {
+    "units": 140,
+    "reset_after": true,
+    "unroll": true,
+    "activation": "tanh",
+    "recurrent_activation": "sigmoid"
+   },
+   "gru_weights": {
+    "gru/gru_cell/kernel:0": [
+     24,
+     420
+    ],
+    "gru/gru_cell/recurrent_kernel:0": [
+     140,
+     420
+    ],
+    "gru/gru_cell/bias:0": [
+     2,
+     420
+    ]
+   },
+   "keras_inference": "PASS",
+   "hls_conversion": "PASS",
+   "ir_apply_reset_gate": "after",
+   "ir_bias_shape": [
+    420
+   ],
+   "ir_recurrent_bias_shape": [
+    420
+   ],
+   "hls_compile": "PASS",
+   "firmware_bias_arrays": {
+    "b2.h": {
+     "declared": "420",
+     "values": 420
+    },
+    "b3.h": {
+     "declared": "1",
+     "values": 1
+    },
+    "br2.h": {
+     "declared": "420",
+     "values": 420
+    }
+   },
+   "hls_prediction": "PASS",
+   "max_abs_tf_minus_hls": 0.1336212158203125,
+   "mean_abs_tf_minus_hls": 0.04558790475130081,
+   "sign_agreement": 1.0,
+   "keras_logit_std": 7.582497596740723
+  }
+ }
+}

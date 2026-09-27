@@ -1,0 +1,123 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+ENV {"python": "3.10.12", "tensorflow": "2.15.0", "tf_keras_module": "tf_keras.api._v2.keras", "hls4ml": "1.3.0", "hls4ml_path": "/usr/local/lib/python3.10/dist-packages/hls4ml", "TF_USE_LEGACY_KERAS": "1", "devices": ["/physical_device:CPU:0"]}
+
+===== units4_reset_after_False_keras_default_zero_bias
+model.get_config() GRU: {"units": 4, "activation": "tanh", "recurrent_activation": "sigmoid", "reset_after": false, "use_bias": true, "unroll": false}
+GRU weights: {'gru/gru_cell/kernel:0': [24, 12], 'gru/gru_cell/recurrent_kernel:0': [4, 12], 'gru/gru_cell/bias:0': [12]}
+  keras_inference: PASS
+  hls_conversion: PASS
+  hls_compile: PASS
+  hls_prediction: PASS
+  max_abs_tf_minus_hls: 0.07014298439025879
+  ir_apply_reset_gate: before
+  ir_bias_shape: []
+  ir_recurrent_bias_shape: []
+  firmware_bias_arrays: {'b2.h': {'declared': '', 'values': 1}, 'b3.h': {'declared': '1', 'values': 1}, 'br2.h': {'declared': '', 'values': 1}}
+  max_abs_hls_minus_numpy_reset_after_True: 0.06981228473169354
+
+===== units4_reset_after_True_keras_default_zero_bias
+model.get_config() GRU: {"units": 4, "activation": "tanh", "recurrent_activation": "sigmoid", "reset_after": true, "use_bias": true, "unroll": false}
+GRU weights: {'gru/gru_cell/kernel:0': [24, 12], 'gru/gru_cell/recurrent_kernel:0': [4, 12], 'gru/gru_cell/bias:0': [2, 12]}
+  keras_inference: PASS
+  hls_conversion: PASS
+  hls_compile: PASS
+  hls_prediction: PASS
+  max_abs_tf_minus_hls: 0.0005429983139038086
+  ir_apply_reset_gate: after
+  ir_bias_shape: [12]
+  ir_recurrent_bias_shape: [12]
+  firmware_bias_arrays: {'b2.h': {'declared': '12', 'values': 12}, 'b3.h': {'declared': '1', 'values': 1}, 'br2.h': {'declared': '12', 'values': 12}}
+
+===== units4_reset_after_False_random_nonzero_bias
+model.get_config() GRU: {"units": 4, "activation": "tanh", "recurrent_activation": "sigmoid", "reset_after": false, "use_bias": true, "unroll": false}
+GRU weights: {'gru/gru_cell/kernel:0': [24, 12], 'gru/gru_cell/recurrent_kernel:0': [4, 12], 'gru/gru_cell/bias:0': [12]}
+  keras_inference: PASS
+  hls_conversion: PASS
+  hls_compile: PASS
+  hls_prediction: PASS
+  max_abs_tf_minus_hls: 0.2615601420402527
+  ir_apply_reset_gate: before
+  ir_bias_shape: []
+  ir_recurrent_bias_shape: []
+  firmware_bias_arrays: {'b2.h': {'declared': '', 'values': 1}, 'b3.h': {'declared': '1', 'values': 1}, 'br2.h': {'declared': '', 'values': 1}}
+  max_abs_hls_minus_numpy_reset_after_True: 0.3405167448514712
+
+===== units4_reset_after_True_random_nonzero_bias
+model.get_config() GRU: {"units": 4, "activation": "tanh", "recurrent_activation": "sigmoid", "reset_after": true, "use_bias": true, "unroll": false}
+GRU weights: {'gru/gru_cell/kernel:0': [24, 12], 'gru/gru_cell/recurrent_kernel:0': [4, 12], 'gru/gru_cell/bias:0': [2, 12]}
+  keras_inference: PASS
+  hls_conversion: PASS
+  hls_compile: PASS
+  hls_prediction: PASS
+  max_abs_tf_minus_hls: 0.0005655288696289062
+  ir_apply_reset_gate: after
+  ir_bias_shape: [12]
+  ir_recurrent_bias_shape: [12]
+  firmware_bias_arrays: {'b2.h': {'declared': '12', 'values': 12}, 'b3.h': {'declared': '1', 'values': 1}, 'br2.h': {'declared': '12', 'values': 12}}
+
+===== REAL d5_u140_10M_run_of_record_reset_after_False
+GRU config: {'units': 140, 'reset_after': False, 'unroll': False, 'activation': 'tanh', 'recurrent_activation': 'sigmoid'}
+GRU weights: {'gru/gru_cell/kernel:0': [24, 420], 'gru/gru_cell/recurrent_kernel:0': [140, 420], 'gru/gru_cell/bias:0': [420]}
+WARNING:tensorflow:5 out of the last 5 calls to <function Model.make_predict_function.<locals>.predict_function at 0xfffcbc2ca830> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+  hls_conversion: PASS
+  hls_compile: PASS
+  hls_prediction: PASS
+  ir_apply_reset_gate: before
+  ir_bias_shape: []
+  ir_recurrent_bias_shape: []
+  firmware_bias_arrays: {'b2.h': {'declared': '', 'values': 1}, 'b3.h': {'declared': '1', 'values': 1}, 'br2.h': {'declared': '', 'values': 1}}
+  max_abs_tf_minus_hls: 24.87604522705078
+  mean_abs_tf_minus_hls: 8.834334373474121
+  sign_agreement: 0.648
+  keras_logit_std: 7.825949668884277
+
+===== REAL d5_u140_20M_aug_seed0_reset_after_False
+GRU config: {'units': 140, 'reset_after': False, 'unroll': False, 'activation': 'tanh', 'recurrent_activation': 'sigmoid'}
+GRU weights: {'gru/gru_cell/kernel:0': [24, 420], 'gru/gru_cell/recurrent_kernel:0': [140, 420], 'gru/gru_cell/bias:0': [420]}
+  hls_conversion: PASS
+  hls_compile: PASS
+  hls_prediction: PASS
+  ir_apply_reset_gate: before
+  ir_bias_shape: []
+  ir_recurrent_bias_shape: []
+  firmware_bias_arrays: {'b2.h': {'declared': '', 'values': 1}, 'b3.h': {'declared': '1', 'values': 1}, 'br2.h': {'declared': '', 'values': 1}}
+  max_abs_tf_minus_hls: 22.225412368774414
+  mean_abs_tf_minus_hls: 8.33010196685791
+  sign_agreement: 0.604
+  keras_logit_std: 7.266559600830078
+
+===== REAL d5_u140_20M_aug_seed0_reset_after_True_unroll
+GRU config: {'units': 140, 'reset_after': True, 'unroll': True, 'activation': 'tanh', 'recurrent_activation': 'sigmoid'}
+GRU weights: {'gru/gru_cell/kernel:0': [24, 420], 'gru/gru_cell/recurrent_kernel:0': [140, 420], 'gru/gru_cell/bias:0': [2, 420]}
+  hls_conversion: PASS
+  hls_compile: PASS
+  hls_prediction: PASS
+  ir_apply_reset_gate: after
+  ir_bias_shape: [420]
+  ir_recurrent_bias_shape: [420]
+  firmware_bias_arrays: {'b2.h': {'declared': '420', 'values': 420}, 'b3.h': {'declared': '1', 'values': 1}, 'br2.h': {'declared': '420', 'values': 420}}
+  max_abs_tf_minus_hls: 0.1336212158203125
+  mean_abs_tf_minus_hls: 0.04558790475130081
+  sign_agreement: 1.0
+  keras_logit_std: 7.582497596740723
+
+wrote /home/kchey/FNAL-AI4QC-GRU/experiments/gru_check/hls4ml_reset_after_diag/run_20260926T235130Z/report.json

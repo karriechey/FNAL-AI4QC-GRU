@@ -1,0 +1,34 @@
+{
+ "hls4ml": "1.3.0.post1568+ge1721b302f8a29397b532b82f21dc8d908781a70",
+ "tensorflow": "2.15.0",
+ "precision": "ap_fixed<32,16>",
+ "backend": "Vivado",
+ "io_type": "io_parallel",
+ "table_size": 65536,
+ "variants": {
+  "gru_u140_reset_after_False": {
+   "reset_after": false,
+   "keras_params": 69441,
+   "input_shape": [
+    6,
+    24
+   ],
+   "apply_reset_gate": "before",
+   "part": "xcvu13p-flga2577-2-e",
+   "clock_period_ns": 5,
+   "checkpoint": "gru_d5_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.best.weights.h5"
+  },
+  "gru_u140_reset_after_True": {
+   "reset_after": true,
+   "keras_params": 69861,
+   "input_shape": [
+    6,
+    24
+   ],
+   "apply_reset_gate": "after",
+   "part": "xcvu13p-flga2577-2-e",
+   "clock_period_ns": 5,
+   "checkpoint": "gru_d5_p004_u140_ext5000000_ra1_ur1_hard_seed0_ntr15000000_b10000.best.weights.h5"
+  }
+ }
+}

@@ -1,0 +1,177 @@
+{
+ "hls4ml": "1.3.0.post1568+ge1721b302f8a29397b532b82f21dc8d908781a70",
+ "hls4ml_path": "/usr/local/lib/python3.10/dist-packages/hls4ml",
+ "tensorflow": "2.15.0",
+ "shots": "first 10000 of the d=5 eval block [15200000, ...)",
+ "keras_reference": "CPU, TF32 off",
+ "results": {
+  "u140_reset_after_False_10M_run_of_record__default_tables": {
+   "weights": "/home/kchey/rcnn_threshold/results/gh200_gru_d5_e200_20260819T185011Z/seed0/ckpt/gru_d5_p004_u140_hard_seed0_ntr10000000_b10000.best.weights.h5",
+   "reset_after": false,
+   "unroll": false,
+   "units": 140,
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [
+    420
+   ],
+   "ir_recurrent_bias_shape": [
+    420
+   ],
+   "compile_s": 3.4,
+   "firmware_reset_after": "false",
+   "max_abs_diff": 0.22028303146362305,
+   "mean_abs_diff": 0.01284231897443533,
+   "sign_agreement": 1.0,
+   "decisions_differ": 0,
+   "n": 10000,
+   "keras_logit_std": 7.97300910949707
+  },
+  "u140_reset_after_False_10M_run_of_record__wide32_tables": {
+   "weights": "/home/kchey/rcnn_threshold/results/gh200_gru_d5_e200_20260819T185011Z/seed0/ckpt/gru_d5_p004_u140_hard_seed0_ntr10000000_b10000.best.weights.h5",
+   "reset_after": false,
+   "unroll": false,
+   "units": 140,
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [
+    420
+   ],
+   "ir_recurrent_bias_shape": [
+    420
+   ],
+   "compile_s": 3.4,
+   "firmware_reset_after": "false",
+   "max_abs_diff": 0.17260050773620605,
+   "mean_abs_diff": 0.02007242478430271,
+   "sign_agreement": 1.0,
+   "decisions_differ": 0,
+   "n": 10000,
+   "keras_logit_std": 7.97300910949707
+  },
+  "u140_reset_after_False_20M_aug_seed0__default_tables": {
+   "weights": "/home/kchey/rcnn_threshold/results/d5_u140_ntr20M_aug_20260821T154820Z/seed0/ckpt/gru_d5_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.best.weights.h5",
+   "reset_after": false,
+   "unroll": false,
+   "units": 140,
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [
+    420
+   ],
+   "ir_recurrent_bias_shape": [
+    420
+   ],
+   "compile_s": 3.5,
+   "firmware_reset_after": "false",
+   "max_abs_diff": 0.11298656463623047,
+   "mean_abs_diff": 0.010580681264400482,
+   "sign_agreement": 0.9999,
+   "decisions_differ": 1,
+   "n": 10000,
+   "keras_logit_std": 7.466118812561035
+  },
+  "u140_reset_after_False_20M_aug_seed0__wide32_tables": {
+   "weights": "/home/kchey/rcnn_threshold/results/d5_u140_ntr20M_aug_20260821T154820Z/seed0/ckpt/gru_d5_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.best.weights.h5",
+   "reset_after": false,
+   "unroll": false,
+   "units": 140,
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [
+    420
+   ],
+   "ir_recurrent_bias_shape": [
+    420
+   ],
+   "compile_s": 3.5,
+   "firmware_reset_after": "false",
+   "max_abs_diff": 0.09999465942382812,
+   "mean_abs_diff": 0.011992157436907291,
+   "sign_agreement": 0.9999,
+   "decisions_differ": 1,
+   "n": 10000,
+   "keras_logit_std": 7.466118812561035
+  },
+  "u70_reset_after_False_gkd20m_hard_seed0__default_tables": {
+   "weights": "/home/kchey/reference_ckpts/gkd20m_u70_hard_seed0/gkd20m_u70_hard_seed0.best.weights.h5",
+   "reset_after": false,
+   "unroll": false,
+   "units": 70,
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [
+    210
+   ],
+   "ir_recurrent_bias_shape": [
+    210
+   ],
+   "compile_s": 3.6,
+   "firmware_reset_after": "false",
+   "max_abs_diff": 0.12679648399353027,
+   "mean_abs_diff": 0.01851501688361168,
+   "sign_agreement": 0.9999,
+   "decisions_differ": 1,
+   "n": 10000,
+   "keras_logit_std": 7.7800188064575195
+  },
+  "u70_reset_after_False_gkd20m_hard_seed0__wide32_tables": {
+   "weights": "/home/kchey/reference_ckpts/gkd20m_u70_hard_seed0/gkd20m_u70_hard_seed0.best.weights.h5",
+   "reset_after": false,
+   "unroll": false,
+   "units": 70,
+   "ir_apply_reset_gate": "before",
+   "ir_bias_shape": [
+    210
+   ],
+   "ir_recurrent_bias_shape": [
+    210
+   ],
+   "compile_s": 3.4,
+   "firmware_reset_after": "false",
+   "max_abs_diff": 0.16800355911254883,
+   "mean_abs_diff": 0.019370125606656075,
+   "sign_agreement": 0.9998,
+   "decisions_differ": 2,
+   "n": 10000,
+   "keras_logit_std": 7.7800188064575195
+  },
+  "u140_reset_after_True_unroll_20M_aug_seed0__default_tables": {
+   "weights": "/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s0_20260926T174023Z/seed0/ckpt/gru_d5_p004_u140_ext5000000_ra1_ur1_hard_seed0_ntr15000000_b10000.best.weights.h5",
+   "reset_after": true,
+   "unroll": true,
+   "units": 140,
+   "ir_apply_reset_gate": "after",
+   "ir_bias_shape": [
+    420
+   ],
+   "ir_recurrent_bias_shape": [
+    420
+   ],
+   "compile_s": 3.5,
+   "firmware_reset_after": "true",
+   "max_abs_diff": 0.14835262298583984,
+   "mean_abs_diff": 0.045227084308862686,
+   "sign_agreement": 0.9999,
+   "decisions_differ": 1,
+   "n": 10000,
+   "keras_logit_std": 7.824825763702393
+  },
+  "u140_reset_after_True_unroll_20M_aug_seed0__wide32_tables": {
+   "weights": "/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s0_20260926T174023Z/seed0/ckpt/gru_d5_p004_u140_ext5000000_ra1_ur1_hard_seed0_ntr15000000_b10000.best.weights.h5",
+   "reset_after": true,
+   "unroll": true,
+   "units": 140,
+   "ir_apply_reset_gate": "after",
+   "ir_bias_shape": [
+    420
+   ],
+   "ir_recurrent_bias_shape": [
+    420
+   ],
+   "compile_s": 3.4,
+   "firmware_reset_after": "true",
+   "max_abs_diff": 0.12304973602294922,
+   "mean_abs_diff": 0.03397410735487938,
+   "sign_agreement": 0.9999,
+   "decisions_differ": 1,
+   "n": 10000,
+   "keras_logit_std": 7.824825763702393
+  }
+ }
+}

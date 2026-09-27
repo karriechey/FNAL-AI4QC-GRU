@@ -1,0 +1,28 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+[pr1568] u140_reset_after_False_10M_run_of_record__default_tables: reset_after=False, unroll=False, units=140, ir_apply_reset_gate=before, ir_bias_shape=[], ir_recurrent_bias_shape=[], compile_s=3.4, firmware_reset_after=not set, max_abs_diff=26.528030395507812, mean_abs_diff=8.942646980285645, sign_agreement=0.6539, decisions_differ=3461, n=10000, keras_logit_std=7.97300910949707
+[pr1568] u140_reset_after_False_10M_run_of_record__wide32_tables: reset_after=False, unroll=False, units=140, ir_apply_reset_gate=before, ir_bias_shape=[], ir_recurrent_bias_shape=[], compile_s=3.3, firmware_reset_after=not set, max_abs_diff=26.520427703857422, mean_abs_diff=8.939300537109375, sign_agreement=0.6545, decisions_differ=3455, n=10000, keras_logit_std=7.97300910949707
+[pr1568] u140_reset_after_False_20M_aug_seed0__default_tables: reset_after=False, unroll=False, units=140, ir_apply_reset_gate=before, ir_bias_shape=[], ir_recurrent_bias_shape=[], compile_s=3.4, firmware_reset_after=not set, max_abs_diff=23.75301170349121, mean_abs_diff=8.393709182739258, sign_agreement=0.6165, decisions_differ=3835, n=10000, keras_logit_std=7.466118812561035
+[pr1568] u140_reset_after_False_20M_aug_seed0__wide32_tables: reset_after=False, unroll=False, units=140, ir_apply_reset_gate=before, ir_bias_shape=[], ir_recurrent_bias_shape=[], compile_s=3.3, firmware_reset_after=not set, max_abs_diff=23.74913787841797, mean_abs_diff=8.392402648925781, sign_agreement=0.6166, decisions_differ=3834, n=10000, keras_logit_std=7.466118812561035
+[pr1568] u70_reset_after_False_gkd20m_hard_seed0__default_tables: reset_after=False, unroll=False, units=70, ir_apply_reset_gate=before, ir_bias_shape=[], ir_recurrent_bias_shape=[], compile_s=3.4, firmware_reset_after=not set, max_abs_diff=45.63339614868164, mean_abs_diff=17.58701515197754, sign_agreement=0.2058, decisions_differ=7942, n=10000, keras_logit_std=7.7800188064575195
+[pr1568] u70_reset_after_False_gkd20m_hard_seed0__wide32_tables: reset_after=False, unroll=False, units=70, ir_apply_reset_gate=before, ir_bias_shape=[], ir_recurrent_bias_shape=[], compile_s=3.3, firmware_reset_after=not set, max_abs_diff=45.71710968017578, mean_abs_diff=17.59630012512207, sign_agreement=0.2059, decisions_differ=7941, n=10000, keras_logit_std=7.7800188064575195
+[pr1568] u140_reset_after_True_unroll_20M_aug_seed0__default_tables: reset_after=True, unroll=True, units=140, ir_apply_reset_gate=after, ir_bias_shape=[420], ir_recurrent_bias_shape=[420], compile_s=3.5, firmware_reset_after=not set, max_abs_diff=0.14835262298583984, mean_abs_diff=0.045227084308862686, sign_agreement=0.9999, decisions_differ=1, n=10000, keras_logit_std=7.824825763702393
+[pr1568] u140_reset_after_True_unroll_20M_aug_seed0__wide32_tables: reset_after=True, unroll=True, units=140, ir_apply_reset_gate=after, ir_bias_shape=[420], ir_recurrent_bias_shape=[420], compile_s=3.4, firmware_reset_after=not set, max_abs_diff=0.12304973602294922, mean_abs_diff=0.03397410735487938, sign_agreement=0.9999, decisions_differ=1, n=10000, keras_logit_std=7.824825763702393
