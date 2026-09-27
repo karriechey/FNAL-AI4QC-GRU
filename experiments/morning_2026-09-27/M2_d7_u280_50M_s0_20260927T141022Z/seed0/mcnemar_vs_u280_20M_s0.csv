@@ -1,0 +1,2 @@
+a_name,b_name,a_dump,b_dump,n_shared,p_L_a,p_L_b,ratio_b_over_a,both_right,b_only,a_only,both_wrong,n_discordant,net_b_wins,mcnemar_chi2_cc,p_chi2,p_exact
+M2_d7_u280_50M_s0,u280_20M_s0,per_shot_gru_d7_p004_u280_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz,per_shot_gru_d7_p004_u280_ext5000000_hard_seed0_ntr15000000_b10000.npz,1800000,0.006233,0.008167,1.3103,1779983,5317,8798,5902,14115,-3481,857.981,1.3381892186568352e-188,1.554612069389179e-190

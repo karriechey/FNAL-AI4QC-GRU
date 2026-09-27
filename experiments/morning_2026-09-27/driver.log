@@ -1,0 +1,10 @@
+[morning 2026-09-27T14:05:22Z] BEGIN morning driver pid=668159 repo=a2fe142
+[morning 2026-09-27T14:05:22Z] START M1_d7_u280_20M_s1 d=7 units=280 seed=1 extra=[/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz] n=[5000000] -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M1_d7_u280_20M_s1_20260927T140522Z (free GPU 3867 MiB)
+[morning 2026-09-27T14:10:22Z] START M2_d7_u280_50M_s0 d=7 units=280 seed=0 extra=[/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed44.npz] n=[5000000 30000000] -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M2_d7_u280_50M_s0_20260927T141022Z (free GPU 2202 MiB)
+[morning 2026-09-27T17:17:43Z] DONE  M1_d7_u280_20M_s1: eval p_L mwpm ratio b c n_disc = 0.007644 0.004291 1.7813 3984 10019 14003; best epoch 82; params=276,641
+[morning 2026-09-27T17:17:44Z] PAIR  M1_d7_u280_20M_s1 vs u280_20M_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M1_d7_u280_20M_s1_20260927T140522Z/seed1/mcnemar_vs_u280_20M_s0.csv
+[morning 2026-09-27T17:17:45Z] PAIR  M1_d7_u280_20M_s1 vs old_ra0_d7_u140_s1 -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M1_d7_u280_20M_s1_20260927T140522Z/seed1/mcnemar_vs_old_ra0_d7_u140_s1.csv
+[morning 2026-09-27T22:16:19Z] DONE  M2_d7_u280_50M_s0: eval p_L mwpm ratio b c n_disc = 0.006233 0.004291 1.4525 4010 7505 11515; best epoch 28; params=276,641
+[morning 2026-09-27T22:16:19Z] PAIR  M2_d7_u280_50M_s0 vs u280_20M_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M2_d7_u280_50M_s0_20260927T141022Z/seed0/mcnemar_vs_u280_20M_s0.csv
+[morning 2026-09-27T22:16:20Z] PAIR  M2_d7_u280_50M_s0 vs old_ra0_d7_u140_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M2_d7_u280_50M_s0_20260927T141022Z/seed0/mcnemar_vs_old_ra0_d7_u140_s0.csv
+[morning 2026-09-27T22:17:20Z] END   morning jobs finished (pair M2 with overnight run C when C is complete)

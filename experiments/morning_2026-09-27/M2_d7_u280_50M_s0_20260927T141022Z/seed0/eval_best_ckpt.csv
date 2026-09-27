@@ -1,0 +1,2 @@
+weights,student,d,p,rounds,eval_start,n_test,n_params,p_L,mwpm_p_L,ratio,base_rate,both_right,student_only,mwpm_only,both_wrong,n_discordant,net_student_wins,mcnemar_chi2_cc,p_chi2,p_exact,reset_after,unroll,tf32
+gru_d7_p004_u280_ext5000000+30000000_hard_seed0_ntr15000000_b10000.best.weights.h5,gru,7,0.004,7,15200000,1800000,276641,0.006233,0.004291,1.4525,0.30511,1784771,4010,7505,3714,11515,-3495,1060.185,1.4875954603126002e-232,3.183584324382641e-236,0,0,off

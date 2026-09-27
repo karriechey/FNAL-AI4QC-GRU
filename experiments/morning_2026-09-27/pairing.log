@@ -1,0 +1,85 @@
+[pair] A = M1_d7_u280_20M_s1  per_shot_gru_d7_p004_u280_ext5000000_hard_seed1_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = u280_20M_s0        per_shot_gru_d7_p004_u280_ext5000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] M1_d7_u280_20M_s1: p_L = 0.007644
+[pair] u280_20M_s0: p_L = 0.008167   (1.0684x of M1_d7_u280_20M_s1)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,777,838
+[pair]   u280_20M_s0 only right     = 7,462
+[pair]   M1_d7_u280_20M_s1 only right     = 8,403
+[pair]   both wrong              = 6,297
+[pair]   discordant              = 15,865 (0.88% of shots)
+[pair]   net u280_20M_s0 wins = -941  (= n x (p_L_A - p_L_B) = -941)
+[pair]   chi2(cc) = 55.7   p_chi2 = 8.464e-14   p_exact = 8.327e-14
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M1_d7_u280_20M_s1_20260927T140522Z/seed1/mcnemar_vs_u280_20M_s0.csv
+[pair] A = M1_d7_u280_20M_s1  per_shot_gru_d7_p004_u280_ext5000000_hard_seed1_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = old_ra0_d7_u140_s1 per_shot_old_ra0.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] M1_d7_u280_20M_s1: p_L = 0.007644
+[pair] old_ra0_d7_u140_s1: p_L = 0.008392   (1.0978x of M1_d7_u280_20M_s1)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,777,478
+[pair]   old_ra0_d7_u140_s1 only right     = 7,417
+[pair]   M1_d7_u280_20M_s1 only right     = 8,763
+[pair]   both wrong              = 6,342
+[pair]   discordant              = 16,180 (0.90% of shots)
+[pair]   net old_ra0_d7_u140_s1 wins = -1,346  (= n x (p_L_A - p_L_B) = -1346)
+[pair]   chi2(cc) = 111.8   p_chi2 = 3.940e-26   p_exact = 3.694e-26
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M1_d7_u280_20M_s1_20260927T140522Z/seed1/mcnemar_vs_old_ra0_d7_u140_s1.csv
+[pair] A = M2_d7_u280_50M_s0  per_shot_gru_d7_p004_u280_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = u280_20M_s0        per_shot_gru_d7_p004_u280_ext5000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] M2_d7_u280_50M_s0: p_L = 0.006233
+[pair] u280_20M_s0: p_L = 0.008167   (1.3103x of M2_d7_u280_50M_s0)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,779,983
+[pair]   u280_20M_s0 only right     = 5,317
+[pair]   M2_d7_u280_50M_s0 only right     = 8,798
+[pair]   both wrong              = 5,902
+[pair]   discordant              = 14,115 (0.78% of shots)
+[pair]   net u280_20M_s0 wins = -3,481  (= n x (p_L_A - p_L_B) = -3481)
+[pair]   chi2(cc) = 858.0   p_chi2 = 1.338e-188   p_exact = 1.555e-190
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M2_d7_u280_50M_s0_20260927T141022Z/seed0/mcnemar_vs_u280_20M_s0.csv
+[pair] A = M2_d7_u280_50M_s0  per_shot_gru_d7_p004_u280_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = old_ra0_d7_u140_s0 per_shot_old_ra0.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] M2_d7_u280_50M_s0: p_L = 0.006233
+[pair] old_ra0_d7_u140_s0: p_L = 0.009704   (1.5570x of M2_d7_u280_50M_s0)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,777,435
+[pair]   old_ra0_d7_u140_s0 only right     = 5,097
+[pair]   M2_d7_u280_50M_s0 only right     = 11,346
+[pair]   both wrong              = 6,122
+[pair]   discordant              = 16,443 (0.91% of shots)
+[pair]   net old_ra0_d7_u140_s0 wins = -6,249  (= n x (p_L_A - p_L_B) = -6249)
+[pair]   chi2(cc) = 2374.1   p_chi2 = 0.000e+00   p_exact = 0.000e+00
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M2_d7_u280_50M_s0_20260927T141022Z/seed0/mcnemar_vs_old_ra0_d7_u140_s0.csv
+[pair] A = M2_d7_u280_50M_s0  per_shot_gru_d7_p004_u280_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = C_d7_u140_50M_s0   per_shot_gru_d7_p004_u140_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] M2_d7_u280_50M_s0: p_L = 0.006233
+[pair] C_d7_u140_50M_s0: p_L = 0.009486   (1.5219x of M2_d7_u280_50M_s0)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,777,821
+[pair]   C_d7_u140_50M_s0 only right     = 5,105
+[pair]   M2_d7_u280_50M_s0 only right     = 10,960
+[pair]   both wrong              = 6,114
+[pair]   discordant              = 16,065 (0.89% of shots)
+[pair]   net C_d7_u140_50M_s0 wins = -5,855  (= n x (p_L_A - p_L_B) = -5855)
+[pair]   chi2(cc) = 2133.2   p_chi2 = 0.000e+00   p_exact = 0.000e+00
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/morning_2026-09-27/M2_d7_u280_50M_s0_20260927T141022Z/seed0/mcnemar_vs_C_d7_u140_50M_s0.csv

@@ -1,0 +1,2 @@
+a_name,b_name,a_dump,b_dump,n_shared,p_L_a,p_L_b,ratio_b_over_a,both_right,b_only,a_only,both_wrong,n_discordant,net_b_wins,mcnemar_chi2_cc,p_chi2,p_exact
+M1_d7_u280_20M_s1,old_ra0_d7_u140_s1,per_shot_gru_d7_p004_u280_ext5000000_hard_seed1_ntr15000000_b10000.npz,per_shot_old_ra0.npz,1800000,0.007644,0.008392,1.0978,1777478,7417,8763,6342,16180,-1346,111.806,3.939933616446833e-26,3.693657237442306e-26
