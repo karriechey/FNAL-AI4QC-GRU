@@ -1,0 +1,14 @@
+[overnight 2026-09-27T07:42:33Z] BEGIN driver pid=533798 repo=a2fe142
+[overnight 2026-09-27T07:42:33Z] START A (CPU) sanity_d7_50M.py -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/A_sanity
+[overnight 2026-09-27T07:42:33Z] START B_d7_u280_20M d=7 units=280 extra=[/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz] n=[5000000] -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/B_d7_u280_20M_20260927T074233Z (free GPU 3867 MiB)
+[overnight 2026-09-27T07:53:35Z] A     sanity check: PASS (details /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/A_sanity/sanity_result.json)
+[overnight 2026-09-27T09:33:46Z] CONTROL eval p_L 0.007106 (MWPM 0.007571, 0.9386x; b 6344 c 5507 n_disc 11851), best epoch 37: PASS (rule p_L <= 0.00730)
+[overnight 2026-09-27T09:33:47Z] PAIR  control vs old reset_after=False seed 0
+[overnight 2026-09-27T09:33:47Z] PAIR  control vs reset_after=True seed 0
+[overnight 2026-09-27T09:33:48Z] START C_d7_u140_50M d=7 units=140 extra=[/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed44.npz] n=[5000000 30000000] -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/C_d7_u140_50M_20260927T093348Z (free GPU 3350 MiB)
+[overnight 2026-09-27T10:55:59Z] DONE  B_d7_u280_20M: eval p_L mwpm ratio b c n_disc = 0.008167 0.004291 1.9032 3862 10838 14700; best epoch 68; params=276,641
+[overnight 2026-09-27T10:56:00Z] PAIR  B_d7_u280_20M vs old_ra0_d7_u140_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/B_d7_u280_20M_20260927T074233Z/seed0/mcnemar_vs_old_ra0_d7_u140_s0.csv
+[overnight 2026-09-27T17:43:46Z] DONE  C_d7_u140_50M: eval p_L mwpm ratio b c n_disc = 0.009486 0.004291 2.2105 3769 13119 16888; best epoch 41; params=79,521
+[overnight 2026-09-27T17:43:47Z] PAIR  C_d7_u140_50M vs old_ra0_d7_u140_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/C_d7_u140_50M_20260927T093348Z/seed0/mcnemar_vs_old_ra0_d7_u140_s0.csv
+[overnight 2026-09-27T17:43:48Z] PAIR  C_d7_u140_50M vs ra1_d7_s0_50M -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/C_d7_u140_50M_20260927T093348Z/seed0/mcnemar_vs_ra1_d7_s0_50M.csv
+[overnight 2026-09-27T17:43:48Z] END   all overnight jobs finished
