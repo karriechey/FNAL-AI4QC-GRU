@@ -1,0 +1,15 @@
+# Created: 2026-09-27
+# Last updated: 2026-09-27
+# qdec:tf215 plus hls4ml from PR #1568 (Vivado GRU reset_after=False), pinned to its head
+# commit. Everything else is unchanged from env/Containerfile. Build (on grace1):
+#   podman build -t qdec:tf215-hlsfix -f Containerfile.hlsfix <dir>
+FROM localhost/qdec:tf215
+ARG HLS4ML_COMMIT=e1721b302f8a29397b532b82f21dc8d908781a70
+# Source archive of the PR head commit, served through the upstream repository (verified
+# identical, file for file, to the archive of the PR's source branch); no git needed.
+# setuptools_scm cannot see a version in an archive, so it is given one that names the
+# commit. --no-deps: keep the image's TF/Keras/numpy as they are.
+ENV SETUPTOOLS_SCM_PRETEND_VERSION=1.3.0.post1568+g${HLS4ML_COMMIT}
+RUN pip install --no-cache-dir --no-deps \
+      "https://github.com/fastmachinelearning/hls4ml/archive/${HLS4ML_COMMIT}.tar.gz" \
+ && python3 -c "import hls4ml; print('hls4ml', hls4ml.__version__, hls4ml.__file__)"

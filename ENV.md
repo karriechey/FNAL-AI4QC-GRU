@@ -1,4 +1,4 @@
-<!-- Created: 2026-09-25 | Last updated: 2026-09-26 -->
+<!-- Created: 2026-09-25 | Last updated: 2026-09-27 -->
 # Environment
 
 Everything runs on **grace1.fnal.gov**: NVIDIA GH200 480GB (one GPU, 97,871 MiB), Grace CPU
@@ -58,6 +58,24 @@ podman run --rm --security-opt=label=disable --device nvidia.com/gpu=all \
 ```
 
 The previous image is kept as `qdec:tf215-bak-2026-09-26`.
+
+## GPU image with the hls4ml GRU fix: `qdec:tf215-hlsfix`
+
+Built 2026-09-27 from `env/Containerfile.hlsfix` on top of `qdec:tf215`. The only change is
+hls4ml, installed `--no-deps` from pull request
+[fastmachinelearning/hls4ml#1568](https://github.com/fastmachinelearning/hls4ml/pull/1568)
+("Vivado: correctly implement GRU reset_after=False"), open and unmerged on 2026-09-27:
+
+| item | value |
+|---|---|
+| source | PR #1568 head branch `fix/vivado-gru-reset-before` (installed from the commit archive) |
+| commit | `e1721b302f8a29397b532b82f21dc8d908781a70` (based on upstream `main` `a2abb4d`) |
+| reported version | `1.3.0.post1568+ge1721b302f8a29397b532b82f21dc8d908781a70` |
+| image ID | `348019dc2dc0` |
+
+The installed `templates/vivado/nnet_utils/nnet_recurrent.h` and
+`backends/vivado/passes/recurrent_templates.py` were checked byte-identical to GitHub at that
+commit. `qdec:tf215` itself is unchanged (hls4ml 1.3.0).
 
 ## Differences between the two environments
 

@@ -1,4 +1,4 @@
-# Created: 2026-09-25 | Last updated: 2026-09-26
+# Created: 2026-09-25 | Last updated: 2026-09-27
 # Data and model files stay out of git; configs/paths.yaml points at them.
 datasets/
 checkpoints/
@@ -17,3 +17,15 @@ __pycache__/
 experiments/gru_check/*/hls_*/
 # TensorFlow profiler traces from the C3 check
 experiments/gru_check/*/profile_*/
+
+# hls4ml generated projects, compiled C simulation and packaged tarballs (regenerable;
+# checksums of the shared artifacts are recorded in the hls4ml_pr1568_check folder)
+**/hls_*/
+**/_verify/
+*.so
+*.o
+*.tar.gz
+experiments/gru_check/hls4ml_pr1568_check/synthesis_package/hls_projects/
+# temporary folders of the d7 50M sanity check
+experiments/overnight_2026-09-27/A_sanity/tmp_ckpt/
+experiments/overnight_2026-09-27/A_sanity/tmp_runs/
