@@ -48,3 +48,9 @@ code sha     : a89f2a97b3fdc938  train_student.py
              : 36d946779b8c7d3a  gh200_run_student_scaling.sh
 
 [gru] seed 2 -> log /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s2_20260926T211723Z/seed2/run.log
+[gru] every requested seed completed -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s2_20260926T211723Z/COMPLETE
+
+[gru] done  d=5 r=5  seeds: 2  parallel=0  wall 10804s
+[gru]   per-seed output -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s2_20260926T211723Z/seed<N>/{runs,ckpt,run.log,eval_best_ckpt.csv}
+gru_d5_p004_u140_ext5000000_ra1_ur1_hard_seed2_ntr15000000_b10000.best.weights.h5,gru,5,0.004,5,15200000,1800000,69861,0.007961,0.007571,1.0515,0.1943,1779394,6277,6979,7350,13256,-702,37.07,1.1395888764519165e-09,1.1297950629629898e-09,1,1,off
+weights,student,d,p,rounds,eval_start,n_test,n_params,p_L,mwpm_p_L,ratio,base_rate,both_right,student_only,mwpm_only,both_wrong,n_discordant,net_student_wins,mcnemar_chi2_cc,p_chi2,p_exact,reset_after,unroll,tf32

@@ -1,0 +1,34 @@
+[pair] A = d7_s0_50M          per_shot_gru_d7_p004_u140_ext5000000+30000000_ra1_ur1_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = ra0_d7_s0          per_shot_old_ra0.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] d7_s0_50M: p_L = 0.010713
+[pair] ra0_d7_s0: p_L = 0.009704   (0.9059x of d7_s0_50M)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,770,741
+[pair]   ra0_d7_s0 only right     = 11,791
+[pair]   d7_s0_50M only right     = 9,976
+[pair]   both wrong              = 7,492
+[pair]   discordant              = 21,767 (1.21% of shots)
+[pair]   net ra0_d7_s0 wins = +1,815  (= n x (p_L_A - p_L_B) = +1815)
+[pair]   chi2(cc) = 151.2   p_chi2 = 9.604e-35   p_exact = 8.797e-35
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s0_50M_20260926T203819Z/seed0/mcnemar_vs_reset_after_false.csv
+[pair] A = d7_s0_50M          per_shot_gru_d7_p004_u140_ext5000000+30000000_ra1_ur1_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = d7_s0              per_shot_gru_d7_p004_u140_ext5000000_ra1_ur1_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] d7_s0_50M: p_L = 0.010713
+[pair] d7_s0: p_L = 0.010366   (0.9676x of d7_s0_50M)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,770,292
+[pair]   d7_s0 only right     = 11,050
+[pair]   d7_s0_50M only right     = 10,425
+[pair]   both wrong              = 8,233
+[pair]   discordant              = 21,475 (1.19% of shots)
+[pair]   net d7_s0 wins = +625  (= n x (p_L_A - p_L_B) = +625)
+[pair]   chi2(cc) = 18.1   p_chi2 = 2.062e-05   p_exact = 2.059e-05
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s0_50M_20260926T203819Z/seed0/mcnemar_vs_d7_s0.csv

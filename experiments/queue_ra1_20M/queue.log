@@ -33,3 +33,15 @@
 [sched 2026-09-26T21:16:52Z] RESCORE old d=7 seed=0 (TF32 off) -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/old_rescored_tf32off/d7_s0
 [sched 2026-09-26T21:16:52Z] PAIR  d7_s0 vs old ra0 d7 s0
 [sched 2026-09-26T21:17:23Z] RUN   d5_s2 d=5 seed=2 extra=[43] n=[5000000] cap=1600MiB -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s2_20260926T211723Z
+[sched 2026-09-27T00:17:43Z] DONE  d5_s2 in 10820s
+[sched 2026-09-27T00:17:43Z] BEST  d5_s2 best epoch 134
+[sched 2026-09-27T00:17:43Z] PAIR  d5_s2 vs old ra0 d5 s2
+[sched 2026-09-27T00:20:22Z] DONE  d7_s1 in 11700s
+[sched 2026-09-27T00:20:22Z] BEST  d7_s1 best epoch 165
+[sched 2026-09-27T00:21:25Z] RESCORE old d=7 seed=1 (TF32 off) -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/old_rescored_tf32off/d7_s1
+[sched 2026-09-27T00:21:25Z] PAIR  d7_s1 vs old ra0 d7 s1
+[sched 2026-09-27T04:48:25Z] DONE  d7_s0_50M in 29406s
+[sched 2026-09-27T04:48:25Z] BEST  d7_s0_50M best epoch 98
+[sched 2026-09-27T04:48:26Z] PAIR  d7_s0_50M vs old ra0 d7 s0
+[sched 2026-09-27T04:48:26Z] PAIR  d7_s0_50M vs d7_s0
+[sched 2026-09-27T04:49:15Z] END   no jobs left

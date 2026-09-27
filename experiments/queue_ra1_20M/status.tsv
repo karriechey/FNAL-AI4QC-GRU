@@ -3,3 +3,6 @@ d	seed	status	seconds	out
 d5_s0	5	0	done	-	/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s0_20260926T174023Z
 d5_s1	5	1	done	10741	/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s1_20260926T180449Z
 d7_s0	7	0	done	11631	/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s0_20260926T180149Z
+d5_s2	5	2	done	10820	/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d5_s2_20260926T211723Z
+d7_s1	7	1	done	11700	/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s1_20260926T210522Z
+d7_s0_50M	7	0	done	29406	/home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s0_50M_20260926T203819Z

@@ -1,0 +1,17 @@
+[pair] A = d7_s1              per_shot_gru_d7_p004_u140_ext5000000_ra1_ur1_hard_seed1_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = ra0_d7_s1          per_shot_old_ra0.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] d7_s1: p_L = 0.010371
+[pair] ra0_d7_s1: p_L = 0.008392   (0.8091x of d7_s1)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,772,950
+[pair]   ra0_d7_s1 only right     = 11,945
+[pair]   d7_s1 only right     = 8,382
+[pair]   both wrong              = 6,723
+[pair]   discordant              = 20,327 (1.13% of shots)
+[pair]   net ra0_d7_s1 wins = +3,563  (= n x (p_L_A - p_L_B) = +3563)
+[pair]   chi2(cc) = 624.2   p_chi2 = 9.187e-138   p_exact = 1.823e-138
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/queue_ra1_20M/d7_s1_20260926T210522Z/seed1/mcnemar_vs_reset_after_false.csv

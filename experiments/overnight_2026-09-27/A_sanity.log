@@ -1,0 +1,39 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+[gru] tf32=on (TensorFlow default)
+[gru] TF 2.15.0  GPUs: []
+[gru] hard-label control arm: teacher column unused (alpha=1).
+[gru] extra pool gen_seed=43 flips_sha=83122704a44ae6b5
+[gru] training set extended by 5,000,000 shots from data_d7_p0.004_r7_TRAINONLY_seed43.npz; total 20,000,000
+[gru] extra pool gen_seed=44 flips_sha=b8a202961bc0dbe2
+[gru] training set extended by 30,000,000 shots from data_d7_p0.004_r7_TRAINONLY_seed44.npz; total 50,000,000
+[gru] provenance: pool=pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz flips_sha= teacher_sha= code_sha=a89f2a97b3fdc938
+[gru] scoring shots [15,200,000, 17,000,000)
+[gru] partitions: train [0, 15,000,000) of the primary pool + 35,000,000 augmentation shots  validation [15,000,000, 15,200,000)  (validation_split disabled)
+[gru] 5000 steps/epoch x 1 epochs = 5,000 optimizer updates
+[gru] reset_after=False unroll=False
+[gru] gru inputs=evts params=79,521
+[gru] checkpoints -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/A_sanity/tmp_ckpt/sanity.best.keras + .best.weights.h5 (lowest val LER, tiebreak val_loss; epoch in /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/A_sanity/tmp_ckpt/sanity.best.json) and /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/A_sanity/tmp_ckpt/sanity.lastepoch.weights.h5
+[gru] callback order: ['ValLERCheckpoint', '_SaveLastEpoch']
+[sanity] FORMAL: {"range": [0, 15000000], "labels_match": true, "inputs_match": true, "flip_rate": 0.30538126666666665, "det_density": 0.060519142063492064, "mwpm_ler_first_5M": 0.0043058, "mwpm_errors_first_5M": 21529}
+[sanity] seed43: {"range": [15000000, 20000000], "labels_match": true, "inputs_match": true, "flip_rate": 0.3053546, "det_density": 0.06051581071428572, "mwpm_ler_first_5M": 0.0043124, "mwpm_errors_first_5M": 21562}
+[sanity] seed44: {"range": [20000000, 50000000], "labels_match": true, "inputs_match": true, "flip_rate": 0.3052559, "det_density": 0.06052866111111111, "mwpm_ler_first_5M": 0.0042638, "mwpm_errors_first_5M": 21319}
+[sanity] PASSED=True checks={"seed43": {"rel_diff_flip_rate": 8.732253604731538e-05, "rel_diff_det_density": 5.5046206749785845e-05, "mwpm_ler_diff_in_se": 0.1593156299247653, "ok": true}, "seed44": {"rel_diff_flip_rate": 0.000410525072592184, "rel_diff_det_density": 0.00015728986390885113, "mwpm_ler_diff_in_se": 1.0166851287226266, "ok": true}}
