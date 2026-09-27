@@ -49,3 +49,37 @@
 [pair]   chi2(cc) = 418.1   p_chi2 = 6.463e-93   p_exact = 2.897e-93
 
 [pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/B_d7_u280_20M_20260927T074233Z/seed0/mcnemar_vs_old_ra0_d7_u140_s0.csv
+[pair] A = C_d7_u140_50M      per_shot_gru_d7_p004_u140_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = old_ra0_d7_u140_s0 per_shot_old_ra0.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] C_d7_u140_50M: p_L = 0.009486
+[pair] old_ra0_d7_u140_s0: p_L = 0.009704   (1.0231x of C_d7_u140_50M)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,773,436
+[pair]   old_ra0_d7_u140_s0 only right     = 9,096
+[pair]   C_d7_u140_50M only right     = 9,490
+[pair]   both wrong              = 7,978
+[pair]   discordant              = 18,586 (1.03% of shots)
+[pair]   net old_ra0_d7_u140_s0 wins = -394  (= n x (p_L_A - p_L_B) = -394)
+[pair]   chi2(cc) = 8.3   p_chi2 = 3.943e-03   p_exact = 3.942e-03
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/C_d7_u140_50M_20260927T093348Z/seed0/mcnemar_vs_old_ra0_d7_u140_s0.csv
+[pair] A = C_d7_u140_50M      per_shot_gru_d7_p004_u140_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = ra1_d7_s0_50M      per_shot_gru_d7_p004_u140_ext5000000+30000000_ra1_ur1_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] C_d7_u140_50M: p_L = 0.009486
+[pair] ra1_d7_s0_50M: p_L = 0.010713   (1.1294x of C_d7_u140_50M)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,771,106
+[pair]   ra1_d7_s0_50M only right     = 9,611
+[pair]   C_d7_u140_50M only right     = 11,820
+[pair]   both wrong              = 7,463
+[pair]   discordant              = 21,431 (1.19% of shots)
+[pair]   net ra1_d7_s0_50M wins = -2,209  (= n x (p_L_A - p_L_B) = -2209)
+[pair]   chi2(cc) = 227.5   p_chi2 = 2.106e-51   p_exact = 1.721e-51
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/overnight_2026-09-27/C_d7_u140_50M_20260927T093348Z/seed0/mcnemar_vs_ra1_d7_s0_50M.csv
