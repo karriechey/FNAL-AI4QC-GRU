@@ -1,0 +1,102 @@
+[pair] A = K1_d7_u280_50M_s0  per_shot_gru_d7_p004_u280_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = M2_const_u280_50M_s0 per_shot_gru_d7_p004_u280_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] K1_d7_u280_50M_s0: p_L = 0.005364
+[pair] M2_const_u280_50M_s0: p_L = 0.006233   (1.1620x of K1_d7_u280_50M_s0)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,784,281
+[pair]   M2_const_u280_50M_s0 only right     = 4,500
+[pair]   K1_d7_u280_50M_s0 only right     = 6,064
+[pair]   both wrong              = 5,155
+[pair]   discordant              = 10,564 (0.59% of shots)
+[pair]   net M2_const_u280_50M_s0 wins = -1,564  (= n x (p_L_A - p_L_B) = -1564)
+[pair]   chi2(cc) = 231.3   p_chi2 = 3.176e-52   p_exact = 2.075e-52
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K1_d7_u280_50M_s0_20260928T032155Z/seed0/mcnemar_vs_M2_const_u280_50M_s0.csv
+[pair] A = K3_d7_u560_50M_s0  per_shot_gru_d7_p004_u560_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = K1_cos_u280_50M_s0 per_shot_gru_d7_p004_u280_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] K3_d7_u560_50M_s0: p_L = 0.005958
+[pair] K1_cos_u280_50M_s0: p_L = 0.005364   (0.9003x of K3_d7_u560_50M_s0)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,784,345
+[pair]   K1_cos_u280_50M_s0 only right     = 6,000
+[pair]   K3_d7_u560_50M_s0 only right     = 4,931
+[pair]   both wrong              = 4,724
+[pair]   discordant              = 10,931 (0.61% of shots)
+[pair]   net K1_cos_u280_50M_s0 wins = +1,069  (= n x (p_L_A - p_L_B) = +1069)
+[pair]   chi2(cc) = 104.3   p_chi2 = 1.698e-24   p_exact = 1.562e-24
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K3_d7_u560_50M_s0_20260928T032655Z/seed0/mcnemar_vs_K1_cos_u280_50M_s0.csv
+[pair] A = K3_d7_u560_50M_s0  per_shot_gru_d7_p004_u560_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = M2_const_u280_50M_s0 per_shot_gru_d7_p004_u280_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] K3_d7_u560_50M_s0: p_L = 0.005958
+[pair] M2_const_u280_50M_s0: p_L = 0.006233   (1.0462x of K3_d7_u560_50M_s0)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,783,041
+[pair]   M2_const_u280_50M_s0 only right     = 5,740
+[pair]   K3_d7_u560_50M_s0 only right     = 6,235
+[pair]   both wrong              = 4,984
+[pair]   discordant              = 11,975 (0.67% of shots)
+[pair]   net M2_const_u280_50M_s0 wins = -495  (= n x (p_L_A - p_L_B) = -495)
+[pair]   chi2(cc) = 20.4   p_chi2 = 6.353e-06   p_exact = 6.335e-06
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K3_d7_u560_50M_s0_20260928T032655Z/seed0/mcnemar_vs_M2_const_u280_50M_s0.csv
+[pair] A = K2_d7_u280_50M_s1  per_shot_gru_d7_p004_u280_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed1_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = M2_const_u280_50M_s0 per_shot_gru_d7_p004_u280_ext5000000+30000000_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] K2_d7_u280_50M_s1: p_L = 0.005332
+[pair] M2_const_u280_50M_s0: p_L = 0.006233   (1.1689x of K2_d7_u280_50M_s1)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,784,225
+[pair]   M2_const_u280_50M_s0 only right     = 4,556
+[pair]   K2_d7_u280_50M_s1 only right     = 6,177
+[pair]   both wrong              = 5,042
+[pair]   discordant              = 10,733 (0.60% of shots)
+[pair]   net M2_const_u280_50M_s0 wins = -1,621  (= n x (p_L_A - p_L_B) = -1621)
+[pair]   chi2(cc) = 244.5   p_chi2 = 4.072e-55   p_exact = 2.549e-55
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K2_d7_u280_50M_s1_20260928T064539Z/seed1/mcnemar_vs_M2_const_u280_50M_s0.csv
+[pair] A = K2_d7_u280_50M_s1  per_shot_gru_d7_p004_u280_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed1_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = K1_cos_u280_50M_s0 per_shot_gru_d7_p004_u280_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] K2_d7_u280_50M_s1: p_L = 0.005332
+[pair] K1_cos_u280_50M_s0: p_L = 0.005364   (1.0059x of K2_d7_u280_50M_s1)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,785,523
+[pair]   K1_cos_u280_50M_s0 only right     = 4,822
+[pair]   K2_d7_u280_50M_s1 only right     = 4,879
+[pair]   both wrong              = 4,776
+[pair]   discordant              = 9,701 (0.54% of shots)
+[pair]   net K1_cos_u280_50M_s0 wins = -57  (= n x (p_L_A - p_L_B) = -57)
+[pair]   chi2(cc) = 0.3   p_chi2 = 5.697e-01   p_exact = 5.697e-01
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K2_d7_u280_50M_s1_20260928T064539Z/seed1/mcnemar_vs_K1_cos_u280_50M_s0.csv
+[pair] A = K3_d7_u560_50M_s0  per_shot_gru_d7_p004_u560_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] B = K2_cos_u280_50M_s1 per_shot_gru_d7_p004_u280_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed1_ntr15000000_b10000.npz  column=student_correct  1,800,000 shots [15,200,000, 17,000,000)
+[pair] truth labels agree on all shared shots.
+
+[pair] K3_d7_u560_50M_s0: p_L = 0.005958
+[pair] K2_cos_u280_50M_s1: p_L = 0.005332   (0.8950x of K3_d7_u560_50M_s0)
+
+[pair] 2x2 on 1,800,000 shared shots:
+[pair]   both right              = 1,784,268
+[pair]   K2_cos_u280_50M_s1 only right     = 6,134
+[pair]   K3_d7_u560_50M_s0 only right     = 5,008
+[pair]   both wrong              = 4,590
+[pair]   discordant              = 11,142 (0.62% of shots)
+[pair]   net K2_cos_u280_50M_s1 wins = +1,126  (= n x (p_L_A - p_L_B) = +1126)
+[pair]   chi2(cc) = 113.6   p_chi2 = 1.602e-26   p_exact = 1.454e-26
+
+[pair] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K3_d7_u560_50M_s0_20260928T032655Z/seed0/mcnemar_vs_K2_cos_u280_50M_s1.csv

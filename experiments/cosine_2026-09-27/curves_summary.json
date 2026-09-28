@@ -1,0 +1,46 @@
+{
+ "u280 50M s0, constant 3e-3 (M2)": {
+  "history": "morning_2026-09-27/M2_d7_u280_50M_s0_20260927T141022Z/seed0/runs/gru_d7_p004_u280_ext5000000+30000000_hard_seed0_ntr15000000_b10000.history.json",
+  "epochs": 200,
+  "best_val_ler_epoch": 28,
+  "min_val_ler": 0.006115,
+  "train_loss_min": 0.01703190617263317,
+  "train_loss_min_epoch": 35,
+  "train_loss_last": 0.12650342285633087,
+  "rise_min_to_last": 0.1094715166836977,
+  "clip_frac_cum_last": null
+ },
+ "u280 50M s0, cosine + clip (K1)": {
+  "history": "cosine_2026-09-27/K1_d7_u280_50M_s0_20260928T032155Z/seed0/runs/gru_d7_p004_u280_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.history.json",
+  "epochs": 80,
+  "best_val_ler_epoch": 57,
+  "min_val_ler": 0.00534,
+  "train_loss_min": 0.00755328731611371,
+  "train_loss_min_epoch": 80,
+  "train_loss_last": 0.00755328731611371,
+  "rise_min_to_last": 0.0,
+  "clip_frac_cum_last": 4.99998750003125e-05
+ },
+ "u280 50M s1, cosine + clip (K2)": {
+  "history": "cosine_2026-09-27/K2_d7_u280_50M_s1_20260928T064539Z/seed1/runs/gru_d7_p004_u280_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed1_ntr15000000_b10000.history.json",
+  "epochs": 80,
+  "best_val_ler_epoch": 50,
+  "min_val_ler": 0.005185,
+  "train_loss_min": 0.0067714424803853035,
+  "train_loss_min_epoch": 80,
+  "train_loss_last": 0.0067714424803853035,
+  "rise_min_to_last": 0.0,
+  "clip_frac_cum_last": 9.9999750000625e-06
+ },
+ "u560 50M s0, cosine + clip (K3)": {
+  "history": "cosine_2026-09-27/K3_d7_u560_50M_s0_20260928T032655Z/seed0/runs/gru_d7_p004_u560_ext5000000+30000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.history.json",
+  "epochs": 80,
+  "best_val_ler_epoch": 56,
+  "min_val_ler": 0.005735,
+  "train_loss_min": 0.0032351072877645493,
+  "train_loss_min_epoch": 80,
+  "train_loss_last": 0.0032351072877645493,
+  "rise_min_to_last": 0.0,
+  "clip_frac_cum_last": 0.00010749973125067187
+ }
+}

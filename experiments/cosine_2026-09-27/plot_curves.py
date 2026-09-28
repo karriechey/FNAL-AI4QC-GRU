@@ -1,5 +1,5 @@
 # Created: 2026-09-27
-# Last modified: 2026-09-27
+# Last modified: 2026-09-28 (training loss on a log axis so the cosine runs stay in view; clipped fraction as markers; shorter panel title)
 """Training curves of the cosine-schedule queue, with the constant-LR run M2 for reference.
 
     python3 plot_curves.py        (from experiments/cosine_2026-09-27)
@@ -45,8 +45,11 @@ def main():
         if 'lr' in h:
             ax[1, 1].plot(ep, h['lr'], color=col, ls=ls, lw=1.1, label=f'{label}: learning rate')
         if 'clip_frac' in h:
-            ax[1, 1].plot(ep, np.maximum(h['clip_frac'], 1e-6), color=col, ls=':', lw=1.1,
-                          label=f'{label}: fraction clipped')
+            cf = np.array(h['clip_frac'])
+            nz = cf > 0          # epochs with no clipped update are left out of the log axis
+            ax[1, 1].plot(ep[nz], cf[nz], color=col, ls='none',
+                          marker='o' if ls == '-' else 's', ms=3,
+                          label=f'{label}: fraction of updates clipped')
         i_min = int(np.argmin(tl))
         summary[label] = dict(
             history=os.path.relpath(files[-1], EXP), epochs=int(len(tl)),
@@ -54,14 +57,14 @@ def main():
             train_loss_min=float(tl[i_min]), train_loss_min_epoch=i_min + 1,
             train_loss_last=float(tl[-1]), rise_min_to_last=float(tl[-1] - tl[i_min]),
             clip_frac_cum_last=(float(h['clip_frac_cum'][-1]) if 'clip_frac_cum' in h else None))
-    ax[0, 0].set_ylim(0.012, 0.05)
+    ax[0, 0].set_yscale('log'); ax[0, 0].set_ylim(0.002, 0.2)
     ax[0, 1].set_ylim(0.012, 0.05)
     ax[1, 0].set_ylim(0.005, 0.015)
     ax[1, 1].set_yscale('log')
     for a, t, y in ((ax[0, 0], 'training loss', 'binary cross-entropy'),
                     (ax[0, 1], 'validation loss', 'binary cross-entropy'),
                     (ax[1, 0], 'validation logical error rate', 'logical error rate'),
-                    (ax[1, 1], 'learning rate and fraction of clipped updates', 'value')):
+                    (ax[1, 1], 'learning rate, clipped updates', 'value')):
         a.set_title(f'd=7, 50M training shots: {t}'); a.set_xlabel('training epoch')
         a.set_ylabel(y); a.grid(alpha=.3); a.legend(fontsize=7)
     fig.tight_layout()

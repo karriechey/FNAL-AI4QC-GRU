@@ -1,0 +1,7 @@
+[cosine-k2 2026-09-28T06:52:30Z] BEGIN K2 watcher pid=908352 (driver.sh logged a false FAIL for K2 at 06:45:39Z; K2 container is running)
+[cosine-k2 2026-09-28T10:03:58Z] DONE  K2_d7_u280_50M_s1: eval p_L mwpm ratio b c n_disc = 0.005332 0.004291 1.2426 4170 6044 10214; best epoch 50; params=276,641; clipped cumulative 0.0000
+[cosine-k2 2026-09-28T10:03:59Z] PAIR  K2_d7_u280_50M_s1 vs M2_const_u280_50M_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K2_d7_u280_50M_s1_20260928T064539Z/seed1/mcnemar_vs_M2_const_u280_50M_s0.csv
+[cosine-k2 2026-09-28T10:04:00Z] PAIR  K2_d7_u280_50M_s1 vs K1_cos_u280_50M_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K2_d7_u280_50M_s1_20260928T064539Z/seed1/mcnemar_vs_K1_cos_u280_50M_s0.csv
+[cosine-k2 2026-09-28T10:04:00Z] PAIR  K3_d7_u560_50M_s0 vs K2_cos_u280_50M_s1 -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K3_d7_u560_50M_s0_20260928T032655Z/seed0/mcnemar_vs_K2_cos_u280_50M_s1.csv
+[cosine-k2 2026-09-28T10:04:02Z] PLOT  loss_curves.png (with K2)
+[cosine-k2 2026-09-28T10:04:02Z] END   K2 finished
