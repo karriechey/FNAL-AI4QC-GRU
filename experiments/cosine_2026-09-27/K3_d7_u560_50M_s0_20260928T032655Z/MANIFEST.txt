@@ -1,0 +1,22 @@
+experiment   : gru distance scaling, d=7 r=7 p=0.004 (grace1 GH200)
+launched     : 2026-09-28T03:27:19Z  on e861f2660090
+pool         : /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz
+pool prov    : gen_seed=42 flips_sha=b49fbe40786da9e62b84ffb2c1937e17855f798b3d7edb1917d0d165880b166e n_total=19000000
+train        : [0, 15000000)
+validation   : [15000000, 15200000)
+evaluation   : [15200000, 17000000)
+sealed test  : [17000000, 19000000)   not read
+recipe       : gru units=560 hidden=() inputs=evts alpha=1.0 hard labels
+             : batch=10000 lr=0.003 epochs=80 early_stop=0
+optimizer    : lr_schedule=cosine lr_end=3e-5 global_clipnorm=0.64
+gru layer    : reset_after=0 unroll=0
+tf32         : training on, evaluation off
+gpu cap      : 1600 MiB per process
+quantization : weights=float32 activations=float32
+extension    : /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed44.npz n=5000000 30000000
+selection    : min val_loss checkpoint, scored once on the evaluation block
+seeds        : 0
+determinism  : TF_DETERMINISTIC_OPS=1  TF_CUDNN_DETERMINISTIC=1
+code sha     : eaa03dcaa9c05b83  train_student.py
+             : 7078646310398978  StudentModels.py
+             : 8a1b8a8f53c50bd7  gh200_run_student_scaling.sh

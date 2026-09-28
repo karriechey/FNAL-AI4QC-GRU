@@ -1,0 +1,12 @@
+[cosine 2026-09-28T03:21:55Z] BEGIN cosine driver pid=835290 repo=bb523c3 global_clipnorm=0.64
+[cosine 2026-09-28T03:21:55Z] START K1_d7_u280_50M_s0 d=7 units=280 seed=0 50M cosine 3e-3->3e-5 80 epochs global_clipnorm=0.64 -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K1_d7_u280_50M_s0_20260928T032155Z (free GPU 5016 MiB)
+[cosine 2026-09-28T03:26:55Z] START K3_d7_u560_50M_s0 d=7 units=560 seed=0 50M cosine 3e-3->3e-5 80 epochs global_clipnorm=0.64 -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K3_d7_u560_50M_s0_20260928T032655Z (free GPU 5017 MiB)
+[cosine 2026-09-28T06:45:39Z] DONE  K1_d7_u280_50M_s0: eval p_L mwpm ratio b c n_disc = 0.005364 0.004291 1.25 4146 6077 10223; best epoch 57; params=276,641; clipped cumulative 0.0000
+[cosine 2026-09-28T06:45:39Z] START K2_d7_u280_50M_s1 d=7 units=280 seed=1 50M cosine 3e-3->3e-5 80 epochs global_clipnorm=0.64 -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K2_d7_u280_50M_s1_20260928T064539Z (free GPU 2780 MiB)
+[cosine 2026-09-28T06:45:39Z] FAIL  K2_d7_u280_50M_s1 ended without COMPLETE (exit )
+[cosine 2026-09-28T06:51:40Z] DONE  K3_d7_u560_50M_s0: eval p_L mwpm ratio b c n_disc = 0.005958 0.004291 1.3884 4109 7109 11218; best epoch 56; params=1,023,681; clipped cumulative 0.0001
+[cosine 2026-09-28T06:51:41Z] PAIR  K1_d7_u280_50M_s0 vs M2_const_u280_50M_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K1_d7_u280_50M_s0_20260928T032155Z/seed0/mcnemar_vs_M2_const_u280_50M_s0.csv
+[cosine 2026-09-28T06:51:41Z] PAIR  K3_d7_u560_50M_s0 vs K1_cos_u280_50M_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K3_d7_u560_50M_s0_20260928T032655Z/seed0/mcnemar_vs_K1_cos_u280_50M_s0.csv
+[cosine 2026-09-28T06:51:42Z] PAIR  K3_d7_u560_50M_s0 vs M2_const_u280_50M_s0 -> /home/kchey/FNAL-AI4QC-GRU/experiments/cosine_2026-09-27/K3_d7_u560_50M_s0_20260928T032655Z/seed0/mcnemar_vs_M2_const_u280_50M_s0.csv
+[cosine 2026-09-28T06:51:43Z] PLOT  loss_curves.png
+[cosine 2026-09-28T06:51:43Z] END   cosine queue finished
