@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-09-26 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL)
+# Last updated: 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -25,7 +25,18 @@ SEEDS="${SEEDS:-0 1 2}"
 NTRAIN="${NTRAIN:-10000000}"
 BATCH="${BATCH:-10000}"
 EPOCHS="${EPOCHS:-200}"
-LR="${LR:-0.003}"          # constant; passing --lr detaches the teacher LR schedule
+LR="${LR:-0.003}"          # start rate; passing --lr detaches the teacher LR schedule
+# LR_SCHEDULE=cosine decays the rate per update from LR to LR_END over all EPOCHS (no
+# warmup) and adds _cos<LR_END> to the tag. Default constant = as before.
+LR_SCHEDULE="${LR_SCHEDULE:-constant}"
+LR_END="${LR_END:-3e-5}"
+# GLOBAL_CLIPNORM=<v> passes Adam global_clipnorm=<v> (norm of all gradients together; the
+# per-update norms and clipped fraction are logged) and adds _gclip<v> to the tag.
+# Default empty = no clipping, as before.
+GLOBAL_CLIPNORM="${GLOBAL_CLIPNORM:-}"
+OPT=(--lr-schedule "$LR_SCHEDULE")
+[ "$LR_SCHEDULE" = "cosine" ] && OPT+=(--lr-end "$LR_END")
+[ -n "$GLOBAL_CLIPNORM" ] && OPT+=(--global-clipnorm "$GLOBAL_CLIPNORM")
 
 STUDENT="${STUDENT:-gru}"  # gru or mlp
 UNITS="${UNITS:-140}"      # GRU state width
@@ -269,6 +280,7 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "$GEOMETRY"
   echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=1.0 hard labels"
   echo "             : batch=$BATCH lr=$LR epochs=$EPOCHS early_stop=$EARLY_STOP"
+  echo "optimizer    : lr_schedule=$LR_SCHEDULE lr_end=$LR_END global_clipnorm=${GLOBAL_CLIPNORM:-none}"
   echo "gru layer    : reset_after=$RESET_AFTER unroll=$UNROLL"
   echo "tf32         : training $([ "$TRAIN_NO_TF32" = 1 ] && echo off || echo on), evaluation $([ "$EVAL_NO_TF32" = 1 ] && echo off || echo on)"
   echo "gpu cap      : ${GPU_MEM_MIB:-none} MiB per process"
@@ -333,6 +345,8 @@ run_seed () {
   [ -n "$EXTRA_POOL" ] && QTAG="${QTAG}_ext$(echo "${EXTRA_N:-all}" | tr ' ' '+')"
   [ "$RESET_AFTER" = "1" ] && QTAG="${QTAG}_ra1"
   [ "$UNROLL" = "1" ] && QTAG="${QTAG}_ur1"
+  [ "$LR_SCHEDULE" = "cosine" ] && QTAG="${QTAG}_cos${LR_END}"
+  [ -n "$GLOBAL_CLIPNORM" ] && QTAG="${QTAG}_gclip${GLOBAL_CLIPNORM}"
   local TAG="${STUDENT}_d${D}_p004_${SIZE}${QTAG}_hard_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
   local SEEDDIR="$OUT/seed${SEED}"
   local SRUNS="$SEEDDIR/runs"
@@ -359,7 +373,7 @@ run_seed () {
       --val-start "$VAL_START" --val-n "$VAL_N" \
       --eval-start "$EVAL_START" --n-test "$EVAL_N" \
       --alpha 1.0 --temperature 1.0 \
-      --batch-size "$BATCH" --lr "$LR" \
+      --batch-size "$BATCH" --lr "$LR" "${OPT[@]}" \
       --epochs "$EPOCHS" \
       --seed "$SEED" --require-determinism \
       --ckpt-dir "$SCKPT" --out-dir "$SRUNS" --tag "$TAG" --run-tag "$TAG"

@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last modified: 2026-09-26 (val-LER callback accepts a tf.data dataset)
+# Last modified: 2026-09-27 (cosine_lr_schedule, make_adam_logging_grad_norm)
 """Small shared helpers for the GRU pipeline.
 
 The first four functions are moved verbatim from the old repo's RCNN files so that no RCNN
@@ -56,6 +56,59 @@ def learning_rate_scheduler(epoch, lr):
     else:
         sched = lr * 0.65
     return max(sched, LR_FLOOR)
+
+
+def cosine_lr_schedule(tf, lr_start, lr_end, total_steps):
+    """Cosine decay of the learning rate from lr_start to lr_end over total_steps optimizer
+    updates, no warmup, updated every step (not every epoch):
+
+        lr(step) = lr_end + (lr_start - lr_end) * 0.5 * (1 + cos(pi * step / total_steps))
+
+    Keras' CosineDecay computes exactly this when alpha = lr_end / lr_start (its alpha is
+    the final rate as a fraction of the initial one). Steps past total_steps stay at lr_end.
+    Added for the 50M runs, whose training loss rose late in training at a constant 3e-3.
+    """
+    return tf.keras.optimizers.schedules.CosineDecay(
+        initial_learning_rate=lr_start, decay_steps=int(total_steps),
+        alpha=lr_end / lr_start)
+
+
+def make_adam_logging_grad_norm(tf, learning_rate, global_clipnorm, n_steps_total):
+    """Adam that records the global gradient norm of every update, before clipping.
+
+    The global norm is sqrt(sum over all weight tensors of sum(g**2)), the quantity Keras'
+    global_clipnorm compares with its threshold: if it exceeds global_clipnorm, every
+    gradient is scaled by global_clipnorm / norm (tf.clip_by_global_norm). With
+    global_clipnorm=None nothing is clipped and the norms are only recorded.
+
+    Returns (optimizer, stats). stats holds tf.Variables, kept outside the optimizer so they
+    are never saved with it:
+      norms      float32 (n_steps_total,)  norm of update i at index i (updates past
+                                          n_steps_total are counted but not stored)
+      n_updates  int64  updates so far
+      n_clipped  int64  updates whose norm exceeded global_clipnorm
+    """
+    stats = dict(norms=tf.Variable(tf.zeros([int(n_steps_total)], tf.float32), trainable=False),
+                 n_updates=tf.Variable(0, dtype=tf.int64, trainable=False),
+                 n_clipped=tf.Variable(0, dtype=tf.int64, trainable=False))
+    size = int(n_steps_total)
+
+    class AdamLoggingGradNorm(tf.keras.optimizers.Adam):
+        # Keras 2.15 calls _clip_gradients(grads) once per update inside apply_gradients,
+        # before the Adam step; the norm is taken here on the unclipped gradients.
+        def _clip_gradients(self, grads):
+            norm = tf.linalg.global_norm([g for g in grads if g is not None])
+            i = tf.cast(stats['n_updates'], tf.int32)
+            tf.cond(i < size,
+                    lambda: stats['norms'].scatter_nd_update([[i]], [norm]),
+                    lambda: stats['norms'])
+            stats['n_updates'].assign_add(1)
+            if global_clipnorm:
+                stats['n_clipped'].assign_add(tf.cast(norm > global_clipnorm, tf.int64))
+            return super()._clip_gradients(grads)
+
+    kw = {} if global_clipnorm is None else {'global_clipnorm': global_clipnorm}
+    return AdamLoggingGradNorm(learning_rate=learning_rate, **kw), stats
 
 
 def lookup_mwpm(data_dir, d, p, rounds):

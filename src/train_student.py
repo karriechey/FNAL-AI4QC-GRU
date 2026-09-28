@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-09-26 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool)
+# Last modified: 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -39,7 +39,8 @@ import os
 import time
 import numpy as np
 
-from helpers import set_seeds, learning_rate_scheduler, lookup_mwpm
+from helpers import (set_seeds, learning_rate_scheduler, lookup_mwpm, cosine_lr_schedule,
+                     make_adam_logging_grad_norm)
 from host_data import to_host_uint8, make_dataset  # reuse the recipe
 
 # Prefix on every log line; set to '[mlp]' or '[gru]' once args are parsed, so a saved log
@@ -434,6 +435,27 @@ def run():
                          'could destabilise the alpha=1 and alpha=0 arms asymmetrically. '
                          'Use this to pin an independent student LR before any sweep. '
                          'None => the teacher schedule (not recommended, unverified here).')
+    ap.add_argument('--lr-schedule', choices=['constant', 'cosine'], default='constant',
+                    help='with --lr: constant (default, as before) keeps --lr for every '
+                         'update; cosine decays it per optimizer update from --lr to '
+                         '--lr-end over all epochs x steps, no warmup '
+                         '(helpers.cosine_lr_schedule).')
+    ap.add_argument('--lr-end', type=float, default=3e-5,
+                    help='final learning rate of --lr-schedule cosine.')
+    ap.add_argument('--global-clipnorm', type=float, default=None,
+                    help='Adam global_clipnorm: when the global norm of all gradients of an '
+                         'update exceeds this value, all of them are scaled down together '
+                         'to it. Implies --log-grad-norm. Default None = no clipping, as '
+                         'before.')
+    ap.add_argument('--log-grad-norm', action='store_true',
+                    help='record the global gradient norm (before clipping) of every '
+                         'update; per epoch the median norm and the clipped fraction go '
+                         'into the history, and all norms into <tag>.grad_norms.npy with a '
+                         'summary in <tag>.grad_norms.json.')
+    ap.add_argument('--stop-after-steps', type=int, default=None,
+                    help='diagnostic: stop training after this many updates (the LR '
+                         'schedule is still laid out over the full --epochs). Used to '
+                         'measure gradient norms before choosing --global-clipnorm.')
     ap.add_argument('--tail-diagnostics', action='store_true',
                     help='evaluate the tail every epoch and log p_L, predicted-positive '
                          'rate vs base rate, a class-collapse flag, and the student logit '
@@ -716,8 +738,30 @@ def run():
                           weight_bits=args.weight_bits, act_bits=args.act_bits,
                           reset_after=args.reset_after, unroll=args.unroll)
     print(f"{LOG} reset_after={args.reset_after} unroll={args.unroll}", flush=True)
-    optimizer = (tf.keras.optimizers.Adam(learning_rate=args.lr) if args.lr is not None
-                 else 'adam')
+    # The learning rate is a constant, or a per-update cosine decay over every update of
+    # the run (steps per epoch x epochs). Gradient-norm logging and global clipping use a
+    # subclass of Adam (helpers.make_adam_logging_grad_norm); without them the optimizer is
+    # exactly the one built before.
+    lr_value = None
+    if args.lr is not None:
+        lr_value = (cosine_lr_schedule(tf, args.lr, args.lr_end, steps * args.epochs)
+                    if args.lr_schedule == 'cosine' else args.lr)
+    elif args.lr_schedule != 'constant':
+        raise SystemExit('--lr-schedule cosine needs --lr (the start rate)')
+    log_gn = args.log_grad_norm or args.global_clipnorm is not None
+    gn_stats = None
+    if log_gn:
+        if lr_value is None:
+            raise SystemExit('--log-grad-norm / --global-clipnorm need --lr')
+        optimizer, gn_stats = make_adam_logging_grad_norm(
+            tf, lr_value, args.global_clipnorm, steps * args.epochs)
+    else:
+        optimizer = (tf.keras.optimizers.Adam(learning_rate=lr_value)
+                     if lr_value is not None else 'adam')
+    print(f"{LOG} optimizer Adam lr={args.lr} schedule={args.lr_schedule}"
+          + (f" lr_end={args.lr_end} over {steps * args.epochs:,} updates"
+             if args.lr_schedule == 'cosine' else '')
+          + f" global_clipnorm={args.global_clipnorm} log_grad_norm={log_gn}", flush=True)
     model.compile(optimizer=optimizer,
                   loss=make_distillation_loss(args.alpha, args.temperature),
                   metrics=[make_hard_accuracy()])
@@ -727,6 +771,37 @@ def run():
     # With --lr the rate is constant and the teacher's scheduler is not attached; it would
     # overwrite the constant each epoch and turn an LR comparison into a schedule test.
     callbacks = []
+    if args.lr_schedule == 'cosine':
+        # Record the rate reached at the end of each epoch in the history (key 'lr').
+        # Runs before Keras' History callback, so the value lands in history.json.
+        def _log_lr(epoch, logs):
+            logs['lr'] = float(lr_value(optimizer.iterations))
+        callbacks.append(tf.keras.callbacks.LambdaCallback(on_epoch_end=_log_lr))
+    if gn_stats is not None:
+        # Per epoch: median global gradient norm of the epoch's updates, and the fraction
+        # of updates clipped in this epoch and since the start. The printed line is what
+        # the queue driver watches ("clipped ... cumulative <fraction>").
+        gn_prev = {'updates': 0, 'clipped': 0}
+
+        def _log_gn(epoch, logs):
+            n = int(gn_stats['n_updates'].numpy())
+            c = int(gn_stats['n_clipped'].numpy())
+            dn, dc = n - gn_prev['updates'], c - gn_prev['clipped']
+            stored = gn_stats['norms'].numpy()
+            norms = stored[gn_prev['updates']:min(n, len(stored))]
+            logs['grad_norm_median'] = float(np.median(norms)) if len(norms) else float('nan')
+            logs['clip_frac'] = dc / dn if dn else 0.0
+            logs['clip_frac_cum'] = c / n if n else 0.0
+            print(f"{LOG} epoch {epoch + 1}: global grad norm median {logs['grad_norm_median']:.4g}; "
+                  f"clipped {dc:,}/{dn:,} updates ({logs['clip_frac']:.4f}), "
+                  f"cumulative {logs['clip_frac_cum']:.4f}", flush=True)
+            gn_prev['updates'], gn_prev['clipped'] = n, c
+        callbacks.append(tf.keras.callbacks.LambdaCallback(on_epoch_end=_log_gn))
+    if args.stop_after_steps:
+        def _stop(batch, logs):
+            if int(optimizer.iterations.numpy()) >= args.stop_after_steps:
+                model.stop_training = True
+        callbacks.append(tf.keras.callbacks.LambdaCallback(on_train_batch_end=_stop))
     if args.lr is None:
         callbacks.append(tf.keras.callbacks.LearningRateScheduler(learning_rate_scheduler))
     if args.tail_diagnostics:
@@ -794,6 +869,21 @@ def run():
                          validation_split=args.val_split)
     train_time = time.time() - t0
     epochs_ran = len(hist.history['loss'])
+    if gn_stats is not None and args.out_dir:
+        # Every update's global gradient norm (before clipping), and a summary.
+        n = int(gn_stats['n_updates'].numpy())
+        norms = gn_stats['norms'].numpy()[:n]
+        base = os.path.join(args.out_dir, (args.tag or 'run') + '.grad_norms')
+        os.makedirs(args.out_dir, exist_ok=True)
+        np.save(base + '.npy', norms)
+        q = [0, 1, 5, 25, 50, 75, 95, 99, 100]
+        with open(base + '.json', 'w') as fh:
+            json.dump(dict(n_updates=n, n_clipped=int(gn_stats['n_clipped'].numpy()),
+                           global_clipnorm=args.global_clipnorm,
+                           percentiles={str(k): float(v) for k, v in
+                                        zip(q, np.percentile(norms, q))} if n else {}),
+                      fh, indent=1)
+        print(f"{LOG} gradient norms of {n:,} updates -> {base}.npy/.json", flush=True)
     best_val = float(min(hist.history['val_loss']))
 
     # --- score on the tail ----------------------------------------------------------
@@ -862,7 +952,9 @@ def run():
               f"{tag}.superseded_{stamp}.*", flush=True)
 
     fields = ['architecture', 'student', 'inputs', 'd', 'p', 'rounds', 'seed', 'n_train',
-              'n_test', 'alpha', 'temperature', 'lr', 'weight_bits', 'act_bits',
+              'n_test', 'alpha', 'temperature', 'lr', 'lr_schedule', 'lr_end', 'global_clipnorm',
+              'clip_frac',
+              'weight_bits', 'act_bits',
               # architecture size, so a row is interpretable without parsing its tag
               'hidden', 'units', 'n_params', 'reset_after', 'unroll', 'tf32',
               'epochs', 'epochs_ran', 'batch_size', 'p_L', 'mwpm_p_L', 'ratio_vs_mwpm',
@@ -880,6 +972,12 @@ def run():
             d=d, p=p, rounds=r, seed=seed, n_train=ntr, n_test=nte,
             alpha=args.alpha, temperature=args.temperature,
             lr=('teacher_schedule' if args.lr is None else args.lr),
+            lr_schedule=args.lr_schedule,
+            lr_end=(args.lr_end if args.lr_schedule == 'cosine' else ''),
+            global_clipnorm=('' if args.global_clipnorm is None else args.global_clipnorm),
+            clip_frac=('' if gn_stats is None or not int(gn_stats['n_updates'].numpy())
+                       else round(int(gn_stats['n_clipped'].numpy())
+                                  / int(gn_stats['n_updates'].numpy()), 6)),
             weight_bits=('' if args.weight_bits is None else args.weight_bits),
             act_bits=('' if args.act_bits is None else args.act_bits),
             hidden='-'.join(str(h) for h in args.hidden) if args.hidden else '',
