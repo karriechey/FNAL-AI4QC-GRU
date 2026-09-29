@@ -1,0 +1,2 @@
+a_name,b_name,a_dump,b_dump,n_shared,p_L_a,p_L_b,ratio_b_over_a,both_right,b_only,a_only,both_wrong,n_discordant,net_b_wins,mcnemar_chi2_cc,p_chi2,p_exact
+L2_d5_u140_20M_s0,control_const_d5_u140_20M_s0,per_shot_gru_d5_p004_u140_ext5000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.npz,per_shot_gru_d5_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.npz,1800000,0.007095,0.007106,1.0015,1784150,3060,3079,9711,6139,-19,0.053,0.8182991251769386,0.8183014212404898

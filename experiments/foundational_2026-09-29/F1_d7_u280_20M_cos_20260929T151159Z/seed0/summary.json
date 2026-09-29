@@ -1,0 +1,22 @@
+{
+ "run": "F1_d7_u280_20M_cos_20260929T151159Z",
+ "params": 276641,
+ "p_L": 0.008298,
+ "mwpm_p_L": 0.004291,
+ "ratio": 1.9338,
+ "best_epoch": 44,
+ "epochs": 80,
+ "best_val_loss": 0.0267,
+ "best_val_ler": 0.00841,
+ "best_train_loss": 0.01223,
+ "final_train_loss": 0.00375,
+ "final_val_loss": 0.0455,
+ "min_val_loss_epoch": 34,
+ "start": "2026-09-29T15:12:22Z",
+ "end": "2026-09-29T16:33:52Z",
+ "runtime_h": 1.36,
+ "peak_host_gb": 40.8,
+ "peak_gpu_mib": 1652,
+ "gpu_pid": "1081996",
+ "gpu_pid_source": "given"
+}

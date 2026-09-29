@@ -1,0 +1,22 @@
+{
+ "run": "F2_d7_u70_20M_20260929T152119Z",
+ "params": 25061,
+ "p_L": 0.015489,
+ "mwpm_p_L": 0.004291,
+ "ratio": 3.6097,
+ "best_epoch": 99,
+ "epochs": 100,
+ "best_val_loss": 0.04097,
+ "best_val_ler": 0.015505,
+ "best_train_loss": 0.04123,
+ "final_train_loss": 0.0411,
+ "final_val_loss": 0.0412,
+ "min_val_loss_epoch": 99,
+ "start": "2026-09-29T15:21:46Z",
+ "end": "2026-09-29T17:01:45Z",
+ "runtime_h": 1.67,
+ "peak_host_gb": 40.6,
+ "peak_gpu_mib": 888,
+ "gpu_pid": "1086600",
+ "gpu_pid_source": "given"
+}
