@@ -8,23 +8,26 @@
 #   A  : 4 epochs straight through
 #   B1 : 2 epochs;  B2 : B1 resumed to 4 epochs
 #
-# Small d5 GRU (u32), 200k training shots, batch 10,000, determinism on, GPU. PASS when
+# Small d5 GRU (u32), 200k training shots, batch 10,000, determinism on. DEVICE=gpu (default)
+# or DEVICE=cpu. PASS when
 # A and B2 have identical per-epoch history, identical final weights and optimizer state,
 # and the same best-checkpoint record.
 #
 #     bash tests/resume_exactness.sh      (from the repo root, on the GPU host)
 set -uo pipefail
 REPO="$HOME/FNAL-AI4QC-GRU"
-O="$REPO/experiments/resume_exactness/$(date -u +%Y%m%dT%H%M%SZ)"; mkdir -p "$O"
+DEVICE="${DEVICE:-gpu}"
+O="$REPO/experiments/resume_exactness/$(date -u +%Y%m%dT%H%M%SZ)_$DEVICE"; mkdir -p "$O"
+if [ "$DEVICE" = cpu ]; then DEV=(-e CUDA_VISIBLE_DEVICES=); GPUFLAG=""; else DEV=(--device nvidia.com/gpu=all); GPUFLAG="--gpu-mem-mib 1600"; fi
 P5="$HOME/pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz"
 T=t
 COMMON="--student gru --inputs evts --hidden --units 32 --d 5 --p 0.004 --rounds 5 --pool $P5 \
  --n-train 200000 --val-start 15000000 --val-n 20000 --eval-start 15200000 --n-test 20000 \
  --alpha 1.0 --temperature 1.0 --batch-size 10000 --lr 0.003 --lr-schedule constant \
- --no-early-stopping --seed 0 --require-determinism --gpu-mem-mib 1600 --tag $T --run-tag $T"
+ --no-early-stopping --seed 0 --require-determinism $GPUFLAG --tag $T --run-tag $T"
 run () {  # run <name> <extra args...>
   local n="$1"; shift
-  podman run --rm --security-opt=label=disable --device nvidia.com/gpu=all -v "$HOME:$HOME" \
+  podman run --rm --security-opt=label=disable "${DEV[@]}" -v "$HOME:$HOME" \
     -e HOME="$HOME" -e TF_DETERMINISTIC_OPS=1 -e TF_CUDNN_DETERMINISTIC=1 -w "$REPO/src" qdec:tf215 \
     python3 train_student.py $COMMON --ckpt-dir "$O/$n/ckpt" --out-dir "$O/$n/runs" "$@" \
     > "$O/$n.log" 2>&1
