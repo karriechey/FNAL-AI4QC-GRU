@@ -2,14 +2,18 @@
 # Created: 2026-09-29
 # Last updated: 2026-09-29
 #
-# Two-slot replacement for driver.sh (same queue, same settings, same per-run outputs).
+# Slot-based replacement for driver.sh (same queue, same settings, same per-run outputs).
+# 2026-09-29 ~15:45Z: the shared GPU was freed (the other user's server stopped), so the
+# job limit became a setting (MAX_JOBS, default 2) and the driver adopts every running
+# fd_* job of this queue and skips queue entries that already have a folder. Restarted
+# with MAX_JOBS=5 so F3-F5 run next to F1 and F2.
 # driver.sh ran one job at a time; at ~16:00Z on 2026-09-29 it was stopped while F1 was
 # training (F1's container kept running untouched) and this driver took over:
 #
 #   - it adopts the running F1 (clip check, DONE/FAIL line, summary.json when it ends;
 #     F1's exit_code is not available because its podman process belonged to driver.sh)
 #   - it starts F2 -> F3 -> F4 -> F5 in that order as slots free up
-#   - at most 2 training jobs at a time; never a third
+#   - at most MAX_JOBS training jobs at a time
 #   - a job starts only if host memory available >= 150 GB and free GPU memory is
 #     >= 2,500 MiB when another job is running (>= 2,000 MiB when none is); otherwise it
 #     waits
@@ -32,15 +36,15 @@ CAP=1600
 NEED_FREE_ALONE=2000
 NEED_FREE_SECOND=2500
 NEED_HOST_GB=150
-MAX_JOBS=2
+MAX_JOBS="${MAX_JOBS:-2}"
 GCLIP=0.64
 CLIP_LIMIT=0.05
 P7="$HOME/pools_d7_p004_19M/data_d7_p0.004_r7"
 
-# driver.sh's lock stays held by F1's podman process (it inherited the descriptor), so this
-# driver uses its own lock.
-exec 9> "$DIR/driver2.lock"
-flock -n 9 || { echo "[foundational $(date -u '+%Y-%m-%dT%H:%M:%SZ')] another driver2 holds driver2.lock; exiting" >> "$LOG"; exit 1; }
+# Earlier locks (driver.lock, driver2.lock) stay held by podman processes that inherited
+# the descriptor, so this driver uses driver2b.lock and closes it for every podman it starts.
+exec 9> "$DIR/driver2b.lock"
+flock -n 9 || { echo "[foundational $(date -u '+%Y-%m-%dT%H:%M:%SZ')] another driver2 holds driver2b.lock; exiting" >> "$LOG"; exit 1; }
 
 log () { echo "[foundational $(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*" | tee -a "$LOG"; }
 free_mib () { nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits | head -1; }
@@ -78,7 +82,7 @@ launch () {   # launch <name> <units> <lr> <epochs> <schedule>
   log "START $name d=7 units=$U lr=$LRV schedule=$SCH epochs=$EP -> $OUT (free GPU $(free_mib) MiB, host available $(host_avail_gb) GB, jobs running ${#PID[@]})"
   podman run --rm --name "fd_$name" --security-opt=label=disable --device nvidia.com/gpu=all \
      -v "$HOME:$HOME" -e HOME="$HOME" -w "$REPO/src" "$IMG" \
-     env "${ENVX[@]}" bash gh200_run_student_scaling.sh > "$OUT/podman.log" 2>&1 &
+     env "${ENVX[@]}" bash gh200_run_student_scaling.sh > "$OUT/podman.log" 2>&1 9>&- &
   PID[$name]=$!; OUTD[$name]=$OUT; SCHED[$name]=$SCH
   for i in $(seq 1 60); do running "fd_$name" && break; sleep 5; done
 }
@@ -116,18 +120,20 @@ finalize () {  # finalize <name>: exit code, DONE/FAIL line, summary
   unset "PID[$name]" "OUTD[$name]" "SCHED[$name]"
 }
 
-log "BEGIN driver2 (two slots) pid=$$ repo=$(git -C "$REPO" rev-parse --short HEAD) free GPU $(free_mib) MiB host available $(host_avail_gb) GB"
-if running fd_F1_d7_u280_20M_cos; then
-  PID[F1_d7_u280_20M_cos]=adopted
-  OUTD[F1_d7_u280_20M_cos]=$(ls -d "$DIR"/F1_d7_u280_20M_cos_*/ | head -1 | sed 's:/$::')
-  SCHED[F1_d7_u280_20M_cos]=cosine
-  log "ADOPT F1_d7_u280_20M_cos running -> ${OUTD[F1_d7_u280_20M_cos]}"
-else
-  log "WARN  F1 container not running at driver2 start"
-fi
+log "BEGIN driver2 (MAX_JOBS=$MAX_JOBS) pid=$$ repo=$(git -C "$REPO" rev-parse --short HEAD) free GPU $(free_mib) MiB host available $(host_avail_gb) GB"
+# Adopt every running job of this queue (its podman process belongs to an earlier driver).
+for c in $(podman ps --format '{{.Names}}' | grep '^fd_F'); do
+  name=${c#fd_}
+  PID[$name]=adopted
+  OUTD[$name]=$(ls -d "$DIR/${name}"_2*/ | tail -1 | sed 's:/$::')
+  case "$name" in *_cos) SCHED[$name]=cosine ;; *) SCHED[$name]=constant ;; esac
+  log "ADOPT $name running -> ${OUTD[$name]}"
+done
 
 NEXT=0
 while :; do
+  # skip queue entries that already have a run folder (started by an earlier driver)
+  while [ "$NEXT" -lt "${#QUEUE[@]}" ] && ls -d "$DIR/${QUEUE[$NEXT]%% *}"_2* >/dev/null 2>&1; do NEXT=$((NEXT + 1)); done
   sample_resources
   for name in "${!PID[@]}"; do
     if alive "$name"; then clip_check "$name"; else sleep 5; finalize "$name"; fi
@@ -137,6 +143,7 @@ while :; do
     fm=$(free_mib); hg=$(host_avail_gb)
     if [ "$fm" -ge "$need" ] && [ "$hg" -ge "$NEED_HOST_GB" ]; then
       launch ${QUEUE[$NEXT]}; NEXT=$((NEXT + 1))
+      sleep 60   # let the new job allocate before the next free-memory check
     elif [ "${WAITLOGGED:-}" != "$NEXT" ]; then
       log "WAIT  next job needs free GPU >= $need MiB (now $fm) and host >= $NEED_HOST_GB GB (now $hg)"; WAITLOGGED=$NEXT
     fi
