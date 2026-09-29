@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -456,6 +456,22 @@ def run():
                     help='diagnostic: stop training after this many updates (the LR '
                          'schedule is still laid out over the full --epochs). Used to '
                          'measure gradient norms before choosing --global-clipnorm.')
+    # Resume: continue a finished run from its last epoch to a larger --epochs. The model and
+    # the Adam state (moments and update count) come from the run's .lastepoch.weights.h5;
+    # the per-epoch shuffle is advanced past the epochs already done, so the resumed
+    # epochs see the same data order an uninterrupted run would have.
+    ap.add_argument('--resume-weights', default=None,
+                    help='a .lastepoch.weights.h5 written by an earlier run (model + optimizer '
+                         'state); training continues from it. Needs --initial-epoch.')
+    ap.add_argument('--initial-epoch', type=int, default=0,
+                    help='number of epochs already done by the run being resumed')
+    ap.add_argument('--resume-best-json', default=None,
+                    help='the earlier run\'s .best.json: the val-LER checkpoint starts from that '
+                         'best, so a resumed epoch replaces it only if it is better. The '
+                         'earlier .best.keras/.best.weights.h5 must already be in --ckpt-dir.')
+    ap.add_argument('--resume-history', default=None,
+                    help='the earlier run\'s .history.json; written history = earlier epochs + '
+                         'resumed epochs')
     ap.add_argument('--tail-diagnostics', action='store_true',
                     help='evaluate the tail every epoch and log p_L, predicted-positive '
                          'rate vs base rate, a class-collapse flag, and the student logit '
@@ -767,6 +783,19 @@ def run():
                   metrics=[make_hard_accuracy()])
     n_params = int(model.count_params())
     print(f"{LOG} {args.student} inputs={args.inputs} params={n_params:,}", flush=True)
+    if args.resume_weights:
+        if args.initial_epoch <= 0:
+            raise SystemExit(f"{LOG} --resume-weights needs --initial-epoch > 0")
+        # The optimizer's variables must exist before its saved state can be loaded into
+        # them; a .weights.h5 from model.save_weights holds both the model and the optimizer.
+        model.optimizer.build(model.trainable_variables)
+        model.load_weights(args.resume_weights)
+        it = int(model.optimizer.iterations.numpy())
+        print(f"{LOG} resumed from {args.resume_weights}: optimizer update count {it:,} "
+              f"(expected {steps * args.initial_epoch:,} = {steps} x {args.initial_epoch})", flush=True)
+        if it != steps * args.initial_epoch:
+            raise SystemExit(f"{LOG} optimizer state not restored: update count {it} != "
+                             f"{steps * args.initial_epoch}. STOP.")
 
     # With --lr the rate is constant and the teacher's scheduler is not attached; it would
     # overwrite the constant each epoch and turn an LR comparison into a schedule test.
@@ -831,7 +860,8 @@ def run():
             from helpers import make_val_ler_checkpoint
             callbacks.insert(0, make_val_ler_checkpoint(
                 tf, make_dataset(tf, x_va, None, args.batch_size), f_va, _ck,
-                args.batch_size, LOG))
+                args.batch_size, LOG, previous_best=(json.load(open(args.resume_best_json))
+                                                     if args.resume_best_json else None)))
             print(f"{LOG} checkpoints -> {_ck}.best.keras + .best.weights.h5 "
                   f"(lowest val LER, tiebreak val_loss; epoch in {_ck}.best.json) and "
                   f"{_ck}.lastepoch.weights.h5", flush=True)
@@ -856,11 +886,19 @@ def run():
         # order differs from Keras' numpy shuffle, so runs are not bit-for-bit comparable
         # with runs from the old pipeline.
         train_ds = make_dataset(tf, x_tr, y_tr, args.batch_size, shuffle_seed=seed)
+        if args.initial_epoch:
+            # Keras opens one iterator of train_ds per epoch, and each new iterator draws
+            # the next shuffle order. Opening (and closing) one iterator per epoch already
+            # done moves the order forward to where an uninterrupted run would be.
+            for _ in range(args.initial_epoch):
+                _it = iter(train_ds)
+                del _it
+            print(f"{LOG} shuffle order advanced past {args.initial_epoch} epochs", flush=True)
         val_ds = make_dataset(tf, x_va, y_va, args.batch_size)
         print(f"{LOG} input: host-memory uint8 tf.data, shuffle seed {seed}, "
               f"batch {args.batch_size}, prefetch to GPU", flush=True)
         hist = model.fit(train_ds, epochs=args.epochs, verbose=2, callbacks=callbacks,
-                         validation_data=val_ds)
+                         validation_data=val_ds, initial_epoch=args.initial_epoch)
     else:
         # validation_split mode (no explicit val block) cannot split a tf.data pipeline;
         # it keeps the old numpy path. Not used by the launchers.
@@ -992,8 +1030,16 @@ def run():
             ambiguous_band=f'{args.ambiguous_band[0]}-{args.ambiguous_band[1]}',
             best_val_loss=round(best_val, 5), train_time_s=round(train_time, 1),
             **ag, **prov))
+    hist_out = {k2: [float(x) for x in v] for k2, v in hist.history.items()}
+    if args.resume_history:
+        # Earlier epochs first, then the resumed ones, so the file covers the whole run.
+        prev = json.load(open(args.resume_history))
+        if len(prev['val_loss']) != args.initial_epoch:
+            raise SystemExit(f"{LOG} --resume-history has {len(prev['val_loss'])} epochs, "
+                             f"--initial-epoch is {args.initial_epoch}. STOP.")
+        hist_out = {k2: list(prev.get(k2, [])) + v for k2, v in hist_out.items()}
     with open(os.path.join(args.out_dir, tag + '.history.json'), 'w') as hf:
-        json.dump({k2: [float(x) for x in v] for k2, v in hist.history.items()}, hf)
+        json.dump(hist_out, hf)
     wpath = os.path.join(args.out_dir, tag + '.weights.h5')
     model.save_weights(wpath)
 

@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last modified: 2026-09-27 (cosine_lr_schedule, make_adam_logging_grad_norm)
+# Last modified: 2026-09-29 (make_val_ler_checkpoint: previous_best for resumed runs). Earlier 2026-09-27 (cosine_lr_schedule, make_adam_logging_grad_norm)
 """Small shared helpers for the GRU pipeline.
 
 The first four functions are moved verbatim from the old repo's RCNN files so that no RCNN
@@ -204,7 +204,8 @@ def assert_deterministic_env():
 # ---------------------------------------------------------------------------------------
 # New: checkpoint selection by validation LER
 # ---------------------------------------------------------------------------------------
-def make_val_ler_checkpoint(tf, x_val, flips_val, ckpt_prefix, batch_size, log_prefix=''):
+def make_val_ler_checkpoint(tf, x_val, flips_val, ckpt_prefix, batch_size, log_prefix='',
+                            previous_best=None):
     """Build a Keras callback that selects the checkpoint by validation LER.
 
     Every epoch it predicts the whole validation block, counts logical errors with the
@@ -220,6 +221,10 @@ def make_val_ler_checkpoint(tf, x_val, flips_val, ckpt_prefix, batch_size, log_p
         <ckpt_prefix>.best.weights.h5   weights only, for the existing eval scripts
         <ckpt_prefix>.best.json         chosen epoch, val LER, error count, val size, val loss
 
+    previous_best: the .best.json of the run being resumed. The callback then starts from
+    that best (errors, val_loss, epoch), so a resumed epoch replaces the saved checkpoint
+    only if it is better, exactly as in an uninterrupted run.
+
     The callback must be given the validation block only. It never sees the evaluation
     block or the sealed partition; the caller chooses the arrays.
     """
@@ -232,6 +237,12 @@ def make_val_ler_checkpoint(tf, x_val, flips_val, ckpt_prefix, batch_size, log_p
             self.best_errors = None
             self.best_val_loss = None
             self.best_epoch = None      # 1-based, to match the printed epoch numbers
+            if previous_best is not None:
+                if int(previous_best['val_n']) != n_val:
+                    raise ValueError('previous_best was scored on a different validation size')
+                self.best_errors = int(previous_best['val_errors'])
+                self.best_val_loss = float(previous_best['val_loss'])
+                self.best_epoch = int(previous_best['best_epoch'])
 
         def on_epoch_end(self, epoch, logs=None):
             logs = logs if logs is not None else {}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -34,6 +34,13 @@ LR_END="${LR_END:-3e-5}"
 # per-update norms and clipped fraction are logged) and adds _gclip<v> to the tag.
 # Default empty = no clipping, as before.
 GLOBAL_CLIPNORM="${GLOBAL_CLIPNORM:-}"
+# Resume (2026-09-29): RESUME_WEIGHTS=<.lastepoch.weights.h5> INITIAL_EPOCH=<n>
+# RESUME_BEST_JSON=<.best.json> RESUME_HISTORY=<.history.json> continue a finished run to
+# EPOCHS in a new OUT; the earlier best checkpoint must already be copied into OUT's ckpt/.
+RESUME_WEIGHTS="${RESUME_WEIGHTS:-}"
+INITIAL_EPOCH="${INITIAL_EPOCH:-0}"
+RESUME_BEST_JSON="${RESUME_BEST_JSON:-}"
+RESUME_HISTORY="${RESUME_HISTORY:-}"
 OPT=(--lr-schedule "$LR_SCHEDULE")
 [ "$LR_SCHEDULE" = "cosine" ] && OPT+=(--lr-end "$LR_END")
 [ -n "$GLOBAL_CLIPNORM" ] && OPT+=(--global-clipnorm "$GLOBAL_CLIPNORM")
@@ -321,6 +328,12 @@ TRAIN_ONLY=()
 if [ -n "$EXTRA_POOL" ]; then
   TRAIN_ONLY+=(--extra-train-pool "${EXTRA_POOLS[@]}")
   [ -n "$EXTRA_N" ] && TRAIN_ONLY+=(--extra-train-n "${EXTRA_NS[@]}")
+fi
+
+if [ -n "$RESUME_WEIGHTS" ]; then
+  TRAIN_ONLY+=(--resume-weights "$RESUME_WEIGHTS" --initial-epoch "$INITIAL_EPOCH")
+  [ -n "$RESUME_BEST_JSON" ] && TRAIN_ONLY+=(--resume-best-json "$RESUME_BEST_JSON")
+  [ -n "$RESUME_HISTORY" ] && TRAIN_ONLY+=(--resume-history "$RESUME_HISTORY")
 fi
 
 if [ -n "$W_BITS" ]; then ARCH+=(--weight-bits "$W_BITS"); fi
