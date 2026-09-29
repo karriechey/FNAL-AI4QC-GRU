@@ -138,7 +138,7 @@ while :; do
   # skip queue entries that already have a run folder
   while [ "$NEXT" -lt "${#QUEUE[@]}" ] && ls -d "$DIR/${QUEUE[$NEXT]%% *}"_2* >/dev/null 2>&1; do NEXT=$((NEXT + 1)); done
   sample_resources
-  for name in "${!PID[@]}"; do
+  for name in ${PID[@]+"${!PID[@]}"}; do  # empty table is "unbound" under set -u
     if alive "$name"; then clip_check "$name"; else sleep 5; finalize "$name"; fi
   done
   if [ "$NEXT" -lt "${#QUEUE[@]}" ] && [ "${#PID[@]}" -lt "$MAX_JOBS" ]; then
