@@ -1,0 +1,350 @@
+=============== d=7 r=7 seed 0  (gru_d7_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000) ===============
+train        : [0, 15000000)
+validation   : [15000000, 15200000)
+evaluation   : [15200000, 17000000)
+sealed test  : [17000000, 19000000)   not read
+pool         : /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz
+pool prov    : gen_seed=42 flips_sha=b49fbe40786da9e62b84ffb2c1937e17855f798b3d7edb1917d0d165880b166e n_total=19000000
+2026-09-29T18:00:03Z start
+[env] TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1 present before import
+[gru] tf32=on (TensorFlow default)
+[gpu] per-process limit 1600 MiB on 1 device(s)
+[gru] TF 2.15.0  GPUs: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+[gru] hard-label control arm: teacher column unused (alpha=1).
+[gru] extra pool gen_seed=43 flips_sha=83122704a44ae6b5
+[gru] training set extended by 5,000,000 shots from data_d7_p0.004_r7_TRAINONLY_seed43.npz; total 20,000,000
+[gru] provenance: pool=pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz flips_sha= teacher_sha= code_sha=f7b7080b3dfcba0b
+[gru] scoring shots [15,200,000, 17,000,000)
+[gru] partitions: train [0, 15,000,000) of the primary pool + 5,000,000 augmentation shots  validation [15,000,000, 15,200,000)  (validation_split disabled)
+[gru] 2000 steps/epoch x 200 epochs = 400,000 optimizer updates
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+[gru] reset_after=False unroll=False
+[gru] optimizer Adam lr=0.0003 schedule=constant global_clipnorm=None log_grad_norm=False
+[gru] gru inputs=evts params=79,521
+[gru] resumed from /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F4_d7_u140_20M_lr3e-4_resume200_20260929T175938Z/resume_from/gru_d7_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.lastepoch.weights.h5: optimizer update count 200,000 (expected 200,000 = 2000 x 100)
+[gru] checkpoints -> /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F4_d7_u140_20M_lr3e-4_resume200_20260929T175938Z/seed0/ckpt/gru_d7_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.best.keras + .best.weights.h5 (lowest val LER, tiebreak val_loss; epoch in /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F4_d7_u140_20M_lr3e-4_resume200_20260929T175938Z/seed0/ckpt/gru_d7_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.best.json) and /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F4_d7_u140_20M_lr3e-4_resume200_20260929T175938Z/seed0/ckpt/gru_d7_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.lastepoch.weights.h5
+[gru] callback order: ['ValLERCheckpoint', '_SaveLastEpoch']
+[gru] shuffle order advanced past 100 epochs
+[gru] input: host-memory uint8 tf.data, shuffle seed 0, batch 10000, prefetch to GPU
+Epoch 101/200
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790705009.475042    1084 device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+[gru] epoch 101: val_loss=0.04503 val_ler=0.016965 (3,393/200,000 errors)  <- new best
+2000/2000 - 73s - loss: 0.0420 - hard_accuracy: 0.9844 - val_loss: 0.0450 - val_hard_accuracy: 0.9830 - val_ler: 0.0170 - val_errors: 3393.0000 - 73s/epoch - 36ms/step
+Epoch 102/200
+[gru] epoch 102: val_loss=0.04486 val_ler=0.016835 (3,367/200,000 errors)  <- new best
+2000/2000 - 56s - loss: 0.0418 - hard_accuracy: 0.9845 - val_loss: 0.0449 - val_hard_accuracy: 0.9832 - val_ler: 0.0168 - val_errors: 3367.0000 - 56s/epoch - 28ms/step
+Epoch 103/200
+[gru] epoch 103: val_loss=0.04459 val_ler=0.017045 (3,409/200,000 errors)
+2000/2000 - 57s - loss: 0.0416 - hard_accuracy: 0.9845 - val_loss: 0.0446 - val_hard_accuracy: 0.9830 - val_ler: 0.0170 - val_errors: 3409.0000 - 57s/epoch - 28ms/step
+Epoch 104/200
+[gru] epoch 104: val_loss=0.04470 val_ler=0.016935 (3,387/200,000 errors)
+2000/2000 - 57s - loss: 0.0415 - hard_accuracy: 0.9846 - val_loss: 0.0447 - val_hard_accuracy: 0.9831 - val_ler: 0.0169 - val_errors: 3387.0000 - 57s/epoch - 28ms/step
+Epoch 105/200
+[gru] epoch 105: val_loss=0.04439 val_ler=0.016795 (3,359/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0413 - hard_accuracy: 0.9846 - val_loss: 0.0444 - val_hard_accuracy: 0.9832 - val_ler: 0.0168 - val_errors: 3359.0000 - 57s/epoch - 28ms/step
+Epoch 106/200
+[gru] epoch 106: val_loss=0.04411 val_ler=0.016680 (3,336/200,000 errors)  <- new best
+2000/2000 - 58s - loss: 0.0411 - hard_accuracy: 0.9847 - val_loss: 0.0441 - val_hard_accuracy: 0.9833 - val_ler: 0.0167 - val_errors: 3336.0000 - 58s/epoch - 29ms/step
+Epoch 107/200
+[gru] epoch 107: val_loss=0.04412 val_ler=0.016775 (3,355/200,000 errors)
+2000/2000 - 57s - loss: 0.0410 - hard_accuracy: 0.9848 - val_loss: 0.0441 - val_hard_accuracy: 0.9832 - val_ler: 0.0168 - val_errors: 3355.0000 - 57s/epoch - 29ms/step
+Epoch 108/200
+[gru] epoch 108: val_loss=0.04380 val_ler=0.016815 (3,363/200,000 errors)
+2000/2000 - 57s - loss: 0.0408 - hard_accuracy: 0.9848 - val_loss: 0.0438 - val_hard_accuracy: 0.9832 - val_ler: 0.0168 - val_errors: 3363.0000 - 57s/epoch - 28ms/step
+Epoch 109/200
+[gru] epoch 109: val_loss=0.04411 val_ler=0.016805 (3,361/200,000 errors)
+2000/2000 - 57s - loss: 0.0407 - hard_accuracy: 0.9849 - val_loss: 0.0441 - val_hard_accuracy: 0.9832 - val_ler: 0.0168 - val_errors: 3361.0000 - 57s/epoch - 28ms/step
+Epoch 110/200
+[gru] epoch 110: val_loss=0.04365 val_ler=0.016440 (3,288/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0405 - hard_accuracy: 0.9849 - val_loss: 0.0437 - val_hard_accuracy: 0.9836 - val_ler: 0.0164 - val_errors: 3288.0000 - 57s/epoch - 29ms/step
+Epoch 111/200
+[gru] epoch 111: val_loss=0.04419 val_ler=0.016830 (3,366/200,000 errors)
+2000/2000 - 57s - loss: 0.0404 - hard_accuracy: 0.9850 - val_loss: 0.0442 - val_hard_accuracy: 0.9832 - val_ler: 0.0168 - val_errors: 3366.0000 - 57s/epoch - 28ms/step
+Epoch 112/200
+[gru] epoch 112: val_loss=0.04327 val_ler=0.016620 (3,324/200,000 errors)
+2000/2000 - 58s - loss: 0.0403 - hard_accuracy: 0.9850 - val_loss: 0.0433 - val_hard_accuracy: 0.9834 - val_ler: 0.0166 - val_errors: 3324.0000 - 58s/epoch - 29ms/step
+Epoch 113/200
+[gru] epoch 113: val_loss=0.04310 val_ler=0.016370 (3,274/200,000 errors)  <- new best
+2000/2000 - 58s - loss: 0.0401 - hard_accuracy: 0.9851 - val_loss: 0.0431 - val_hard_accuracy: 0.9836 - val_ler: 0.0164 - val_errors: 3274.0000 - 58s/epoch - 29ms/step
+Epoch 114/200
+[gru] epoch 114: val_loss=0.04400 val_ler=0.016585 (3,317/200,000 errors)
+2000/2000 - 57s - loss: 0.0400 - hard_accuracy: 0.9851 - val_loss: 0.0440 - val_hard_accuracy: 0.9834 - val_ler: 0.0166 - val_errors: 3317.0000 - 57s/epoch - 28ms/step
+Epoch 115/200
+[gru] epoch 115: val_loss=0.04338 val_ler=0.016375 (3,275/200,000 errors)
+2000/2000 - 57s - loss: 0.0399 - hard_accuracy: 0.9852 - val_loss: 0.0434 - val_hard_accuracy: 0.9836 - val_ler: 0.0164 - val_errors: 3275.0000 - 57s/epoch - 28ms/step
+Epoch 116/200
+[gru] epoch 116: val_loss=0.04304 val_ler=0.016230 (3,246/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0397 - hard_accuracy: 0.9852 - val_loss: 0.0430 - val_hard_accuracy: 0.9838 - val_ler: 0.0162 - val_errors: 3246.0000 - 57s/epoch - 28ms/step
+Epoch 117/200
+[gru] epoch 117: val_loss=0.04291 val_ler=0.016330 (3,266/200,000 errors)
+2000/2000 - 57s - loss: 0.0396 - hard_accuracy: 0.9853 - val_loss: 0.0429 - val_hard_accuracy: 0.9837 - val_ler: 0.0163 - val_errors: 3266.0000 - 57s/epoch - 28ms/step
+Epoch 118/200
+[gru] epoch 118: val_loss=0.04267 val_ler=0.016325 (3,265/200,000 errors)
+2000/2000 - 57s - loss: 0.0395 - hard_accuracy: 0.9853 - val_loss: 0.0427 - val_hard_accuracy: 0.9837 - val_ler: 0.0163 - val_errors: 3265.0000 - 57s/epoch - 28ms/step
+Epoch 119/200
+[gru] epoch 119: val_loss=0.04284 val_ler=0.016290 (3,258/200,000 errors)
+2000/2000 - 56s - loss: 0.0393 - hard_accuracy: 0.9854 - val_loss: 0.0428 - val_hard_accuracy: 0.9837 - val_ler: 0.0163 - val_errors: 3258.0000 - 56s/epoch - 28ms/step
+Epoch 120/200
+[gru] epoch 120: val_loss=0.04257 val_ler=0.016140 (3,228/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0392 - hard_accuracy: 0.9854 - val_loss: 0.0426 - val_hard_accuracy: 0.9839 - val_ler: 0.0161 - val_errors: 3228.0000 - 57s/epoch - 29ms/step
+Epoch 121/200
+[gru] epoch 121: val_loss=0.04215 val_ler=0.015905 (3,181/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0391 - hard_accuracy: 0.9855 - val_loss: 0.0421 - val_hard_accuracy: 0.9841 - val_ler: 0.0159 - val_errors: 3181.0000 - 57s/epoch - 28ms/step
+Epoch 122/200
+[gru] epoch 122: val_loss=0.04258 val_ler=0.016060 (3,212/200,000 errors)
+2000/2000 - 57s - loss: 0.0390 - hard_accuracy: 0.9855 - val_loss: 0.0426 - val_hard_accuracy: 0.9839 - val_ler: 0.0161 - val_errors: 3212.0000 - 57s/epoch - 28ms/step
+Epoch 123/200
+[gru] epoch 123: val_loss=0.04264 val_ler=0.015985 (3,197/200,000 errors)
+2000/2000 - 57s - loss: 0.0388 - hard_accuracy: 0.9856 - val_loss: 0.0426 - val_hard_accuracy: 0.9840 - val_ler: 0.0160 - val_errors: 3197.0000 - 57s/epoch - 28ms/step
+Epoch 124/200
+[gru] epoch 124: val_loss=0.04192 val_ler=0.015900 (3,180/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0387 - hard_accuracy: 0.9856 - val_loss: 0.0419 - val_hard_accuracy: 0.9841 - val_ler: 0.0159 - val_errors: 3180.0000 - 57s/epoch - 28ms/step
+Epoch 125/200
+[gru] epoch 125: val_loss=0.04167 val_ler=0.015615 (3,123/200,000 errors)  <- new best
+2000/2000 - 56s - loss: 0.0386 - hard_accuracy: 0.9857 - val_loss: 0.0417 - val_hard_accuracy: 0.9844 - val_ler: 0.0156 - val_errors: 3123.0000 - 56s/epoch - 28ms/step
+Epoch 126/200
+[gru] epoch 126: val_loss=0.04238 val_ler=0.015960 (3,192/200,000 errors)
+2000/2000 - 57s - loss: 0.0385 - hard_accuracy: 0.9857 - val_loss: 0.0424 - val_hard_accuracy: 0.9840 - val_ler: 0.0160 - val_errors: 3192.0000 - 57s/epoch - 29ms/step
+Epoch 127/200
+[gru] epoch 127: val_loss=0.04202 val_ler=0.015875 (3,175/200,000 errors)
+2000/2000 - 57s - loss: 0.0384 - hard_accuracy: 0.9858 - val_loss: 0.0420 - val_hard_accuracy: 0.9841 - val_ler: 0.0159 - val_errors: 3175.0000 - 57s/epoch - 29ms/step
+Epoch 128/200
+[gru] epoch 128: val_loss=0.04160 val_ler=0.015740 (3,148/200,000 errors)
+2000/2000 - 57s - loss: 0.0382 - hard_accuracy: 0.9858 - val_loss: 0.0416 - val_hard_accuracy: 0.9843 - val_ler: 0.0157 - val_errors: 3148.0000 - 57s/epoch - 29ms/step
+Epoch 129/200
+[gru] epoch 129: val_loss=0.04136 val_ler=0.015655 (3,131/200,000 errors)
+2000/2000 - 57s - loss: 0.0381 - hard_accuracy: 0.9859 - val_loss: 0.0414 - val_hard_accuracy: 0.9843 - val_ler: 0.0157 - val_errors: 3131.0000 - 57s/epoch - 28ms/step
+Epoch 130/200
+[gru] epoch 130: val_loss=0.04140 val_ler=0.015445 (3,089/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0380 - hard_accuracy: 0.9859 - val_loss: 0.0414 - val_hard_accuracy: 0.9846 - val_ler: 0.0154 - val_errors: 3089.0000 - 57s/epoch - 28ms/step
+Epoch 131/200
+[gru] epoch 131: val_loss=0.04117 val_ler=0.015560 (3,112/200,000 errors)
+2000/2000 - 57s - loss: 0.0379 - hard_accuracy: 0.9859 - val_loss: 0.0412 - val_hard_accuracy: 0.9844 - val_ler: 0.0156 - val_errors: 3112.0000 - 57s/epoch - 29ms/step
+Epoch 132/200
+[gru] epoch 132: val_loss=0.04182 val_ler=0.015700 (3,140/200,000 errors)
+2000/2000 - 57s - loss: 0.0378 - hard_accuracy: 0.9860 - val_loss: 0.0418 - val_hard_accuracy: 0.9843 - val_ler: 0.0157 - val_errors: 3140.0000 - 57s/epoch - 29ms/step
+Epoch 133/200
+[gru] epoch 133: val_loss=0.04120 val_ler=0.015430 (3,086/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0377 - hard_accuracy: 0.9861 - val_loss: 0.0412 - val_hard_accuracy: 0.9846 - val_ler: 0.0154 - val_errors: 3086.0000 - 57s/epoch - 28ms/step
+Epoch 134/200
+[gru] epoch 134: val_loss=0.04107 val_ler=0.015810 (3,162/200,000 errors)
+2000/2000 - 57s - loss: 0.0376 - hard_accuracy: 0.9861 - val_loss: 0.0411 - val_hard_accuracy: 0.9842 - val_ler: 0.0158 - val_errors: 3162.0000 - 57s/epoch - 28ms/step
+Epoch 135/200
+[gru] epoch 135: val_loss=0.04079 val_ler=0.015410 (3,082/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0374 - hard_accuracy: 0.9861 - val_loss: 0.0408 - val_hard_accuracy: 0.9846 - val_ler: 0.0154 - val_errors: 3082.0000 - 57s/epoch - 28ms/step
+Epoch 136/200
+[gru] epoch 136: val_loss=0.04097 val_ler=0.015465 (3,093/200,000 errors)
+2000/2000 - 57s - loss: 0.0373 - hard_accuracy: 0.9862 - val_loss: 0.0410 - val_hard_accuracy: 0.9845 - val_ler: 0.0155 - val_errors: 3093.0000 - 57s/epoch - 28ms/step
+Epoch 137/200
+[gru] epoch 137: val_loss=0.04074 val_ler=0.015285 (3,057/200,000 errors)  <- new best
+2000/2000 - 56s - loss: 0.0372 - hard_accuracy: 0.9862 - val_loss: 0.0407 - val_hard_accuracy: 0.9847 - val_ler: 0.0153 - val_errors: 3057.0000 - 56s/epoch - 28ms/step
+Epoch 138/200
+[gru] epoch 138: val_loss=0.04057 val_ler=0.015230 (3,046/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0371 - hard_accuracy: 0.9862 - val_loss: 0.0406 - val_hard_accuracy: 0.9848 - val_ler: 0.0152 - val_errors: 3046.0000 - 57s/epoch - 28ms/step
+Epoch 139/200
+[gru] epoch 139: val_loss=0.04098 val_ler=0.015425 (3,085/200,000 errors)
+2000/2000 - 57s - loss: 0.0370 - hard_accuracy: 0.9863 - val_loss: 0.0410 - val_hard_accuracy: 0.9846 - val_ler: 0.0154 - val_errors: 3085.0000 - 57s/epoch - 28ms/step
+Epoch 140/200
+[gru] epoch 140: val_loss=0.04054 val_ler=0.015260 (3,052/200,000 errors)
+2000/2000 - 56s - loss: 0.0369 - hard_accuracy: 0.9863 - val_loss: 0.0405 - val_hard_accuracy: 0.9847 - val_ler: 0.0153 - val_errors: 3052.0000 - 56s/epoch - 28ms/step
+Epoch 141/200
+[gru] epoch 141: val_loss=0.04025 val_ler=0.015190 (3,038/200,000 errors)  <- new best
+2000/2000 - 56s - loss: 0.0368 - hard_accuracy: 0.9864 - val_loss: 0.0402 - val_hard_accuracy: 0.9848 - val_ler: 0.0152 - val_errors: 3038.0000 - 56s/epoch - 28ms/step
+Epoch 142/200
+[gru] epoch 142: val_loss=0.04051 val_ler=0.015345 (3,069/200,000 errors)
+2000/2000 - 57s - loss: 0.0367 - hard_accuracy: 0.9864 - val_loss: 0.0405 - val_hard_accuracy: 0.9847 - val_ler: 0.0153 - val_errors: 3069.0000 - 57s/epoch - 28ms/step
+Epoch 143/200
+[gru] epoch 143: val_loss=0.04062 val_ler=0.015460 (3,092/200,000 errors)
+2000/2000 - 57s - loss: 0.0366 - hard_accuracy: 0.9865 - val_loss: 0.0406 - val_hard_accuracy: 0.9845 - val_ler: 0.0155 - val_errors: 3092.0000 - 57s/epoch - 28ms/step
+Epoch 144/200
+[gru] epoch 144: val_loss=0.03993 val_ler=0.014965 (2,993/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0365 - hard_accuracy: 0.9865 - val_loss: 0.0399 - val_hard_accuracy: 0.9850 - val_ler: 0.0150 - val_errors: 2993.0000 - 57s/epoch - 28ms/step
+Epoch 145/200
+[gru] epoch 145: val_loss=0.04018 val_ler=0.015300 (3,060/200,000 errors)
+2000/2000 - 57s - loss: 0.0364 - hard_accuracy: 0.9865 - val_loss: 0.0402 - val_hard_accuracy: 0.9847 - val_ler: 0.0153 - val_errors: 3060.0000 - 57s/epoch - 29ms/step
+Epoch 146/200
+[gru] epoch 146: val_loss=0.03981 val_ler=0.014895 (2,979/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0363 - hard_accuracy: 0.9866 - val_loss: 0.0398 - val_hard_accuracy: 0.9851 - val_ler: 0.0149 - val_errors: 2979.0000 - 57s/epoch - 28ms/step
+Epoch 147/200
+[gru] epoch 147: val_loss=0.03983 val_ler=0.015050 (3,010/200,000 errors)
+2000/2000 - 56s - loss: 0.0362 - hard_accuracy: 0.9866 - val_loss: 0.0398 - val_hard_accuracy: 0.9850 - val_ler: 0.0150 - val_errors: 3010.0000 - 56s/epoch - 28ms/step
+Epoch 148/200
+[gru] epoch 148: val_loss=0.03997 val_ler=0.014910 (2,982/200,000 errors)
+2000/2000 - 57s - loss: 0.0361 - hard_accuracy: 0.9866 - val_loss: 0.0400 - val_hard_accuracy: 0.9851 - val_ler: 0.0149 - val_errors: 2982.0000 - 57s/epoch - 28ms/step
+Epoch 149/200
+[gru] epoch 149: val_loss=0.03961 val_ler=0.014840 (2,968/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0360 - hard_accuracy: 0.9867 - val_loss: 0.0396 - val_hard_accuracy: 0.9852 - val_ler: 0.0148 - val_errors: 2968.0000 - 57s/epoch - 29ms/step
+Epoch 150/200
+[gru] epoch 150: val_loss=0.04057 val_ler=0.015175 (3,035/200,000 errors)
+2000/2000 - 57s - loss: 0.0359 - hard_accuracy: 0.9867 - val_loss: 0.0406 - val_hard_accuracy: 0.9848 - val_ler: 0.0152 - val_errors: 3035.0000 - 57s/epoch - 28ms/step
+Epoch 151/200
+[gru] epoch 151: val_loss=0.03921 val_ler=0.014730 (2,946/200,000 errors)  <- new best
+2000/2000 - 58s - loss: 0.0358 - hard_accuracy: 0.9868 - val_loss: 0.0392 - val_hard_accuracy: 0.9853 - val_ler: 0.0147 - val_errors: 2946.0000 - 58s/epoch - 29ms/step
+Epoch 152/200
+[gru] epoch 152: val_loss=0.03967 val_ler=0.014910 (2,982/200,000 errors)
+2000/2000 - 57s - loss: 0.0357 - hard_accuracy: 0.9868 - val_loss: 0.0397 - val_hard_accuracy: 0.9851 - val_ler: 0.0149 - val_errors: 2982.0000 - 57s/epoch - 28ms/step
+Epoch 153/200
+[gru] epoch 153: val_loss=0.03954 val_ler=0.014845 (2,969/200,000 errors)
+2000/2000 - 56s - loss: 0.0357 - hard_accuracy: 0.9868 - val_loss: 0.0395 - val_hard_accuracy: 0.9852 - val_ler: 0.0148 - val_errors: 2969.0000 - 56s/epoch - 28ms/step
+Epoch 154/200
+[gru] epoch 154: val_loss=0.03941 val_ler=0.014740 (2,948/200,000 errors)
+2000/2000 - 56s - loss: 0.0356 - hard_accuracy: 0.9869 - val_loss: 0.0394 - val_hard_accuracy: 0.9853 - val_ler: 0.0147 - val_errors: 2948.0000 - 56s/epoch - 28ms/step
+Epoch 155/200
+[gru] epoch 155: val_loss=0.03950 val_ler=0.015060 (3,012/200,000 errors)
+2000/2000 - 57s - loss: 0.0355 - hard_accuracy: 0.9869 - val_loss: 0.0395 - val_hard_accuracy: 0.9849 - val_ler: 0.0151 - val_errors: 3012.0000 - 57s/epoch - 28ms/step
+Epoch 156/200
+[gru] epoch 156: val_loss=0.03930 val_ler=0.014915 (2,983/200,000 errors)
+2000/2000 - 57s - loss: 0.0354 - hard_accuracy: 0.9869 - val_loss: 0.0393 - val_hard_accuracy: 0.9851 - val_ler: 0.0149 - val_errors: 2983.0000 - 57s/epoch - 28ms/step
+Epoch 157/200
+[gru] epoch 157: val_loss=0.03875 val_ler=0.014710 (2,942/200,000 errors)  <- new best
+2000/2000 - 56s - loss: 0.0353 - hard_accuracy: 0.9870 - val_loss: 0.0387 - val_hard_accuracy: 0.9853 - val_ler: 0.0147 - val_errors: 2942.0000 - 56s/epoch - 28ms/step
+Epoch 158/200
+[gru] epoch 158: val_loss=0.03950 val_ler=0.014940 (2,988/200,000 errors)
+2000/2000 - 56s - loss: 0.0352 - hard_accuracy: 0.9870 - val_loss: 0.0395 - val_hard_accuracy: 0.9851 - val_ler: 0.0149 - val_errors: 2988.0000 - 56s/epoch - 28ms/step
+Epoch 159/200
+[gru] epoch 159: val_loss=0.03897 val_ler=0.014825 (2,965/200,000 errors)
+2000/2000 - 57s - loss: 0.0351 - hard_accuracy: 0.9870 - val_loss: 0.0390 - val_hard_accuracy: 0.9852 - val_ler: 0.0148 - val_errors: 2965.0000 - 57s/epoch - 29ms/step
+Epoch 160/200
+[gru] epoch 160: val_loss=0.03851 val_ler=0.014535 (2,907/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0350 - hard_accuracy: 0.9871 - val_loss: 0.0385 - val_hard_accuracy: 0.9855 - val_ler: 0.0145 - val_errors: 2907.0000 - 57s/epoch - 29ms/step
+Epoch 161/200
+[gru] epoch 161: val_loss=0.03866 val_ler=0.014560 (2,912/200,000 errors)
+2000/2000 - 57s - loss: 0.0349 - hard_accuracy: 0.9871 - val_loss: 0.0387 - val_hard_accuracy: 0.9854 - val_ler: 0.0146 - val_errors: 2912.0000 - 57s/epoch - 28ms/step
+Epoch 162/200
+[gru] epoch 162: val_loss=0.03838 val_ler=0.014425 (2,885/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0349 - hard_accuracy: 0.9871 - val_loss: 0.0384 - val_hard_accuracy: 0.9856 - val_ler: 0.0144 - val_errors: 2885.0000 - 57s/epoch - 29ms/step
+Epoch 163/200
+[gru] epoch 163: val_loss=0.03847 val_ler=0.014550 (2,910/200,000 errors)
+2000/2000 - 58s - loss: 0.0348 - hard_accuracy: 0.9872 - val_loss: 0.0385 - val_hard_accuracy: 0.9854 - val_ler: 0.0146 - val_errors: 2910.0000 - 58s/epoch - 29ms/step
+Epoch 164/200
+[gru] epoch 164: val_loss=0.03841 val_ler=0.014375 (2,875/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0347 - hard_accuracy: 0.9872 - val_loss: 0.0384 - val_hard_accuracy: 0.9856 - val_ler: 0.0144 - val_errors: 2875.0000 - 57s/epoch - 29ms/step
+Epoch 165/200
+[gru] epoch 165: val_loss=0.03835 val_ler=0.014315 (2,863/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0346 - hard_accuracy: 0.9872 - val_loss: 0.0383 - val_hard_accuracy: 0.9857 - val_ler: 0.0143 - val_errors: 2863.0000 - 57s/epoch - 28ms/step
+Epoch 166/200
+[gru] epoch 166: val_loss=0.03826 val_ler=0.014490 (2,898/200,000 errors)
+2000/2000 - 57s - loss: 0.0346 - hard_accuracy: 0.9873 - val_loss: 0.0383 - val_hard_accuracy: 0.9855 - val_ler: 0.0145 - val_errors: 2898.0000 - 57s/epoch - 28ms/step
+Epoch 167/200
+[gru] epoch 167: val_loss=0.03803 val_ler=0.014345 (2,869/200,000 errors)
+2000/2000 - 56s - loss: 0.0345 - hard_accuracy: 0.9873 - val_loss: 0.0380 - val_hard_accuracy: 0.9857 - val_ler: 0.0143 - val_errors: 2869.0000 - 56s/epoch - 28ms/step
+Epoch 168/200
+[gru] epoch 168: val_loss=0.03794 val_ler=0.014240 (2,848/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0344 - hard_accuracy: 0.9873 - val_loss: 0.0379 - val_hard_accuracy: 0.9858 - val_ler: 0.0142 - val_errors: 2848.0000 - 57s/epoch - 28ms/step
+Epoch 169/200
+[gru] epoch 169: val_loss=0.03820 val_ler=0.014290 (2,858/200,000 errors)
+2000/2000 - 57s - loss: 0.0343 - hard_accuracy: 0.9873 - val_loss: 0.0382 - val_hard_accuracy: 0.9857 - val_ler: 0.0143 - val_errors: 2858.0000 - 57s/epoch - 29ms/step
+Epoch 170/200
+[gru] epoch 170: val_loss=0.03783 val_ler=0.014260 (2,852/200,000 errors)
+2000/2000 - 57s - loss: 0.0343 - hard_accuracy: 0.9874 - val_loss: 0.0378 - val_hard_accuracy: 0.9857 - val_ler: 0.0143 - val_errors: 2852.0000 - 57s/epoch - 28ms/step
+Epoch 171/200
+[gru] epoch 171: val_loss=0.03787 val_ler=0.014175 (2,835/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0342 - hard_accuracy: 0.9874 - val_loss: 0.0379 - val_hard_accuracy: 0.9858 - val_ler: 0.0142 - val_errors: 2835.0000 - 57s/epoch - 28ms/step
+Epoch 172/200
+[gru] epoch 172: val_loss=0.03780 val_ler=0.014125 (2,825/200,000 errors)  <- new best
+2000/2000 - 56s - loss: 0.0341 - hard_accuracy: 0.9874 - val_loss: 0.0378 - val_hard_accuracy: 0.9859 - val_ler: 0.0141 - val_errors: 2825.0000 - 56s/epoch - 28ms/step
+Epoch 173/200
+[gru] epoch 173: val_loss=0.03787 val_ler=0.014130 (2,826/200,000 errors)
+2000/2000 - 55s - loss: 0.0340 - hard_accuracy: 0.9875 - val_loss: 0.0379 - val_hard_accuracy: 0.9859 - val_ler: 0.0141 - val_errors: 2826.0000 - 55s/epoch - 27ms/step
+Epoch 174/200
+[gru] epoch 174: val_loss=0.03805 val_ler=0.014360 (2,872/200,000 errors)
+2000/2000 - 57s - loss: 0.0340 - hard_accuracy: 0.9875 - val_loss: 0.0381 - val_hard_accuracy: 0.9856 - val_ler: 0.0144 - val_errors: 2872.0000 - 57s/epoch - 28ms/step
+Epoch 175/200
+[gru] epoch 175: val_loss=0.03739 val_ler=0.014175 (2,835/200,000 errors)
+2000/2000 - 57s - loss: 0.0339 - hard_accuracy: 0.9875 - val_loss: 0.0374 - val_hard_accuracy: 0.9858 - val_ler: 0.0142 - val_errors: 2835.0000 - 57s/epoch - 28ms/step
+Epoch 176/200
+[gru] epoch 176: val_loss=0.03754 val_ler=0.014165 (2,833/200,000 errors)
+2000/2000 - 56s - loss: 0.0338 - hard_accuracy: 0.9875 - val_loss: 0.0375 - val_hard_accuracy: 0.9858 - val_ler: 0.0142 - val_errors: 2833.0000 - 56s/epoch - 28ms/step
+Epoch 177/200
+[gru] epoch 177: val_loss=0.03785 val_ler=0.014215 (2,843/200,000 errors)
+2000/2000 - 57s - loss: 0.0338 - hard_accuracy: 0.9876 - val_loss: 0.0378 - val_hard_accuracy: 0.9858 - val_ler: 0.0142 - val_errors: 2843.0000 - 57s/epoch - 29ms/step
+Epoch 178/200
+[gru] epoch 178: val_loss=0.03756 val_ler=0.014100 (2,820/200,000 errors)  <- new best
+2000/2000 - 56s - loss: 0.0337 - hard_accuracy: 0.9876 - val_loss: 0.0376 - val_hard_accuracy: 0.9859 - val_ler: 0.0141 - val_errors: 2820.0000 - 56s/epoch - 28ms/step
+Epoch 179/200
+[gru] epoch 179: val_loss=0.03766 val_ler=0.014110 (2,822/200,000 errors)
+2000/2000 - 57s - loss: 0.0336 - hard_accuracy: 0.9876 - val_loss: 0.0377 - val_hard_accuracy: 0.9859 - val_ler: 0.0141 - val_errors: 2822.0000 - 57s/epoch - 28ms/step
+Epoch 180/200
+[gru] epoch 180: val_loss=0.03757 val_ler=0.014100 (2,820/200,000 errors)
+2000/2000 - 57s - loss: 0.0336 - hard_accuracy: 0.9876 - val_loss: 0.0376 - val_hard_accuracy: 0.9859 - val_ler: 0.0141 - val_errors: 2820.0000 - 57s/epoch - 28ms/step
+Epoch 181/200
+[gru] epoch 181: val_loss=0.03739 val_ler=0.013935 (2,787/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0335 - hard_accuracy: 0.9877 - val_loss: 0.0374 - val_hard_accuracy: 0.9861 - val_ler: 0.0139 - val_errors: 2787.0000 - 57s/epoch - 28ms/step
+Epoch 182/200
+[gru] epoch 182: val_loss=0.03707 val_ler=0.013885 (2,777/200,000 errors)  <- new best
+2000/2000 - 58s - loss: 0.0334 - hard_accuracy: 0.9877 - val_loss: 0.0371 - val_hard_accuracy: 0.9861 - val_ler: 0.0139 - val_errors: 2777.0000 - 58s/epoch - 29ms/step
+Epoch 183/200
+[gru] epoch 183: val_loss=0.03702 val_ler=0.013790 (2,758/200,000 errors)  <- new best
+2000/2000 - 58s - loss: 0.0334 - hard_accuracy: 0.9877 - val_loss: 0.0370 - val_hard_accuracy: 0.9862 - val_ler: 0.0138 - val_errors: 2758.0000 - 58s/epoch - 29ms/step
+Epoch 184/200
+[gru] epoch 184: val_loss=0.03715 val_ler=0.013765 (2,753/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0333 - hard_accuracy: 0.9877 - val_loss: 0.0372 - val_hard_accuracy: 0.9862 - val_ler: 0.0138 - val_errors: 2753.0000 - 57s/epoch - 28ms/step
+Epoch 185/200
+[gru] epoch 185: val_loss=0.03702 val_ler=0.013895 (2,779/200,000 errors)
+2000/2000 - 58s - loss: 0.0332 - hard_accuracy: 0.9878 - val_loss: 0.0370 - val_hard_accuracy: 0.9861 - val_ler: 0.0139 - val_errors: 2779.0000 - 58s/epoch - 29ms/step
+Epoch 186/200
+[gru] epoch 186: val_loss=0.03700 val_ler=0.013860 (2,772/200,000 errors)
+2000/2000 - 57s - loss: 0.0332 - hard_accuracy: 0.9878 - val_loss: 0.0370 - val_hard_accuracy: 0.9861 - val_ler: 0.0139 - val_errors: 2772.0000 - 57s/epoch - 29ms/step
+Epoch 187/200
+[gru] epoch 187: val_loss=0.03713 val_ler=0.013825 (2,765/200,000 errors)
+2000/2000 - 57s - loss: 0.0331 - hard_accuracy: 0.9878 - val_loss: 0.0371 - val_hard_accuracy: 0.9862 - val_ler: 0.0138 - val_errors: 2765.0000 - 57s/epoch - 28ms/step
+Epoch 188/200
+[gru] epoch 188: val_loss=0.03699 val_ler=0.013845 (2,769/200,000 errors)
+2000/2000 - 58s - loss: 0.0330 - hard_accuracy: 0.9878 - val_loss: 0.0370 - val_hard_accuracy: 0.9862 - val_ler: 0.0138 - val_errors: 2769.0000 - 58s/epoch - 29ms/step
+Epoch 189/200
+[gru] epoch 189: val_loss=0.03681 val_ler=0.013835 (2,767/200,000 errors)
+2000/2000 - 57s - loss: 0.0330 - hard_accuracy: 0.9878 - val_loss: 0.0368 - val_hard_accuracy: 0.9862 - val_ler: 0.0138 - val_errors: 2767.0000 - 57s/epoch - 28ms/step
+Epoch 190/200
+[gru] epoch 190: val_loss=0.03669 val_ler=0.013790 (2,758/200,000 errors)
+2000/2000 - 57s - loss: 0.0329 - hard_accuracy: 0.9879 - val_loss: 0.0367 - val_hard_accuracy: 0.9862 - val_ler: 0.0138 - val_errors: 2758.0000 - 57s/epoch - 29ms/step
+Epoch 191/200
+[gru] epoch 191: val_loss=0.03699 val_ler=0.013725 (2,745/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0329 - hard_accuracy: 0.9879 - val_loss: 0.0370 - val_hard_accuracy: 0.9863 - val_ler: 0.0137 - val_errors: 2745.0000 - 57s/epoch - 28ms/step
+Epoch 192/200
+[gru] epoch 192: val_loss=0.03667 val_ler=0.013680 (2,736/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0328 - hard_accuracy: 0.9879 - val_loss: 0.0367 - val_hard_accuracy: 0.9863 - val_ler: 0.0137 - val_errors: 2736.0000 - 57s/epoch - 29ms/step
+Epoch 193/200
+[gru] epoch 193: val_loss=0.03674 val_ler=0.013740 (2,748/200,000 errors)
+2000/2000 - 57s - loss: 0.0327 - hard_accuracy: 0.9880 - val_loss: 0.0367 - val_hard_accuracy: 0.9863 - val_ler: 0.0137 - val_errors: 2748.0000 - 57s/epoch - 28ms/step
+Epoch 194/200
+[gru] epoch 194: val_loss=0.03690 val_ler=0.013785 (2,757/200,000 errors)
+2000/2000 - 57s - loss: 0.0327 - hard_accuracy: 0.9880 - val_loss: 0.0369 - val_hard_accuracy: 0.9862 - val_ler: 0.0138 - val_errors: 2757.0000 - 57s/epoch - 28ms/step
+Epoch 195/200
+[gru] epoch 195: val_loss=0.03671 val_ler=0.013855 (2,771/200,000 errors)
+2000/2000 - 57s - loss: 0.0327 - hard_accuracy: 0.9880 - val_loss: 0.0367 - val_hard_accuracy: 0.9861 - val_ler: 0.0139 - val_errors: 2771.0000 - 57s/epoch - 29ms/step
+Epoch 196/200
+[gru] epoch 196: val_loss=0.03639 val_ler=0.013540 (2,708/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0326 - hard_accuracy: 0.9880 - val_loss: 0.0364 - val_hard_accuracy: 0.9865 - val_ler: 0.0135 - val_errors: 2708.0000 - 57s/epoch - 28ms/step
+Epoch 197/200
+[gru] epoch 197: val_loss=0.03662 val_ler=0.013485 (2,697/200,000 errors)  <- new best
+2000/2000 - 57s - loss: 0.0325 - hard_accuracy: 0.9880 - val_loss: 0.0366 - val_hard_accuracy: 0.9865 - val_ler: 0.0135 - val_errors: 2697.0000 - 57s/epoch - 28ms/step
+Epoch 198/200
+[gru] epoch 198: val_loss=0.03652 val_ler=0.013590 (2,718/200,000 errors)
+2000/2000 - 55s - loss: 0.0325 - hard_accuracy: 0.9881 - val_loss: 0.0365 - val_hard_accuracy: 0.9864 - val_ler: 0.0136 - val_errors: 2718.0000 - 55s/epoch - 27ms/step
+Epoch 199/200
+[gru] epoch 199: val_loss=0.03686 val_ler=0.013750 (2,750/200,000 errors)
+2000/2000 - 57s - loss: 0.0324 - hard_accuracy: 0.9881 - val_loss: 0.0369 - val_hard_accuracy: 0.9863 - val_ler: 0.0138 - val_errors: 2750.0000 - 57s/epoch - 29ms/step
+Epoch 200/200
+[gru] epoch 200: val_loss=0.03642 val_ler=0.013510 (2,702/200,000 errors)
+2000/2000 - 55s - loss: 0.0324 - hard_accuracy: 0.9881 - val_loss: 0.0364 - val_hard_accuracy: 0.9865 - val_ler: 0.0135 - val_errors: 2702.0000 - 55s/epoch - 28ms/step
+[gru] --test-pool given: suppressing the stored MWPM ratio (baselines are tail-specific). Decode MWPM on THIS tail to compare.
+[gru] gru_d7_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000  p_L=0.01320  base_rate=0.305  agree_ambiguous=  (100 ep, 5699s)
+[gru] wrote -> /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F4_d7_u140_20M_lr3e-4_resume200_20260929T175938Z/seed0/runs/gru_d7_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.csv  (+ history, weights)
+[student-eval] tf32=off reset_after=False unroll=False
+[gpu] per-process limit 1600 MiB on 1 device(s)
+[student-eval] scoring shots [15,200,000, 17,000,000) of data_d7_p0.004_r7_FORMAL.npz
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+[student-eval] gru params=79,521
+[student-eval] student p_L=0.013224  MWPM p_L=0.004291  ratio=3.0818x  base_rate=0.30511
+[mcnemar] 2x2 on 1,800,000 shared shots:
+[mcnemar]   both-right   = 1,772,287
+[mcnemar]   student-only = 3,909   (student wins these)
+[mcnemar]   MWPM-only    = 19,989   (MWPM wins these)
+[mcnemar]   both-wrong   = 3,815
+[mcnemar]   net student wins = -16,080  (= n_test x (p_L_MWPM - p_L_student) = -16080)
+[mcnemar]   chi2(cc)=10818.2  p_chi2=0.000e+00  p_exact=0.000e+00
+[student-eval] dumped per-shot -> /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F4_d7_u140_20M_lr3e-4_resume200_20260929T175938Z/seed0/per_shot_gru_d7_p004_u140_ext5000000_hard_seed0_ntr15000000_b10000.npz
+[student-eval] appended -> /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F4_d7_u140_20M_lr3e-4_resume200_20260929T175938Z/seed0/eval_best_ckpt.csv
+[complete] all artifacts present -> COMPLETE
+2026-09-29T19:39:17Z end

@@ -1,0 +1,22 @@
+{
+ "run": "F4_d7_u140_20M_lr3e-4_resume200_20260929T175938Z",
+ "params": 79521,
+ "p_L": 0.013224,
+ "mwpm_p_L": 0.004291,
+ "ratio": 3.0818,
+ "best_epoch": 197,
+ "epochs": 200,
+ "best_val_loss": 0.03662,
+ "best_val_ler": 0.013485,
+ "best_train_loss": 0.03254,
+ "final_train_loss": 0.03237,
+ "final_val_loss": 0.03642,
+ "min_val_loss_epoch": 196,
+ "start": "2026-09-29T18:00:03Z",
+ "end": "2026-09-29T19:39:17Z",
+ "runtime_h": 1.65,
+ "peak_host_gb": 40.6,
+ "peak_gpu_mib": 1144,
+ "gpu_pid": "1276667 1433865",
+ "gpu_pid_source": "container_hpids"
+}

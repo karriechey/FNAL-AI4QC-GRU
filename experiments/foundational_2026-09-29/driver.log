@@ -17,3 +17,23 @@
 [foundational 2026-09-29T17:23:43Z] DONE  F4_d7_u140_20M_lr3e-4: params=79521 p_L=0.016811 mwpm_p_L=0.004291 ratio=3.9175 best_epoch=98 best_val_loss=0.04538 best_val_ler=0.016995 final_train_loss=0.04216 final_val_loss=0.04524 runtime_h=1.66 peak_host_gb=40.1 peak_gpu_mib=1660
 [foundational 2026-09-29T17:25:19Z] DONE  F5_d7_u140_20M_lr3e-5: params=79521 p_L=0.054662 mwpm_p_L=0.004291 ratio=12.7385 best_epoch=100 best_val_loss=0.13583 best_val_ler=0.05502 final_train_loss=0.1353 final_val_loss=0.13583 runtime_h=1.66 peak_host_gb=40.8 peak_gpu_mib=1660
 [foundational 2026-09-29T17:25:19Z] END   foundational queue finished
+[foundational 2026-09-29T17:48:41Z] BEGIN resume_driver (MAX_JOBS=4) pid=1269620 repo=4f47582 free GPU 97280 MiB host available 521 GB
+[foundational 2026-09-29T17:48:41Z] END   resume queue finished
+[foundational 2026-09-29T17:49:33Z] BEGIN resume_driver (MAX_JOBS=4) pid=1269880 repo=4f47582 free GPU 97280 MiB host available 522 GB
+[foundational 2026-09-29T17:49:33Z] END   resume queue finished
+[foundational 2026-09-29T17:49:43Z] NOTE  the two resume_driver BEGIN/END pairs above exited at once (empty job table unbound under set -u); nothing was started. Fixed and relaunched.
+[foundational 2026-09-29T17:49:43Z] BEGIN resume_driver (MAX_JOBS=4) pid=1270019 repo=4f47582 free GPU 97280 MiB host available 522 GB
+[foundational 2026-09-29T17:49:43Z] END   resume queue finished
+[foundational 2026-09-29T17:51:43Z] BEGIN resume_driver (MAX_JOBS=4) pid=1270551 repo=9fb2133 free GPU 97280 MiB host available 522 GB
+[foundational 2026-09-29T17:51:43Z] END   resume queue finished
+[foundational 2026-09-29T17:56:27Z] NOTE  17:51:43Z attempt also exited at once (same cause: empty tables unbound); tables now declared =(); relaunching
+[foundational 2026-09-29T17:56:27Z] BEGIN resume_driver (MAX_JOBS=4) pid=1271576 repo=25f67ed free GPU 97280 MiB host available 522 GB
+[foundational 2026-09-29T17:56:27Z] START F2_d7_u70_20M_resume200 (resume F2_d7_u70_20M from epoch 100 to 200) units=70 lr=0.003 -> /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F2_d7_u70_20M_resume200_20260929T175627Z (free GPU 97280 MiB, host available 522 GB, jobs running 0)
+[foundational 2026-09-29T17:58:03Z] START F3_d7_u200_20M_resume200 (resume F3_d7_u200_20M from epoch 100 to 200) units=200 lr=0.003 -> /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F3_d7_u200_20M_resume200_20260929T175803Z (free GPU 97277 MiB, host available 482 GB, jobs running 1)
+[foundational 2026-09-29T17:59:38Z] START F4_d7_u140_20M_lr3e-4_resume200 (resume F4_d7_u140_20M_lr3e-4 from epoch 100 to 200) units=140 lr=0.0003 -> /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F4_d7_u140_20M_lr3e-4_resume200_20260929T175938Z (free GPU 96718 MiB, host available 471 GB, jobs running 2)
+[foundational 2026-09-29T18:01:14Z] START F5_d7_u140_20M_lr3e-5_resume200 (resume F5_d7_u140_20M_lr3e-5 from epoch 100 to 200) units=140 lr=0.00003 -> /home/kchey/FNAL-AI4QC-GRU/experiments/foundational_2026-09-29/F5_d7_u140_20M_lr3e-5_resume200_20260929T180113Z (free GPU 96385 MiB, host available 449 GB, jobs running 3)
+[foundational 2026-09-29T19:36:16Z] DONE  F2_d7_u70_20M_resume200: params=25061 p_L=0.014794 mwpm_p_L=0.004291 ratio=3.4477 best_epoch=142 best_val_loss=0.03976 best_val_ler=0.01473 final_train_loss=0.04432 final_val_loss=0.04569 runtime_h=1.65 peak_host_gb=40.7 peak_gpu_mib=888
+[foundational 2026-09-29T19:37:52Z] DONE  F3_d7_u200_20M_resume200: params=149601 p_L=0.009072 mwpm_p_L=0.004291 ratio=2.1141 best_epoch=100 best_val_loss=0.02606 best_val_ler=0.009035 final_train_loss=0.02753 final_val_loss=0.02953 runtime_h=1.65 peak_host_gb=40.6 peak_gpu_mib=1660
+[foundational 2026-09-29T19:39:28Z] DONE  F4_d7_u140_20M_lr3e-4_resume200: params=79521 p_L=0.013224 mwpm_p_L=0.004291 ratio=3.0818 best_epoch=197 best_val_loss=0.03662 best_val_ler=0.013485 final_train_loss=0.03237 final_val_loss=0.03642 runtime_h=1.65 peak_host_gb=40.6 peak_gpu_mib=1144
+[foundational 2026-09-29T19:40:33Z] DONE  F5_d7_u140_20M_lr3e-5_resume200: params=79521 p_L=0.033996 mwpm_p_L=0.004291 ratio=7.9224 best_epoch=200 best_val_loss=0.08931 best_val_ler=0.034535 final_train_loss=0.08802 final_val_loss=0.08931 runtime_h=1.64 peak_host_gb=40.7 peak_gpu_mib=1144
+[foundational 2026-09-29T19:40:33Z] END   resume queue finished
