@@ -1,0 +1,48 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+[env] TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1 present before import
+2026-09-29 17:47:53.503389: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-29 17:47:53.503419: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-29 17:47:53.504040: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[gru] tf32=on (TensorFlow default)
+[gru] TF 2.15.0  GPUs: []
+[gru] hard-label control arm: teacher column unused (alpha=1).
+[gru] provenance: pool=pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz flips_sha= teacher_sha= code_sha=f7b7080b3dfcba0b
+[gru] scoring shots [15,200,000, 15,220,000)
+[gru] partitions: train [0, 200,000) of the primary pool  validation [15,000,000, 15,020,000)  (validation_split disabled)
+[gru] 20 steps/epoch x 4 epochs = 80 optimizer updates
+[gru] reset_after=False unroll=False
+[gru] optimizer Adam lr=0.003 schedule=constant global_clipnorm=None log_grad_norm=False
+[gru] gru inputs=evts params=5,505
+[gru] resumed from /home/kchey/FNAL-AI4QC-GRU/experiments/resume_exactness/20260929T174648Z_cpu/B1/ckpt/t.lastepoch.weights.h5: optimizer update count 40 (expected 40 = 20 x 2)
+[gru] checkpoints -> /home/kchey/FNAL-AI4QC-GRU/experiments/resume_exactness/20260929T174648Z_cpu/B2/ckpt/t.best.keras + .best.weights.h5 (lowest val LER, tiebreak val_loss; epoch in /home/kchey/FNAL-AI4QC-GRU/experiments/resume_exactness/20260929T174648Z_cpu/B2/ckpt/t.best.json) and /home/kchey/FNAL-AI4QC-GRU/experiments/resume_exactness/20260929T174648Z_cpu/B2/ckpt/t.lastepoch.weights.h5
+[gru] callback order: ['ValLERCheckpoint', '_SaveLastEpoch']
+[gru] shuffle order advanced past 2 epochs
+[gru] input: host-memory uint8 tf.data, shuffle seed 0, batch 10000, prefetch to GPU
+Epoch 3/4
+[gru] epoch 3: val_loss=0.41593 val_ler=0.197200 (3,944/20,000 errors)
+20/20 - 9s - loss: 0.4494 - hard_accuracy: 0.8034 - val_loss: 0.4159 - val_hard_accuracy: 0.8028 - val_ler: 0.1972 - val_errors: 3944.0000 - 9s/epoch - 458ms/step
+Epoch 4/4
+[gru] epoch 4: val_loss=0.40028 val_ler=0.204250 (4,085/20,000 errors)
+20/20 - 1s - loss: 0.4143 - hard_accuracy: 0.7912 - val_loss: 0.4003 - val_hard_accuracy: 0.7958 - val_ler: 0.2042 - val_errors: 4085.0000 - 583ms/epoch - 29ms/step
+[gru] --test-pool given: suppressing the stored MWPM ratio (baselines are tail-specific). Decode MWPM on THIS tail to compare.
+[gru] t  p_L=0.21005  base_rate=0.196  agree_ambiguous=  <-- fails: p_L >= base rate (class collapse)  (2 ep, 10s)
+[gru] wrote -> /home/kchey/FNAL-AI4QC-GRU/experiments/resume_exactness/20260929T174648Z_cpu/B2/runs/t.csv  (+ history, weights)
