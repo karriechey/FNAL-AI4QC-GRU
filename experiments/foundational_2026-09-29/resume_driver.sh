@@ -67,7 +67,8 @@ QUEUE=("F2_d7_u70_20M_resume200 F2_d7_u70_20M 70 0.003 constant"
        "F3_d7_u200_20M_resume200 F3_d7_u200_20M 200 0.003 constant"
        "F4_d7_u140_20M_lr3e-4_resume200 F4_d7_u140_20M_lr3e-4 140 0.0003 constant"
        "F5_d7_u140_20M_lr3e-5_resume200 F5_d7_u140_20M_lr3e-5 140 0.00003 constant")
-declare -A PID OUTD SCHED      # per active job: podman pid ("adopted" for F1), folder, schedule
+# Declared with =() so the tables count as set under set -u even while empty.
+declare -A PID=() OUTD=() SCHED=()   # per active job: podman pid, folder, schedule
 
 launch () {   # launch <name> <source run> <units> <lr> <schedule>
   local name="$1" SRCN="$2" U="$3" LRV="$4" SCH="$5" S OUT SRC TAGB i ENVX
@@ -138,7 +139,7 @@ while :; do
   # skip queue entries that already have a run folder
   while [ "$NEXT" -lt "${#QUEUE[@]}" ] && ls -d "$DIR/${QUEUE[$NEXT]%% *}"_2* >/dev/null 2>&1; do NEXT=$((NEXT + 1)); done
   sample_resources
-  for name in ${PID[@]+"${!PID[@]}"}; do  # empty table is "unbound" under set -u
+  for name in "${!PID[@]}"; do
     if alive "$name"; then clip_check "$name"; else sleep 5; finalize "$name"; fi
   done
   if [ "$NEXT" -lt "${#QUEUE[@]}" ] && [ "${#PID[@]}" -lt "$MAX_JOBS" ]; then
