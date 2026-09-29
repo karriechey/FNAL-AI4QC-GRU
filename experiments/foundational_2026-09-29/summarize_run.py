@@ -2,7 +2,7 @@
 # Last modified: 2026-09-29 (GPU peak from the run's own process: first new GPU process after the run's start; resumed runs report the resumed segment's runtime)
 """One-run summary for the foundational queue, printed as JSON.
 
-    python summarize_run.py <run folder> <resources.tsv> <container name>
+    python summarize_run.py <run folder> <resources.tsv> <container name> [<gpu pid>...]
 
 Reads <run>/seed0: eval_best_ckpt.csv (GRU and MWPM logical error rates on the evaluation
 block), ckpt/*.best.json (chosen epoch), runs/*.history.json (losses per epoch), run.log
@@ -21,6 +21,7 @@ import sys
 import numpy as np
 
 run, res, cname = sys.argv[1:4]
+given_pids = set(sys.argv[4:])
 sd = os.path.join(run, 'seed0')
 ev = list(csv.DictReader(open(os.path.join(sd, 'eval_best_ckpt.csv'))))[-1]
 best = json.load(open(glob.glob(os.path.join(sd, 'ckpt', '*.best.json'))[0]))
@@ -31,27 +32,35 @@ t = re.findall(r'^(\S+Z) (start|end)$', log, re.M)
 times = {k: dt.datetime.strptime(v, '%Y-%m-%dT%H:%M:%SZ') for v, k in t}
 
 # Peaks from the driver's samples. Host: the container's memory. GPU: the run's own
-# process, identified as the first GPU process that appears after the run's start and was
-# not present before it (jobs start at least 60 s apart, samples are every 30 s).
+# processes, taken in this order of preference:
+#   1. 'container_hpids' lines in resources.tsv (host process ids of the container, recorded
+#      by drivers from 2026-09-29 ~18:30Z on);
+#   2. process ids given on the command line (for runs sampled before that);
+#   3. otherwise none (peak_gpu_mib 0, gpu_pid_source 'unknown').
 start, end = t[0][0], t[-1][0]
 host = 0.0
 unit = {'kB': 1e-6, 'MB': 1e-3, 'GB': 1.0}
-first_seen, gpu_by_pid = {}, {}
+gpu_by_pid, cont_pids = {}, set()
 for line in open(res):
     f = line.rstrip('\n').split('\t')
-    if f[1] == 'gpu_pid_mib':
-        pid, mib = [s_.strip() for s_ in f[2].split(',')]
-        first_seen.setdefault(pid, f[0])
-        if start <= f[0] <= end:
-            gpu_by_pid[pid] = max(gpu_by_pid.get(pid, 0), int(mib))
     if not (start <= f[0] <= end):
         continue
-    if f[1] == 'container_mem' and f[2] == cname:
+    if f[1] == 'gpu_pid_mib':
+        pid, mib = [s_.strip() for s_ in f[2].split(',')]
+        gpu_by_pid[pid] = max(gpu_by_pid.get(pid, 0), int(mib))
+    elif f[1] == 'container_hpids' and f[2] == cname:
+        cont_pids.update(f[3].split())
+    elif f[1] == 'container_mem' and f[2] == cname:
         m = re.match(r'([\d.]+)([kMG]B)', f[3].split('/')[0].strip())
         host = max(host, float(m.group(1)) * unit[m.group(2)])
-new_pids = sorted((ts, pid) for pid, ts in first_seen.items() if ts >= start and pid in gpu_by_pid)
-gpu_pid = new_pids[0][1] if new_pids else None
-gpu = gpu_by_pid.get(gpu_pid, 0) if gpu_pid else 0
+if cont_pids & gpu_by_pid.keys():
+    pids, src = cont_pids & gpu_by_pid.keys(), 'container_hpids'
+elif given_pids:
+    pids, src = given_pids, 'given'
+else:
+    pids, src = set(), 'unknown'
+gpu = max([gpu_by_pid.get(q, 0) for q in pids], default=0)
+gpu_pid = ' '.join(sorted(pids))
 
 out = dict(
     run=os.path.basename(run),
@@ -66,5 +75,5 @@ out = dict(
     min_val_loss_epoch=int(np.argmin(hist['val_loss'])) + 1,
     start=start, end=end,
     runtime_h=round((times['end'] - times['start']).total_seconds() / 3600, 2),
-    peak_host_gb=round(host, 1), peak_gpu_mib=gpu, gpu_pid=gpu_pid)
+    peak_host_gb=round(host, 1), peak_gpu_mib=gpu, gpu_pid=gpu_pid, gpu_pid_source=src)
 print(json.dumps(out, indent=1))
