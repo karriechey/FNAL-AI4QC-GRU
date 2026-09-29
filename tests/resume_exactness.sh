@@ -36,7 +36,7 @@ run B1 --epochs 2
 mkdir -p "$O/B2/ckpt"; cp "$O"/B1/ckpt/$T.best.* "$O/B2/ckpt/"
 run B2 --epochs 4 --resume-weights "$O/B1/ckpt/$T.lastepoch.weights.h5" --initial-epoch 2 \
   --resume-best-json "$O/B2/ckpt/$T.best.json" --resume-history "$O/B1/runs/$T.history.json"
-podman run --rm --security-opt=label=disable -v "$HOME:$HOME" -e CUDA_VISIBLE_DEVICES= qdec:tf215 \
+podman run -i --rm --security-opt=label=disable -v "$HOME:$HOME" -e CUDA_VISIBLE_DEVICES= qdec:tf215 \
   python3 - "$O" "$T" <<'PY' 2>&1 | grep -v -e NVIDIA -e nvidia -e '^=' -e TensorFlow -e Copyright -e 'By pulling' -e '^$' | tee -a "$O/summary.txt"
 import json, sys, h5py, numpy as np
 o, t = sys.argv[1], sys.argv[2]
