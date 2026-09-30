@@ -34,7 +34,10 @@
 #   - REPO is the checkout this script sits in; files carry a _b suffix (driver_b.log,
 #     jobs_b.tsv, resources_b.tsv, results_b.tsv) so the two folders merge without clashes;
 #   - slots and the one-load-at-a-time rule count every q12_ container of both drivers;
-#   - nothing starts until every job in the main checkout's jobs.tsv has started.
+#   - nothing starts until every job in the main checkout's jobs.tsv has started;
+#   - optional 10th jobs column: host memory (GB) that must be available before that job
+#     starts (default 150), set from its expected loading peak. If the next job whose pools
+#     are ready does not have it, the driver waits instead of starting a later job.
 #
 #     setsid nohup bash driver_b.sh > /dev/null 2>&1 < /dev/null &
 set -uo pipefail
@@ -159,7 +162,7 @@ while :; do
     need=$NEED_FREE_ALONE; [ "$NR" -ge 1 ] && need=$NEED_FREE_SECOND
     fm=$(free_mib); hg=$(host_avail_gb)
     if [ "$fm" -ge "$need" ] && [ "$hg" -ge "$NEED_HOST_GB" ]; then
-      while IFS=$'\t' read -r name d u lr pp pool xp xn cap; do
+      while IFS=$'\t' read -r name d u lr pp pool xp xn cap hn; do
         [ -z "$name" ] || [ "${name:0:1}" = "#" ] && continue
         ls -d "$DIR/${name}"_2* >/dev/null 2>&1 && continue          # started before
         [ -n "${PID[$name]:-}" ] && continue
@@ -169,6 +172,9 @@ while :; do
           [ -f "$f" ] && [ -f "${f%.npz}.fingerprint.json" ] || ok=0
         done
         [ "$ok" = 1 ] || continue
+        if [ "$hg" -lt "${hn:-$NEED_HOST_GB}" ]; then
+          [ "${HOSTWAIT:-}" != "$name" ] && log "WAIT  $name needs host >= ${hn} GB available (now $hg)"; HOSTWAIT=$name; break
+        fi
         launch "$name" "$d" "$u" "$lr" "$pp" "$pool" "$xp" "$xn" "$cap"; started=1; break
       done < "$JOBS"
     fi
