@@ -335,7 +335,8 @@ def cap_gpu_memory(tf, mib):
     print(f"[gpu] per-process limit {mib} MiB on {len(gpus)} device(s)", flush=True)
 
 
-def load_extension_features(zex, take, d, r, p, inputs, student, idx_t, binary_t):
+def load_extension_features(zex, take, d, r, p, inputs, student, idx_t, binary_t,
+                            chunk=2_000_000):
     """Features and labels of the first `take` shots of a training-only pool.
 
     Two file formats:
@@ -343,27 +344,42 @@ def load_extension_features(zex, take, d, r, p, inputs, student, idx_t, binary_t
       compact : det_evts_packed (np.packbits along the detector axis), n_det, flips
                 (as written by sample_pool_compact; same shots for the same seed)
     The GRU's input is built from the detection events only, so both formats give the
-    same features (tests/compact_pool_check.py checks this tensor for tensor). The compact
+    same features (tests/compact_pool_check.sh checks this tensor for tensor). The compact
     format has no measurements, so it serves the GRU with inputs='evts' only.
+
+    The features are built `chunk` shots at a time straight into a preallocated uint8
+    array. assemble_features returns float32, 4 bytes per value, so converting a whole
+    50M-shot pool at once held a float32 copy about 4x the size of the final array; per
+    chunk the values are the same and the float32 copy stays small.
     """
     from circuit_partition import split_measurements
     from StudentModels import assemble_features
     f_ex = zex['flips'][0:take].astype(binary_t).reshape(-1)
-    if 'det_evts_packed' in zex.files:
+    compact = 'det_evts_packed' in zex.files
+    if compact:
         if not (student == 'gru' and inputs == 'evts'):
             raise SystemExit(f"{LOG} compact pool (detection events only) serves the GRU "
                              f"with inputs='evts' only; got student={student} inputs={inputs}")
         n_det = int(zex['n_det'])
-        e_ex = np.unpackbits(zex['det_evts_packed'][0:take], axis=1, count=n_det).astype(binary_t)
-        b_ex = None
+        src = zex['det_evts_packed'][0:take]
     else:
-        m_ex = zex['measurements'][0:take].astype(binary_t)
-        e_ex = zex['det_evts'][0:take].astype(binary_t)
-        b_ex, _, _ = split_measurements(m_ex, d, idx_t)
-        del m_ex
-    x_ex = to_host_uint8(assemble_features(b_ex, e_ex, inputs, student=student,
-                                           d=d, rounds=r, p=p))
-    del b_ex, e_ex
+        src_m = zex['measurements'][0:take]
+        src = zex['det_evts'][0:take]
+    x_ex = None
+    for a in range(0, take, chunk):
+        b = min(a + chunk, take)
+        if compact:
+            e_c = np.unpackbits(src[a:b], axis=1, count=n_det).astype(binary_t)
+            b_c = None
+        else:
+            e_c = src[a:b].astype(binary_t)
+            b_c, _, _ = split_measurements(src_m[a:b].astype(binary_t), d, idx_t)
+        x_c = to_host_uint8(assemble_features(b_c, e_c, inputs, student=student,
+                                              d=d, rounds=r, p=p))
+        if x_ex is None:
+            x_ex = np.empty((take,) + x_c.shape[1:], dtype=np.uint8)
+        x_ex[a:b] = x_c
+        del e_c, b_c, x_c
     return x_ex, f_ex
 
 
