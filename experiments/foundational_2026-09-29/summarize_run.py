@@ -1,5 +1,5 @@
 # Created: 2026-09-29
-# Last modified: 2026-09-29 (GPU peak from the run's own process: first new GPU process after the run's start; resumed runs report the resumed segment's runtime)
+# Last modified: 2026-09-30 (clip_frac_cum and n_clipped when the run logged gradient norms). Earlier 2026-09-29 (GPU peak from the run's own process: first new GPU process after the run's start; resumed runs report the resumed segment's runtime)
 """One-run summary for the foundational queue, printed as JSON.
 
     python summarize_run.py <run folder> <resources.tsv> <container name> [<gpu pid>...]
@@ -76,4 +76,12 @@ out = dict(
     start=start, end=end,
     runtime_h=round((times['end'] - times['start']).total_seconds() / 3600, 2),
     peak_host_gb=round(host, 1), peak_gpu_mib=gpu, gpu_pid=gpu_pid, gpu_pid_source=src)
+# Clipping, for runs with --global-clipnorm / --log-grad-norm: cumulative fraction of
+# updates clipped (history) and the counts (<tag>.grad_norms.json).
+if 'clip_frac_cum' in hist:
+    out['clip_frac_cum'] = round(float(hist['clip_frac_cum'][-1]), 6)
+gj = glob.glob(os.path.join(sd, 'runs', '*.grad_norms.json'))
+if gj:
+    g = json.load(open(gj[0]))
+    out['n_clipped'], out['n_updates'] = g.get('n_clipped'), g.get('n_updates')
 print(json.dumps(out, indent=1))

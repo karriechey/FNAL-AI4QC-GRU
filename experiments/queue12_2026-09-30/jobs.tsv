@@ -1,0 +1,6 @@
+# name	d	units	peak_lr	p	formal_pool	extra_pools	extra_counts	gpu_cap_mib
+# Runs 6, 7, 9, 10 (existing pools). Later runs are appended when their pools exist.
+R06_d7_u200_100M	7	200	0.003	0.004	/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz	/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz,/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed44.npz,/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed45.npz	5000000,30000000,50000000	1600
+R07_d7_u140_100M	7	140	0.003	0.004	/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz	/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz,/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed44.npz,/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed45.npz	5000000,30000000,50000000	1600
+R09_d7_u280_50M_lr5e-3	7	280	0.005	0.004	/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz	/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz,/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed44.npz	5000000,30000000	1600
+R10_d7_u280_50M_lr1e-2	7	280	0.01	0.004	/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz	/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz,/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed44.npz	5000000,30000000	1600
