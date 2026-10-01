@@ -44,6 +44,9 @@
 #   - swap rule: a job starts only if swap in use has not grown by more than 2 GB over the
 #     last 10 minutes (no active swapping) and host memory available >= its threshold.
 #     Swap already in use from earlier (idle pages of running jobs) does not block by itself;
+#     (2026-10-01 17:45Z) and nothing starts while swap in use exceeds MAX_SWAP_GB (40 GB):
+#     run 8 started at 16:46Z with 143 GB of swap already in use, because only growth
+#     was checked;
 #   - job_env.txt (KEY=VALUE lines, re-read at every launch) adds environment settings to
 #     every job started from then on (the memory settings chosen by the memory test);
 #   - on start the driver adopts running q12_ jobs whose run folder is in this checkout
@@ -189,6 +192,7 @@ while :; do
   started=""
   NR=$(n_running)
   SG=no; swap_growing && SG=yes
+  [ "$(swap_used_gb)" -gt "${MAX_SWAP_GB:-40}" ] && SG=yes
   if [ "$SG" = yes ] && [ "${SWAPLOGGED:-}" != yes ]; then log "HOLD  swap in use grew by > 2 GB in the last ~10 min (now $(swap_used_gb) GB); no new starts"; SWAPLOGGED=yes; fi
   [ "$SG" = no ] && SWAPLOGGED=""
   if [ "$SG" = no ] && main_all_started && [ "$NR" -lt "$MAX_JOBS" ] && ! loading; then
