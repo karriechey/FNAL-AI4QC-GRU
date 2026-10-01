@@ -1,5 +1,5 @@
 # Created: 2026-09-26
-# Last modified: 2026-09-26
+# Last modified: 2026-10-01 (HOSTDATA_MAP_PARALLEL, HOSTDATA_PREFETCH, HOSTDATA_GPU_PREFETCH: optional fixed pipeline depths)
 """Input pipelines that keep the data in host (CPU) memory.
 
 Why this exists
@@ -23,6 +23,8 @@ like seed variance.
 
 Validation and evaluation use the same pipeline without shuffling, in shot order.
 """
+import os
+
 import numpy as np
 
 
@@ -81,8 +83,16 @@ def make_dataset(tf, x_u8, y=None, batch_size=10_000, shuffle_seed=None, to_gpu=
                 yb.set_shape((None,) + y_shape)
                 return tf.cast(xb, tf.float32), yb
         # deterministic=True keeps batch order fixed even with parallel gathers.
-        ds = ds.map(fn, num_parallel_calls=tf.data.AUTOTUNE, deterministic=True)
-        ds = ds.prefetch(tf.data.AUTOTUNE)
+        # Pipeline depths. Defaults (env unset) are the ones every earlier run used:
+        # AUTOTUNE parallel gathers, AUTOTUNE prefetch, 2 batches prefetched to the GPU.
+        # HOSTDATA_MAP_PARALLEL / HOSTDATA_PREFETCH / HOSTDATA_GPU_PREFETCH (integers) fix
+        # them, to bound host memory (2026-10-01 memory test). deterministic=True keeps the
+        # batch order the same for any depth, so the numbers do not depend on these.
+        par = int(os.environ.get('HOSTDATA_MAP_PARALLEL', 0)) or tf.data.AUTOTUNE
+        pre = int(os.environ.get('HOSTDATA_PREFETCH', 0)) or tf.data.AUTOTUNE
+        ds = ds.map(fn, num_parallel_calls=par, deterministic=True)
+        ds = ds.prefetch(pre)
     if to_gpu and tf.config.list_logical_devices('GPU'):
-        ds = ds.apply(tf.data.experimental.prefetch_to_device('/GPU:0', buffer_size=2))
+        gpre = int(os.environ.get('HOSTDATA_GPU_PREFETCH', 2))
+        ds = ds.apply(tf.data.experimental.prefetch_to_device('/GPU:0', buffer_size=gpre))
     return ds
