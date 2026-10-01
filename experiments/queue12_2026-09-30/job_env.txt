@@ -1,0 +1,2 @@
+# Environment added to every job started by driver_b from now on (KEY=VALUE per line).
+# Filled in after the memory-settings test of 2026-10-01; empty = current settings.

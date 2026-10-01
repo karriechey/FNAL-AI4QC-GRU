@@ -39,6 +39,16 @@
 #     starts (default 150), set from its expected loading peak. If the next job whose pools
 #     are ready does not have it, the driver waits instead of starting a later job.
 #
+# Changes 2026-10-01:
+#   - optional 11th jobs column: epochs (default 80); run 13 uses 120;
+#   - swap rule: a job starts only if swap in use has not grown by more than 2 GB over the
+#     last 10 minutes (no active swapping) and host memory available >= its threshold.
+#     Swap already in use from earlier (idle pages of running jobs) does not block by itself;
+#   - job_env.txt (KEY=VALUE lines, re-read at every launch) adds environment settings to
+#     every job started from then on (the memory settings chosen by the memory test);
+#   - on start the driver adopts running q12_ jobs whose run folder is in this checkout
+#     (their podman process belonged to an earlier copy of this driver).
+#
 #     setsid nohup bash driver_b.sh > /dev/null 2>&1 < /dev/null &
 set -uo pipefail
 
@@ -63,6 +73,13 @@ flock -n 9 || { echo "[queue12 $(date -u '+%Y-%m-%dT%H:%M:%SZ')] another driver_
 
 log () { echo "[queue12 $(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*" | tee -a "$LOG"; }
 free_mib () { nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits | head -1; }
+swap_used_gb () { awk '/SwapTotal/{t=$2} /SwapFree/{f=$2} END{printf "%d", (t-f)/1048576}' /proc/meminfo; }
+SWAPHIST=()   # swap in use at each loop (about every 30-60 s), last ~10 minutes
+swap_growing () {  # has swap in use grown by > 2 GB over the samples kept?
+  local now; now=$(swap_used_gb); SWAPHIST+=("$now")
+  [ "${#SWAPHIST[@]}" -gt 15 ] && SWAPHIST=("${SWAPHIST[@]:1}")
+  [ $(( now - SWAPHIST[0] )) -gt 2 ]
+}
 host_avail_gb () { awk '/MemAvailable/ {printf "%d", $2/1048576}' /proc/meminfo; }
 running () { [ -n "$(podman ps -q --filter name="^$1\$")" ]; }
 sample_resources () {
@@ -79,19 +96,22 @@ sample_resources () {
 
 declare -A PID=() OUTD=()
 
-launch () {   # launch <name> <d> <units> <lr> <p> <pool> <extra pools csv> <extra counts csv> <gpu cap>
-  local name="$1" D="$2" U="$3" LRV="$4" PP="$5" POOLF="$6" XP="$7" XN="$8" CAP="$9" S OUT ENVX i
+launch () {   # launch <name> <d> <units> <lr> <p> <pool> <extra pools csv> <extra counts csv> <gpu cap> <epochs>
+  local name="$1" D="$2" U="$3" LRV="$4" PP="$5" POOLF="$6" XP="$7" XN="$8" CAP="$9" EP="${10:-80}" S OUT ENVX i kv
   S=$(date -u +%Y%m%dT%H%M%SZ); OUT="$DIR/${name}_$S"; mkdir -p "$OUT"
   { echo "at_start repo_head $(git -C "$REPO" rev-parse HEAD)"
     echo "at_start train_student_sha256 $(sha256sum "$REPO/src/train_student.py" | cut -d' ' -f1)"
   } > "$OUT/code_commit.txt"
   ENVX=(D="$D" ROUNDS="$D" SEEDS=0 UNITS="$U" P="$PP" POOL="$POOLF" NTRAIN=15000000
-        BATCH=10000 EPOCHS=80 LR="$LRV" LR_SCHEDULE=cosine LR_END=3e-5 GLOBAL_CLIPNORM="$GCLIP"
+        BATCH=10000 EPOCHS="$EP" LR="$LRV" LR_SCHEDULE=cosine LR_END=3e-5 GLOBAL_CLIPNORM="$GCLIP"
         EARLY_STOP=0 RESET_AFTER=0 UNROLL=0 EVAL_NO_TF32=1
         GPU_MEM_MIB="$CAP" MIN_FREE_MIB="$CAP" OUT="$OUT" STAMP="$S")
   [ "$XP" != "-" ] && ENVX+=(EXTRA_POOL="${XP//,/ }" EXTRA_N="${XN//,/ }")
+  if [ -f "$DIR/job_env.txt" ]; then
+    while IFS= read -r kv; do [ -n "$kv" ] && [ "${kv:0:1}" != "#" ] && ENVX+=("$kv"); done < "$DIR/job_env.txt"
+  fi
   echo "podman run --rm --name q12_$name --security-opt=label=disable --device nvidia.com/gpu=all -v $HOME:$HOME -e HOME=$HOME -w $REPO/src $IMG env ${ENVX[*]} bash gh200_run_student_scaling.sh" > "$OUT/command.txt"
-  log "START $name d=$D units=$U peak_lr=$LRV p=$PP extra=[$XN] -> $OUT (free GPU $(free_mib) MiB, host available $(host_avail_gb) GB, jobs running $(n_running))"
+  log "START $name d=$D units=$U peak_lr=$LRV p=$PP epochs=$EP extra=[$XN] env=[$(grep -v '^#' "$DIR/job_env.txt" 2>/dev/null | tr '\n' ' ')] -> $OUT (free GPU $(free_mib) MiB, host available $(host_avail_gb) GB, jobs running $(n_running))"
   podman run --rm --name "q12_$name" --security-opt=label=disable --device nvidia.com/gpu=all \
      -v "$HOME:$HOME" -e HOME="$HOME" -w "$REPO/src" "$IMG" \
      env "${ENVX[@]}" bash gh200_run_student_scaling.sh > "$OUT/podman.log" 2>&1 9>&- &
@@ -137,7 +157,11 @@ nan_check () {
 
 finalize () {
   local name="$1" OUT SD; OUT="${OUTD[$name]}"; SD="$OUT/seed0"
-  wait "${PID[$name]}"; echo $? > "$OUT/exit_code"
+  if [ "${PID[$name]}" = adopted ]; then
+    echo "unknown (podman process belonged to an earlier driver_b; adopted)" > "$OUT/exit_code"
+  else
+    wait "${PID[$name]}"; echo $? > "$OUT/exit_code"
+  fi
   if [ ! -f "$SD/COMPLETE" ]; then
     log "FAIL  $name ended without COMPLETE (exit $(cat "$OUT/exit_code")); last lines: $(grep -E 'Error|error|STOP|Killed|DIVERGED' "$SD/run.log" "$OUT/podman.log" "$OUT/DIVERGED" 2>/dev/null | tail -2 | tr '\n' ' ')"
   elif "$PYH" "$SUMMARIZE" "$OUT" "$RES" "q12_$name" > "$SD/summary.json" 2>> "$DIR/summarize.log"; then
@@ -150,19 +174,28 @@ finalize () {
 }
 
 log "BEGIN queue12 driver_b pid=$$ repo=$(git -C "$REPO" rev-parse --short HEAD) MAX_JOBS=$MAX_JOBS free GPU $(free_mib) MiB host available $(host_avail_gb) GB"
+for c in $(podman ps --format '{{.Names}}' | grep '^q12_'); do
+  f=$(ls -d "$DIR/${c#q12_}"_2* 2>/dev/null | tail -1)
+  [ -n "$f" ] || continue
+  PID[${c#q12_}]=adopted; OUTD[${c#q12_}]=$f
+  log "ADOPT ${c#q12_} running -> $f"
+done
 IDLE=0
 while :; do
   sample_resources
   for name in "${!PID[@]}"; do
-    if kill -0 "${PID[$name]}" 2>/dev/null; then nan_check "$name"; else sleep 5; finalize "$name"; fi
+    if { [ "${PID[$name]}" = adopted ] && running "q12_$name"; } || kill -0 "${PID[$name]}" 2>/dev/null; then nan_check "$name"; else sleep 5; finalize "$name"; fi
   done
   started=""
   NR=$(n_running)
-  if main_all_started && [ "$NR" -lt "$MAX_JOBS" ] && ! loading; then
+  SG=no; swap_growing && SG=yes
+  if [ "$SG" = yes ] && [ "${SWAPLOGGED:-}" != yes ]; then log "HOLD  swap in use grew by > 2 GB in the last ~10 min (now $(swap_used_gb) GB); no new starts"; SWAPLOGGED=yes; fi
+  [ "$SG" = no ] && SWAPLOGGED=""
+  if [ "$SG" = no ] && main_all_started && [ "$NR" -lt "$MAX_JOBS" ] && ! loading; then
     need=$NEED_FREE_ALONE; [ "$NR" -ge 1 ] && need=$NEED_FREE_SECOND
     fm=$(free_mib); hg=$(host_avail_gb)
     if [ "$fm" -ge "$need" ] && [ "$hg" -ge "$NEED_HOST_GB" ]; then
-      while IFS=$'\t' read -r name d u lr pp pool xp xn cap hn; do
+      while IFS=$'\t' read -r name d u lr pp pool xp xn cap hn ep; do
         [ -z "$name" ] || [ "${name:0:1}" = "#" ] && continue
         ls -d "$DIR/${name}"_2* >/dev/null 2>&1 && continue          # started before
         [ -n "${PID[$name]:-}" ] && continue
@@ -175,7 +208,7 @@ while :; do
         if [ "$hg" -lt "${hn:-$NEED_HOST_GB}" ]; then
           [ "${HOSTWAIT:-}" != "$name" ] && log "WAIT  $name needs host >= ${hn} GB available (now $hg)"; HOSTWAIT=$name; break
         fi
-        launch "$name" "$d" "$u" "$lr" "$pp" "$pool" "$xp" "$xn" "$cap"; started=1; break
+        launch "$name" "$d" "$u" "$lr" "$pp" "$pool" "$xp" "$xn" "$cap" "${ep:-80}"; started=1; break
       done < "$JOBS"
     fi
   fi
