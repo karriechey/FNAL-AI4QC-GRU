@@ -1,2 +1,5 @@
 # Environment added to every job started by driver_b from now on (KEY=VALUE per line).
-# Filled in after the memory-settings test of 2026-10-01; empty = current settings.
+# 2026-10-01 19:45Z: tests/memory_growth_test.sh (d7 u280 50M, 10 epochs): without this the
+# training process grew ~1.25 GB per epoch and was still growing at epoch 9; with it memory
+# levels off at epoch 3 (38.6 -> 39.2 GB over epochs 3-9). Losses identical (max |diff| 0).
+MALLOC_ARENA_MAX=2
