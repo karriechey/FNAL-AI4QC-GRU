@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -40,6 +40,10 @@ LR_WARMUP_EPOCHS="${LR_WARMUP_EPOCHS:-0}"
 # checkpoint and the scored weights are the averaged ones. Adds _ema<m> to the tag.
 # Default empty = no EMA, as before.
 EMA_DECAY="${EMA_DECAY:-}"
+# WARM_START=<.best.keras> initialises from another run's model: tensors of matching name and
+# shape are loaded, the rest (e.g. the GRU input kernel across distances) stay fresh. Adds
+# _ws to the tag. Default empty = fresh initialisation, as before.
+WARM_START="${WARM_START:-}"
 # GLOBAL_CLIPNORM=<v> passes Adam global_clipnorm=<v> (norm of all gradients together; the
 # per-update norms and clipped fraction are logged) and adds _gclip<v> to the tag.
 # Default empty = no clipping, as before.
@@ -301,6 +305,7 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "             : batch=$BATCH lr=$LR epochs=$EPOCHS early_stop=$EARLY_STOP"
   echo "optimizer    : lr_schedule=$LR_SCHEDULE lr_end=$LR_END warmup_epochs=$LR_WARMUP_EPOCHS ema_decay=${EMA_DECAY:-none} global_clipnorm=${GLOBAL_CLIPNORM:-none}"
   echo "gru layer    : reset_after=$RESET_AFTER unroll=$UNROLL"
+  echo "warm start   : ${WARM_START:-none}"
   echo "tf32         : training $([ "$TRAIN_NO_TF32" = 1 ] && echo off || echo on), evaluation $([ "$EVAL_NO_TF32" = 1 ] && echo off || echo on)"
   echo "gpu cap      : ${GPU_MEM_MIB:-none} MiB per process"
   echo "quantization : weights=${W_BITS:-float32} activations=${A_BITS:-float32}"
@@ -342,6 +347,8 @@ if [ -n "$EXTRA_POOL" ]; then
   [ -n "$EXTRA_N" ] && TRAIN_ONLY+=(--extra-train-n "${EXTRA_NS[@]}")
 fi
 
+[ -n "$WARM_START" ] && TRAIN_ONLY+=(--warm-start "$WARM_START")
+
 if [ -n "$RESUME_WEIGHTS" ]; then
   TRAIN_ONLY+=(--resume-weights "$RESUME_WEIGHTS" --initial-epoch "$INITIAL_EPOCH")
   [ -n "$RESUME_BEST_JSON" ] && TRAIN_ONLY+=(--resume-best-json "$RESUME_BEST_JSON")
@@ -373,6 +380,7 @@ run_seed () {
   [ "$LR_SCHEDULE" = "cosine" ] && QTAG="${QTAG}_cos${LR_END}"
   [ "$LR_WARMUP_EPOCHS" != "0" ] && QTAG="${QTAG}_wu${LR_WARMUP_EPOCHS}"
   [ -n "$EMA_DECAY" ] && QTAG="${QTAG}_ema${EMA_DECAY}"
+  [ -n "$WARM_START" ] && QTAG="${QTAG}_ws"
   [ -n "$GLOBAL_CLIPNORM" ] && QTAG="${QTAG}_gclip${GLOBAL_CLIPNORM}"
   local TAG="${STUDENT}_d${D}_${PTAG}_${SIZE}${QTAG}_hard_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
   local SEEDDIR="$OUT/seed${SEED}"

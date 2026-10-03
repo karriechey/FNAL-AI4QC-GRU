@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored). Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape). Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -612,6 +612,13 @@ def run():
     ap.add_argument('--resume-history', default=None,
                     help='the earlier run\'s .history.json; written history = earlier epochs + '
                          'resumed epochs')
+    ap.add_argument('--warm-start', default=None,
+                    help='a .best.keras from an earlier run (any distance). Every weight '
+                         'tensor whose name and shape match this model\'s is copied in; the '
+                         'others keep their fresh initialisation. Between distances the GRU '
+                         'input kernel differs in shape (positions per timestep) and stays '
+                         'fresh; the recurrent kernel, the GRU bias and the logit head load. '
+                         'The optimizer starts fresh. Not with --resume-weights.')
     ap.add_argument('--tail-diagnostics', action='store_true',
                     help='evaluate the tail every epoch and log p_L, predicted-positive '
                          'rate vs base rate, a class-collapse flag, and the student logit '
@@ -973,6 +980,29 @@ def run():
                   metrics=[make_hard_accuracy()])
     n_params = int(model.count_params())
     print(f"{LOG} {args.student} inputs={args.inputs} params={n_params:,}", flush=True)
+    if args.warm_start:
+        if args.resume_weights:
+            raise SystemExit(f"{LOG} --warm-start and --resume-weights together. STOP.")
+        if not os.path.exists(args.warm_start):
+            raise SystemExit(f"{LOG} MISSING warm-start model {args.warm_start}")
+        # compile=False: only the architecture and weights are read, not the optimizer.
+        src_model = tf.keras.models.load_model(args.warm_start, compile=False)
+        src_w = {w.name: w for w in src_model.weights}
+        n_loaded = 0
+        for w in model.weights:
+            s_w = src_w.get(w.name)
+            if s_w is not None and tuple(s_w.shape) == tuple(w.shape):
+                w.assign(s_w)
+                n_loaded += 1
+                print(f"{LOG} warm-start: loaded {w.name} {tuple(w.shape)}", flush=True)
+            else:
+                print(f"{LOG} warm-start: fresh  {w.name} {tuple(w.shape)} (source: "
+                      f"{'absent' if s_w is None else tuple(s_w.shape)})", flush=True)
+        if not n_loaded:
+            raise SystemExit(f"{LOG} warm-start: no tensor of {args.warm_start} matches. STOP.")
+        print(f"{LOG} warm-start from {args.warm_start}: {n_loaded}/{len(model.weights)} "
+              f"tensors loaded", flush=True)
+        del src_model, src_w
     if args.resume_weights:
         if args.initial_epoch <= 0:
             raise SystemExit(f"{LOG} --resume-weights needs --initial-epoch > 0")
@@ -1005,6 +1035,7 @@ def run():
                        f'{args.lr_schedule}_e{args.epochs}_ra{int(args.reset_after)}_'
                        + (f'wu{args.lr_warmup_epochs:g}_' if args.lr_warmup_epochs else '')
                        + (f'ema{args.ema_decay:g}_' if args.ema_decay is not None else '')
+                       + ('ws_' if args.warm_start else '')
                        + f'{pool_tag}')
     ck_name = args.run_tag or tag      # checkpoint and gradient-norm file prefix
 
@@ -1197,7 +1228,7 @@ def run():
 
     fields = ['architecture', 'student', 'inputs', 'd', 'p', 'rounds', 'seed', 'n_train',
               'n_test', 'alpha', 'temperature', 'lr', 'lr_schedule', 'lr_end', 'lr_warmup_epochs',
-              'ema_decay', 'global_clipnorm',
+              'ema_decay', 'warm_start', 'global_clipnorm',
               'clip_frac',
               'weight_bits', 'act_bits',
               # architecture size, so a row is interpretable without parsing its tag
@@ -1222,6 +1253,7 @@ def run():
             lr_end=(args.lr_end if args.lr_schedule == 'cosine' else ''),
             lr_warmup_epochs=args.lr_warmup_epochs,
             ema_decay=('' if args.ema_decay is None else args.ema_decay),
+            warm_start=(os.path.abspath(args.warm_start) if args.warm_start else ''),
             global_clipnorm=('' if args.global_clipnorm is None else args.global_clipnorm),
             clip_frac=('' if gn_stats is None or not int(gn_stats['n_updates'].numpy())
                        else round(int(gn_stats['n_clipped'].numpy())

@@ -117,7 +117,7 @@ class Checks:
             out = {}
             with h5py.File(path, 'r') as f:
                 f.visititems(lambda k, v: out.__setitem__(k, v[()])
-                             if isinstance(v, h5py.Dataset) and 'optimizer' not in k else None)
+                             if isinstance(v, h5py.Dataset) and 'optimizer' not in k and 'metrics' not in k else None)
             return out
 
         def equal(a, b):
@@ -155,6 +155,37 @@ class Checks:
                     f"best==end-of-fit {equal(best, end)}; val_loss raw {h.get('val_loss')} "
                     f"ema {h.get('val_loss_ema')}; scored_weights {row.get('scored_weights')}")
 
+    def warm_start_on(self):
+        import h5py
+        import numpy as np
+
+        def weights(path):
+            out = {}
+            with h5py.File(path, 'r') as f:
+                f.visititems(lambda k, v: out.__setitem__(k, v[()])
+                             if isinstance(v, h5py.Dataset) and 'optimizer' not in k and 'metrics' not in k else None)
+            return out
+
+        # Source: d=7 (48 positions), saved with the warmup schedule in its optimizer.
+        rs, _, _ = self.run_new('ws_source', ['--lr-warmup-epochs', '0.5'], d=7, epochs=1)
+        src = f'{self.a.out}/ws_source/ckpt/t.best.keras'
+        # Target: d=9 (80 positions), learning rate ~0 so the loaded values survive the
+        # one epoch unchanged to within ~1e-9.
+        rc, log, _ = self.run_new('ws_target', ['--warm-start', src, '--lr', '1e-12',
+                                                '--lr-end', '1e-13'], d=9, epochs=1)
+        loaded = re.findall(r'warm-start: loaded (\S+)', log)
+        fresh = re.findall(r'warm-start: fresh  (\S+)', log)
+        ws = weights(f'{self.a.out}/ws_source/ckpt/t.best.weights.h5') if rs == 0 else {}
+        wt = weights(f'{self.a.out}/ws_target/ckpt/t.lastepoch.weights.h5') if rc == 0 else {}
+        close = {k: bool(np.allclose(ws[k], wt[k], atol=1e-8))
+                 for k in ws if k in wt and ws[k].shape == wt[k].shape}
+        diff_shape = [k for k in ws if k in wt and ws[k].shape != wt[k].shape]
+        ok = (rs == 0 and rc == 0 and len(loaded) == 4 and len(fresh) == 1
+              and 'kernel' in fresh[0] and 'recurrent' not in fresh[0]
+              and close and all(close.values()) and len(diff_shape) == 1)
+        self.report('warm_start_on', ok, f"loaded {loaded}; fresh {fresh}; "
+                    f"source==target after 1 epoch at lr~0: {close}; shape differs: {diff_shape}")
+
     def run(self, names):
         for n in names:
             getattr(self, n)()
@@ -170,6 +201,6 @@ if __name__ == '__main__':
     ap.add_argument('--pool-dir', required=True)
     ap.add_argument('--base-ref', required=True)
     ap.add_argument('--out', required=True)
-    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on', 'ema_on'])
+    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on', 'ema_on', 'warm_start_on'])
     a = ap.parse_args()
     sys.exit(Checks(a).run(a.checks))
