@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape). Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -619,6 +619,10 @@ def run():
                          'input kernel differs in shape (positions per timestep) and stays '
                          'fresh; the recurrent kernel, the GRU bias and the logit head load. '
                          'The optimizer starts fresh. Not with --resume-weights.')
+    ap.add_argument('--max-params', type=int, default=None,
+                    help='stop before training if the model has more parameters than this '
+                         '(the width budget, e.g. the u280 count at this distance). Default '
+                         'None = no limit.')
     ap.add_argument('--tail-diagnostics', action='store_true',
                     help='evaluate the tail every epoch and log p_L, predicted-positive '
                          'rate vs base rate, a class-collapse flag, and the student logit '
@@ -980,6 +984,9 @@ def run():
                   metrics=[make_hard_accuracy()])
     n_params = int(model.count_params())
     print(f"{LOG} {args.student} inputs={args.inputs} params={n_params:,}", flush=True)
+    if args.max_params is not None and n_params > args.max_params:
+        raise SystemExit(f"{LOG} {n_params:,} parameters exceed --max-params "
+                         f"{args.max_params:,}. STOP.")
     if args.warm_start:
         if args.resume_weights:
             raise SystemExit(f"{LOG} --warm-start and --resume-weights together. STOP.")

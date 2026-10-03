@@ -186,6 +186,14 @@ class Checks:
         self.report('warm_start_on', ok, f"loaded {loaded}; fresh {fresh}; "
                     f"source==target after 1 epoch at lr~0: {close}; shape differs: {diff_shape}")
 
+    def max_params_on(self):
+        # u32 at d=5 has 5,505 parameters: a cap of 5,505 passes, 5,504 stops before training.
+        rc_ok, log_ok, _ = self.run_new('maxp_ok', ['--max-params', '5505'], epochs=1)
+        rc_no, log_no, _ = self.run_new('maxp_no', ['--max-params', '5504'], epochs=1)
+        ok = (rc_ok == 0 and rc_no != 0 and 'exceed --max-params 5,504' in log_no
+              and 'Epoch 1' not in log_no and '40/40' not in log_no)
+        self.report('max_params_on', ok, f"cap 5505 exit {rc_ok}; cap 5504 exit {rc_no}")
+
     def run(self, names):
         for n in names:
             getattr(self, n)()
@@ -201,6 +209,6 @@ if __name__ == '__main__':
     ap.add_argument('--pool-dir', required=True)
     ap.add_argument('--base-ref', required=True)
     ap.add_argument('--out', required=True)
-    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on', 'ema_on', 'warm_start_on'])
+    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on', 'ema_on', 'warm_start_on', 'max_params_on'])
     a = ap.parse_args()
     sys.exit(Checks(a).run(a.checks))

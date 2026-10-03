@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -44,6 +44,9 @@ EMA_DECAY="${EMA_DECAY:-}"
 # shape are loaded, the rest (e.g. the GRU input kernel across distances) stay fresh. Adds
 # _ws to the tag. Default empty = fresh initialisation, as before.
 WARM_START="${WARM_START:-}"
+# MAX_PARAMS=<n> stops before training when the model has more than n parameters (checked
+# in the parameter-count step below and again by train_student.py). Default empty = none.
+MAX_PARAMS="${MAX_PARAMS:-}"
 # GLOBAL_CLIPNORM=<v> passes Adam global_clipnorm=<v> (norm of all gradients together; the
 # per-update norms and clipped fraction are logged) and adds _gclip<v> to the tag.
 # Default empty = no clipping, as before.
@@ -266,12 +269,13 @@ PYEXT
 done
 
 # Print the measured layout and parameter count
-"$PY" - "$STUDENT" "$UNITS" "$D" "$ROUNDS" "$P" $HIDDEN <<'PYPARAM'
+"$PY" - "$STUDENT" "$UNITS" "$D" "$ROUNDS" "$P" "${MAX_PARAMS:-0}" $HIDDEN <<'PYPARAM'
 import os, sys
 os.environ['CUDA_VISIBLE_DEVICES'] = ''      # shape check, no GPU needed
 student, units = sys.argv[1], int(sys.argv[2])
 d, r, p = int(sys.argv[3]), int(sys.argv[4]), float(sys.argv[5])
-hidden = tuple(int(h) for h in sys.argv[6:])
+max_params = int(sys.argv[6])
+hidden = tuple(int(h) for h in sys.argv[7:])
 from StudentModels import build_student, detector_sequence_layout, input_width
 if student == 'gru':
     n_t, n_pos, _ = detector_sequence_layout(d, r, p)
@@ -280,7 +284,10 @@ else:
     print(f"[gru] flat input width: {input_width(d, r, 'evts')}")
 m = build_student(student, d=d, rounds=r, inputs='evts', hidden=hidden, units=units)
 print(f"[gru] {student} units={units} hidden={hidden}  params={m.count_params():,}")
+if max_params and m.count_params() > max_params:
+    raise SystemExit(f"[gru] {m.count_params():,} parameters exceed MAX_PARAMS {max_params:,}. STOP.")
 PYPARAM
+[ $? -eq 0 ] || exit 1
 
 PROV=$("$PY" -c "import json;m=json.load(open('$OUT/pool_provenance.json'));\
 print(f\"gen_seed={m['gen_seed']} flips_sha={m['flips_sha256']} n_total={m['n_total']}\")")
@@ -348,6 +355,7 @@ if [ -n "$EXTRA_POOL" ]; then
 fi
 
 [ -n "$WARM_START" ] && TRAIN_ONLY+=(--warm-start "$WARM_START")
+[ -n "$MAX_PARAMS" ] && TRAIN_ONLY+=(--max-params "$MAX_PARAMS")
 
 if [ -n "$RESUME_WEIGHTS" ]; then
   TRAIN_ONLY+=(--resume-weights "$RESUME_WEIGHTS" --initial-epoch "$INITIAL_EPOCH")
