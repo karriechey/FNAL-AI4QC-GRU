@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine). Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -39,7 +39,7 @@ import os
 import time
 import numpy as np
 
-from helpers import (set_seeds, learning_rate_scheduler, lookup_mwpm, cosine_lr_schedule,
+from helpers import (set_seeds, learning_rate_scheduler, lookup_mwpm, warmup_cosine_lr_schedule,
                      make_adam_logging_grad_norm)
 from host_data import to_host_uint8, make_dataset  # reuse the recipe
 
@@ -569,6 +569,10 @@ def run():
                          'update; cosine decays it per optimizer update from --lr to '
                          '--lr-end over all epochs x steps, no warmup '
                          '(helpers.cosine_lr_schedule).')
+    ap.add_argument('--lr-warmup-epochs', type=float, default=0.0,
+                    help='with --lr-schedule cosine: raise the rate linearly from ~0 to --lr '
+                         'over this many epochs of updates, then run the cosine from --lr to '
+                         '--lr-end over the remaining updates. Default 0 = no warmup, as before.')
     ap.add_argument('--lr-end', type=float, default=3e-5,
                     help='final learning rate of --lr-schedule cosine.')
     ap.add_argument('--global-clipnorm', type=float, default=None,
@@ -918,10 +922,23 @@ def run():
     # exactly the one built before.
     lr_value = None
     if args.lr is not None:
-        lr_value = (cosine_lr_schedule(tf, args.lr, args.lr_end, steps * args.epochs)
+        warmup_steps = int(round(args.lr_warmup_epochs * steps))
+        if warmup_steps and args.lr_schedule != 'cosine':
+            raise SystemExit(f"{LOG} --lr-warmup-epochs needs --lr-schedule cosine. STOP.")
+        lr_value = (warmup_cosine_lr_schedule(tf, args.lr, args.lr_end, steps * args.epochs,
+                                              warmup_steps)
                     if args.lr_schedule == 'cosine' else args.lr)
+        if warmup_steps:
+            # The rate at the first updates, the end of the warmup and the last update, so
+            # the log shows the schedule that was used.
+            marks = sorted({0, 1, 2, warmup_steps - 1, warmup_steps, warmup_steps + 1,
+                            steps * args.epochs - 1})
+            print(f"{LOG} warmup {args.lr_warmup_epochs:g} epochs = {warmup_steps:,} updates; "
+                  + "  ".join(f"lr[{m:,}]={float(lr_value(m)):.3e}" for m in marks), flush=True)
     elif args.lr_schedule != 'constant':
         raise SystemExit('--lr-schedule cosine needs --lr (the start rate)')
+    elif args.lr_warmup_epochs:
+        raise SystemExit(f"{LOG} --lr-warmup-epochs needs --lr. STOP.")
     log_gn = args.log_grad_norm or args.global_clipnorm is not None
     gn_stats = None
     if log_gn:
@@ -935,6 +952,7 @@ def run():
     print(f"{LOG} optimizer Adam lr={args.lr} schedule={args.lr_schedule}"
           + (f" lr_end={args.lr_end} over {steps * args.epochs:,} updates"
              if args.lr_schedule == 'cosine' else '')
+          + (f" warmup_epochs={args.lr_warmup_epochs:g}" if args.lr_warmup_epochs else '')
           + f" global_clipnorm={args.global_clipnorm} log_grad_norm={log_gn}", flush=True)
     model.compile(optimizer=optimizer,
                   loss=make_distillation_loss(args.alpha, args.temperature),
@@ -971,7 +989,8 @@ def run():
                        + f'h{"-".join(str(h) for h in hidden) or 0}_'
                        f'lr{"teacher" if args.lr is None else format(args.lr, "g")}_'
                        f'{args.lr_schedule}_e{args.epochs}_ra{int(args.reset_after)}_'
-                       f'{pool_tag}')
+                       + (f'wu{args.lr_warmup_epochs:g}_' if args.lr_warmup_epochs else '')
+                       + f'{pool_tag}')
     ck_name = args.run_tag or tag      # checkpoint and gradient-norm file prefix
 
     # With --lr the rate is constant and the teacher's scheduler is not attached; it would
@@ -1161,7 +1180,8 @@ def run():
               f"{tag}.superseded_{stamp}.*", flush=True)
 
     fields = ['architecture', 'student', 'inputs', 'd', 'p', 'rounds', 'seed', 'n_train',
-              'n_test', 'alpha', 'temperature', 'lr', 'lr_schedule', 'lr_end', 'global_clipnorm',
+              'n_test', 'alpha', 'temperature', 'lr', 'lr_schedule', 'lr_end', 'lr_warmup_epochs',
+              'global_clipnorm',
               'clip_frac',
               'weight_bits', 'act_bits',
               # architecture size, so a row is interpretable without parsing its tag
@@ -1184,6 +1204,7 @@ def run():
             lr=('teacher_schedule' if args.lr is None else args.lr),
             lr_schedule=args.lr_schedule,
             lr_end=(args.lr_end if args.lr_schedule == 'cosine' else ''),
+            lr_warmup_epochs=args.lr_warmup_epochs,
             global_clipnorm=('' if args.global_clipnorm is None else args.global_clipnorm),
             clip_frac=('' if gn_stats is None or not int(gn_stats['n_updates'].numpy())
                        else round(int(gn_stats['n_clipped'].numpy())

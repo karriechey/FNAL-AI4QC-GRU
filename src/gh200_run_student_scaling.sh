@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-03 (LR_WARMUP_EPOCHS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -32,6 +32,10 @@ LR="${LR:-0.003}"          # start rate; passing --lr detaches the teacher LR sc
 # warmup) and adds _cos<LR_END> to the tag. Default constant = as before.
 LR_SCHEDULE="${LR_SCHEDULE:-constant}"
 LR_END="${LR_END:-3e-5}"
+# LR_WARMUP_EPOCHS=<n> (with LR_SCHEDULE=cosine) raises the rate linearly over the first n
+# epochs of updates, then runs the cosine over the rest, and adds _wu<n> to the tag.
+# Default 0 = no warmup, as before.
+LR_WARMUP_EPOCHS="${LR_WARMUP_EPOCHS:-0}"
 # GLOBAL_CLIPNORM=<v> passes Adam global_clipnorm=<v> (norm of all gradients together; the
 # per-update norms and clipped fraction are logged) and adds _gclip<v> to the tag.
 # Default empty = no clipping, as before.
@@ -45,6 +49,7 @@ RESUME_BEST_JSON="${RESUME_BEST_JSON:-}"
 RESUME_HISTORY="${RESUME_HISTORY:-}"
 OPT=(--lr-schedule "$LR_SCHEDULE")
 [ "$LR_SCHEDULE" = "cosine" ] && OPT+=(--lr-end "$LR_END")
+[ "$LR_WARMUP_EPOCHS" != "0" ] && OPT+=(--lr-warmup-epochs "$LR_WARMUP_EPOCHS")
 [ -n "$GLOBAL_CLIPNORM" ] && OPT+=(--global-clipnorm "$GLOBAL_CLIPNORM")
 
 STUDENT="${STUDENT:-gru}"  # gru or mlp
@@ -289,7 +294,7 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "$GEOMETRY"
   echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=1.0 hard labels"
   echo "             : batch=$BATCH lr=$LR epochs=$EPOCHS early_stop=$EARLY_STOP"
-  echo "optimizer    : lr_schedule=$LR_SCHEDULE lr_end=$LR_END global_clipnorm=${GLOBAL_CLIPNORM:-none}"
+  echo "optimizer    : lr_schedule=$LR_SCHEDULE lr_end=$LR_END warmup_epochs=$LR_WARMUP_EPOCHS global_clipnorm=${GLOBAL_CLIPNORM:-none}"
   echo "gru layer    : reset_after=$RESET_AFTER unroll=$UNROLL"
   echo "tf32         : training $([ "$TRAIN_NO_TF32" = 1 ] && echo off || echo on), evaluation $([ "$EVAL_NO_TF32" = 1 ] && echo off || echo on)"
   echo "gpu cap      : ${GPU_MEM_MIB:-none} MiB per process"
@@ -361,6 +366,7 @@ run_seed () {
   [ "$RESET_AFTER" = "1" ] && QTAG="${QTAG}_ra1"
   [ "$UNROLL" = "1" ] && QTAG="${QTAG}_ur1"
   [ "$LR_SCHEDULE" = "cosine" ] && QTAG="${QTAG}_cos${LR_END}"
+  [ "$LR_WARMUP_EPOCHS" != "0" ] && QTAG="${QTAG}_wu${LR_WARMUP_EPOCHS}"
   [ -n "$GLOBAL_CLIPNORM" ] && QTAG="${QTAG}_gclip${GLOBAL_CLIPNORM}"
   local TAG="${STUDENT}_d${D}_${PTAG}_${SIZE}${QTAG}_hard_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
   local SEEDDIR="$OUT/seed${SEED}"

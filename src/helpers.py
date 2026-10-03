@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last modified: 2026-09-29 (make_val_ler_checkpoint: previous_best for resumed runs). Earlier 2026-09-27 (cosine_lr_schedule, make_adam_logging_grad_norm)
+# Last modified: 2026-10-03 (warmup_cosine_lr_schedule: linear warmup before the cosine). Earlier 2026-09-29 (make_val_ler_checkpoint: previous_best for resumed runs). Earlier 2026-09-27 (cosine_lr_schedule, make_adam_logging_grad_norm)
 """Small shared helpers for the GRU pipeline.
 
 The first four functions are moved verbatim from the old repo's RCNN files so that no RCNN
@@ -71,6 +71,38 @@ def cosine_lr_schedule(tf, lr_start, lr_end, total_steps):
     return tf.keras.optimizers.schedules.CosineDecay(
         initial_learning_rate=lr_start, decay_steps=int(total_steps),
         alpha=lr_end / lr_start)
+
+
+def warmup_cosine_lr_schedule(tf, lr_start, lr_end, total_steps, warmup_steps):
+    """Linear warmup over the first warmup_steps updates, then the cosine of
+    cosine_lr_schedule from lr_start to lr_end over the remaining updates:
+
+        step <  W : lr = lr_start * (step + 1) / W
+        step >= W : lr = cosine(step - W), over total_steps - W updates
+
+    warmup_steps = 0 returns cosine_lr_schedule itself, so a run without warmup is the
+    same object as before. Registered as a Keras serializable, so a model saved with this
+    schedule in its optimizer (.best.keras) can be saved.
+    """
+    if not warmup_steps:
+        return cosine_lr_schedule(tf, lr_start, lr_end, total_steps)
+    w = int(warmup_steps)
+    if w >= int(total_steps):
+        raise ValueError(f'warmup {w} updates >= total {int(total_steps)} updates')
+    cosine = cosine_lr_schedule(tf, lr_start, lr_end, int(total_steps) - w)
+
+    @tf.keras.saving.register_keras_serializable(package='gru_pipeline')
+    class WarmupCosine(tf.keras.optimizers.schedules.LearningRateSchedule):
+        def __call__(self, step):
+            step = tf.cast(step, tf.float32)
+            warm = lr_start * (step + 1.0) / float(w)
+            return tf.where(step < float(w), warm, cosine(tf.maximum(step - float(w), 0.0)))
+
+        def get_config(self):
+            return dict(lr_start=lr_start, lr_end=lr_end, total_steps=int(total_steps),
+                        warmup_steps=w)
+
+    return WarmupCosine()
 
 
 def make_adam_logging_grad_norm(tf, learning_rate, global_clipnorm, n_steps_total):
