@@ -1,4 +1,4 @@
-<!-- Created: 2026-10-03 | Last updated: 2026-10-03 -->
+<!-- Created: 2026-10-03 | Last updated: 2026-10-03 (amendments before launch) -->
 # Pre-registration: d=9 runs aimed at beating MWPM (October 2026)
 
 Written before any of these runs started. The queue is run by
@@ -26,7 +26,7 @@ file and `jobs.tsv` hold the same table.
 - **Score:** that checkpoint on the evaluation block, with MWPM decoded on the same 1.8M shots (`eval_student_on_tail.py`). McNemar b (GRU-only correct), c (MWPM-only correct), n_discordant and exact p are reported for every run. No Fisher combination across seeds.
 - **Sealed block [17M, 19M):** not read.
 - **Parameter budget:** at most 303,521 parameters, the single-layer u280 count at d=9. The launcher (`MAX_PARAMS`) and `train_student.py --max-params` refuse anything larger.
-- **One run on the GPU at a time.** Before each launch, the GPU must have no other user's compute process; otherwise the driver waits and re-checks every 15 minutes.
+- **One run on the GPU at a time.** Before each launch, if another user's process is on the GPU, the driver launches only if it holds < 10 GB and GPU utilization stays near 0% over a 5-minute check (mean < 5%, max < 20%). Otherwise it waits and re-checks every 15 minutes, adding the waiting time to `blocked.json`.
 - **Code:** branch `mwpm-fixes`. Every new setting is off by default, and with all of them off a run reproduces the earlier losses exactly (`tests/knob_checks.py defaults_off`).
 
 ## Runs (launch order)
@@ -35,14 +35,13 @@ STAB means the value comes from the Tier A promotion (see the promotion rule bel
 
 | # | Tier | Peak LR | Warmup (epochs) | Clipnorm | Epochs | Batch | Data | Other | Why |
 |---|---|---|---|---|---|---|---|---|---|
-| 9-1 | A | 1e-3 | 3 | 1.0 | 160 | 10,000 | 100M | | lower peak, warmup and clip address the early divergence; 160 epochs address undertraining |
-| 9-2 | A | 1.5e-3 | 3 | 1.0 | 160 | 10,000 | 100M | | brackets the LR |
-| 9-3 | A | 3e-3 | 3 | 1.0 | 160 | 10,000 | 100M | | do warmup and clip alone fix the known peak? |
+| 9-1 | A | 1e-3 | 3 | 0.64 | 160 | 10,000 | 100M | | lower peak and warmup address the early divergence; 160 epochs address undertraining |
+| 9-2 | A | 1.5e-3 | 3 | 0.64 | 160 | 10,000 | 100M | | brackets the LR |
+| 9-3 | A | 3e-3 | 3 | 0.64 | 160 | 10,000 | 100M | | does warmup alone fix the known peak? |
 | 9-4 | B | STAB | STAB | STAB | 160 | 10,000 | 100M | warm start from R01 (d7 u280 200M, 1.060). Recurrent kernel, GRU bias and head are loaded; the input kernel (48 → 80 positions) starts fresh. | curriculum from a near-MWPM decoder |
 | 9-5 | B | STAB | STAB | STAB | 160 | 10,000 | 200M | | more data once stable |
 | 9-6 | B | STAB | STAB | STAB | 240 | 10,000 | 100M | only if the promoted run's best epoch is in the last 10% of its epochs; otherwise skipped, with the reason logged | longer only if still improving |
 | 9-7 | B | STAB | STAB | STAB | 160 | 10,000 | 100M | EMA of weights, decay 0.999; the EMA weights are checkpointed and scored | smooths the end of training |
-| 9-8 | B | STAB | STAB | STAB | 160 | 10,000 | 100M | 2-layer stacked GRU within the 303,521 budget | depth instead of width. **Not runnable yet:** needs the stacked GRU, including the evaluation script rebuilding two layers. Pending approval; skipped by the driver until present. |
 | 9-9 | B | STAB / √2 | STAB | STAB | 160 | 5,000 | 100M | | more updates per epoch |
 | 9-10 | B | best so far | | | | | | seed 1 | replicate the best config among 9-1 to 9-9 |
 
@@ -50,16 +49,29 @@ STAB means the value comes from the Tier A promotion (see the promotion rule bel
 
 - **Win:** p_L / MWPM on the evaluation block < 1.0 *and* McNemar exact p < 0.01.
 - **Improvement:** the ratio is below the current d=9 best: 5.019 (R02), or the best of this queue so far.
-- **Kill (saves GPU time):**
-  - Training loss NaN: the run is stopped and recorded as diverged, with the epoch.
-  - At 25% of the run's epochs (epoch 40 of 160, epoch 60 of 240): if validation p_L exceeds 1.25 × R02's validation p_L at 25% of its 80 epochs (epoch 20), the run is stopped and recorded as `Killed @ ep N`.
-  - The threshold is read from R02's `history.json` when the driver starts and is printed on its first log line. Comparing at the same fraction of the schedule keeps the lower-peak and longer runs from being stopped just because their LR is lower early on.
+- **Kill (saves GPU time):** a run is stopped, and recorded with the epoch, when any of these holds:
+  1. Training loss is NaN (recorded as diverged).
+  2. Validation p_L stays above 1.5 × the run's own best validation p_L so far for 5 consecutive epochs (`Killed @ ep N`).
+  3. Validation p_L at epoch 60 is above 2 × R02's validation p_L at epoch 60 (`Killed @ ep 60`). R02's value is read from its `history.json` when the driver starts and printed on its first log line.
 - **Promotion:**
   - After 9-1, 9-2 and 9-3 finish, the one with the lowest p_L / MWPM sets the peak LR, warmup and clipnorm of every row marked STAB (written to `stability.json`).
   - Runs that were stopped don't count.
   - If all three were stopped, the queue stops there and waits.
-- **9-10 placement:** last, unless some run wins. Then it runs next, replicating the best config so far.
-- **Deliberately absent:** no d=7 runs and no MLP variants in this queue.
+- **9-10 placement:** last, unless some run wins. Then it runs next, replicating the best config so far among the remaining runs (9-1 to 9-9 without 9-8).
+- **Deliberately absent:** no d=7 runs in this queue.
+
+## Amendments (2026-10-03, before any run started; no data from this queue seen)
+
+1. **Tier A clipnorm 0.64 instead of 1.0.** R02, R16 and R17 already clipped at 0.64, so 1.0 would have relaxed clipping rather than added it. At 0.64, Tier A changes only the peak LR and the warmup relative to R02.
+2. **Kill rule replaced.** The earlier rule (epoch-20, or 25%-of-schedule, comparison against R02 at 1.25×) is replaced by the three conditions above. Reason: a lower peak LR with warmup is expected to trail R02 early, so an early comparison would stop exactly the runs meant to fix the divergence. The new rule catches a run that degrades and stays degraded (5 epochs at 1.5× its own best), and one that is far behind R02 well into training (2× at epoch 60).
+3. **9-8 (stacked GRU) declined.** It needed the evaluation script to rebuild two layers, and the evaluation path is not changed in this queue. Moved to Deferred.
+
+## Deferred (not implemented, not run)
+
+Decided after the d=9 results.
+- **9-8: 2-layer stacked GRU within the 303,521 budget** (e.g. two layers of 160, 269,921 parameters). Needs `--units` to take a list in both `train_student.py` and `eval_student_on_tail.py`.
+- **MLP head:** final GRU state → Dense(128, ReLU) → Dense(1). u256 + head: 291,841 parameters at d=9. Paired with a plain u256 control.
+- **MLP encoder:** each round's detector vector → shared Dense(128, ReLU) → GRU u248 (291,105 parameters at d=9). Adds per-round FPGA latency; lower priority.
 
 ## Report at the end of the queue
 

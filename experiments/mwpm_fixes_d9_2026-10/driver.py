@@ -1,29 +1,30 @@
 #!/usr/bin/env python3
 # Created: 2026-10-03
-# Last modified: 2026-10-03
+# Last modified: 2026-10-03 (amended before launch: kill rules replaced; 9-8 removed)
 """Queue driver for the d=9 MWPM-fix runs (prereg/mwpm_fixes_d9_2026-10.md).
 
 One run on the GPU at a time, in the order of jobs.tsv, with the rules fixed in the
 pre-registration:
 
-  GPU       before each launch, no compute process of another user on the GPU; if there is
-            one, wait and re-check every 15 minutes
+  GPU       before each launch (none of ours running): if other compute processes are on
+            the GPU, launch only if together they hold < 10 GB and GPU utilization stays near
+            0% (mean < 5%, max < 20%) over a 5-minute check; otherwise wait and re-check every
+            15 minutes. Time spent waiting is added up in blocked.json.
   host      host memory available >= the job's need_host_gb
   budget    MAX_PARAMS = the single-layer u280 count at d=9 (303,521); the launcher and
             train_student.py refuse a model over it
-  kill      training loss nan -> stopped (DIVERGED). At 25% of the run's epochs, validation
-            p_L above 1.25 x the baseline run's validation p_L at 25% of its epochs (R02,
-            epoch 20 of 80) -> stopped (KILLED). Both recorded with the epoch.
+  kill      training loss nan -> stopped (DIVERGED). Validation p_L above 1.5 x the run's
+            own best so far for 5 consecutive epochs -> stopped (KILLED). Validation p_L at
+            epoch 60 above 2 x the baseline run's (R02) validation p_L at epoch 60 -> stopped
+            (KILLED). All recorded with the epoch.
   win       p_L / MWPM on the evaluation block < 1 with McNemar p_exact < 0.01
   promote   after 9-1, 9-2, 9-3 finish, the one with the lowest p_L / MWPM sets the peak LR,
             warmup and clipnorm of every later row marked STAB (stability.json). If all
             three were stopped, the driver stops here.
   9-6       only if the promoted run's best epoch is in the last 10% of its epochs;
             otherwise skipped, with the reason logged
-  9-8       needs the stacked GRU (two layers), which needs the evaluation script to rebuild
-            two layers; skipped until that change is approved and present
-  9-10      the best config so far (lowest ratio among 9-1..9-9), seed 1. If a run wins, 9-10
-            runs next instead of last.
+  9-10      the best config so far (lowest ratio among the finished runs), seed 1. If a run
+            wins, 9-10 runs next instead of last.
 
 Every finished, stopped or skipped run gets one row in results.tsv with the columns of
 GRU_all_runs_2026-10-01.csv. Runs from the launcher gh200_run_student_scaling.sh in the
@@ -68,9 +69,16 @@ WARM_START = {   # name in jobs.tsv -> glob of the source model
            'R01_d7_u280_200M_2*/seed0/ckpt/*.best.keras',
 }
 GPU_WAIT_S = 900
+GPU_OTHER_MAX_MIB = 10 * 1024
+GPU_IDLE_CHECK_S = 300
+GPU_IDLE_MEAN = 5.0
+GPU_IDLE_MAX = 20.0
+BLOCKED = os.path.join(DIR, 'blocked.json')
 POLL_S = 60
-KILL_FRACTION = 0.25
-KILL_FACTOR = 1.25
+KILL_EPOCH = 60            # absolute epoch compared with the baseline
+KILL_FACTOR = 2.0          # x baseline val p_L at KILL_EPOCH
+STREAK_FACTOR = 1.5        # x the run's own best val p_L so far
+STREAK_EPOCHS = 5          # consecutive epochs above it
 CSV_COLS = ['Done?', 'Width', 'Parameters', 'd', 'r', 'LR Schedule', 'LR', 'Data', 'Seed', 'p',
             'Batch', 'Max Epoch', 'Best Ckpt', 'MWPM', 'p_L', 'Relative to MWPM', 'Val_loss',
             'reset_after', 'Checkpoint criterion', 'runtime (h)', 'Date']
@@ -152,11 +160,59 @@ def epoch_val_ler(out):
     return {int(e): float(v) for e, v in re.findall(r'\] epoch (\d+): val_loss=\S+ val_ler=([0-9.]+)', txt)}
 
 
+def streak_reason(vl):
+    """(epoch, reason) when validation p_L has been above STREAK_FACTOR x the run's own best
+    so far for STREAK_EPOCHS consecutive epochs, else None."""
+    best, run = None, 0
+    for e in sorted(vl):
+        v = vl[e]
+        best = v if best is None else min(best, v)
+        run = run + 1 if v > STREAK_FACTOR * best else 0
+        if run >= STREAK_EPOCHS:
+            return e, (f"val p_L above {STREAK_FACTOR:g} x the run's best so far ({best:.6f}) for "
+                       f"{STREAK_EPOCHS} consecutive epochs, epochs {e - STREAK_EPOCHS + 1}-{e} "
+                       f"(last {v:.6f})")
+    return None
+
+
 def other_gpu_processes():
-    """Compute processes on the GPU (pid, MiB). Called only when none of ours runs, so any
-    process listed belongs to someone else."""
+    """Compute processes on the GPU as (pid, MiB, user). Called only when none of ours runs."""
     out = sh('nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader,nounits')
-    return [l.strip() for l in out.splitlines() if l.strip()]
+    procs = []
+    for l in out.splitlines():
+        if not l.strip():
+            continue
+        pid, mib = [x.strip() for x in l.split(',')[:2]]
+        user = sh(f'ps -o user= -p {pid}').strip() or '?'
+        procs.append((pid, int(float(mib)), user))
+    return procs
+
+
+def gpu_free_for_us():
+    """(ok, note). ok when no other compute process, or when the others hold < 10 GB in total
+    and GPU utilization stays near 0% over a 5-minute check."""
+    procs = other_gpu_processes()
+    if not procs:
+        return True, 'no other GPU process'
+    mib = sum(p[1] for p in procs)
+    desc = ', '.join(f'pid {p[0]} ({p[2]}, {p[1]} MiB)' for p in procs)
+    if mib >= GPU_OTHER_MAX_MIB:
+        return False, f'{desc}: {mib} MiB >= {GPU_OTHER_MAX_MIB} MiB'
+    util = []
+    for _ in range(GPU_IDLE_CHECK_S // 10):
+        u = sh('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits').split()
+        util.append(float(u[0]) if u else 100.0)
+        time.sleep(10)
+    mean, peak = sum(util) / len(util), max(util)
+    ok = mean < GPU_IDLE_MEAN and peak < GPU_IDLE_MAX
+    return ok, (f'{desc}; utilization over {GPU_IDLE_CHECK_S // 60} min mean {mean:.1f}% max '
+                f'{peak:.0f}% -> {"idle, launching alongside" if ok else "busy"}')
+
+
+def add_blocked(kind, seconds):
+    b = json.load(open(BLOCKED)) if os.path.exists(BLOCKED) else {}
+    b[kind] = b.get(kind, 0) + seconds
+    json.dump(b, open(BLOCKED, 'w'), indent=1)
 
 
 def host_avail_gb():
@@ -275,8 +331,8 @@ def run_job(j, threshold, dry):
         f"ema={j['ema']} warm_start={j['warm_start']} -> {out}")
     with open(os.path.join(out, 'podman.log'), 'w') as pl:
         proc = subprocess.Popen(cmd, stdout=pl, stderr=subprocess.STDOUT)
-    k_epoch = max(1, round(KILL_FRACTION * int(j['epochs'])))
     checked = False
+    k_epoch = None
     while proc.poll() is None:
         time.sleep(POLL_S)
         logf = glob.glob(os.path.join(out, 'seed*', 'run.log'))
@@ -290,16 +346,21 @@ def run_job(j, threshold, dry):
             log(f"DIVERGED {j['name']} at epoch {ep}")
             break
         vl = epoch_val_ler(out)
-        if not checked and k_epoch in vl:
+        reason = streak_reason(vl)
+        if reason is None and not checked and KILL_EPOCH in vl:
             checked = True
-            if vl[k_epoch] > threshold:
-                sh(f'podman stop -t 30 {cname}')
-                open(os.path.join(out, 'KILLED'), 'w').write(
-                    f"Killed @ ep {k_epoch}: val p_L {vl[k_epoch]:.6f} > {KILL_FACTOR} x baseline "
-                    f"{threshold / KILL_FACTOR:.6f} = {threshold:.6f}")
-                log(f"KILLED {j['name']} at epoch {k_epoch}: val p_L {vl[k_epoch]:.6f} > {threshold:.6f}")
-                break
-            log(f"CHECK {j['name']} epoch {k_epoch}: val p_L {vl[k_epoch]:.6f} <= {threshold:.6f}; continues")
+            if vl[KILL_EPOCH] > threshold:
+                reason = (KILL_EPOCH, f"val p_L {vl[KILL_EPOCH]:.6f} at epoch {KILL_EPOCH} > "
+                          f"{KILL_FACTOR:g} x baseline {threshold / KILL_FACTOR:.6f} = {threshold:.6f}")
+            else:
+                log(f"CHECK {j['name']} epoch {KILL_EPOCH}: val p_L {vl[KILL_EPOCH]:.6f} <= "
+                    f"{threshold:.6f}; continues")
+        if reason is not None:
+            k_epoch = reason[0]
+            sh(f'podman stop -t 30 {cname}')
+            open(os.path.join(out, 'KILLED'), 'w').write(f"Killed @ ep {k_epoch}: {reason[1]}")
+            log(f"KILLED {j['name']} at epoch {k_epoch}: {reason[1]}")
+            break
     rc = proc.wait()
     open(os.path.join(out, 'exit_code'), 'w').write(f'{rc}\n')
     st = status(j['name'])
@@ -333,12 +394,11 @@ def main():
     global DRY
     DRY = a.dry_run
     hb = json.load(open(a.baseline_history))
-    base_k = round(KILL_FRACTION * len(hb['val_ler']))
-    threshold = KILL_FACTOR * hb['val_ler'][base_k - 1]
+    threshold = KILL_FACTOR * hb['val_ler'][KILL_EPOCH - 1]
     log(f"BEGIN repo={sh(f'git -C {REPO} rev-parse --short HEAD').strip()} baseline val p_L at "
-        f"epoch {base_k} = {hb['val_ler'][base_k - 1]:.6f}; kill threshold {threshold:.6f}"
-        + ('  (dry run)' if a.dry_run else ''))
-    stacked_ok = 'nargs' in sh(f"grep -n \"'--units'\" {REPO}/src/eval_student_on_tail.py")
+        f"epoch {KILL_EPOCH} = {hb['val_ler'][KILL_EPOCH - 1]:.6f}; epoch-{KILL_EPOCH} kill "
+        f"threshold {threshold:.6f}; streak rule {STREAK_FACTOR:g} x own best for "
+        f"{STREAK_EPOCHS} epochs" + ('  (dry run)' if a.dry_run else ''))
     dry_stab = None
     while True:
         jobs = read_jobs()
@@ -383,10 +443,6 @@ def main():
                 dry_stab = dict(source=t1['name'] + ' (dry run: assumed)', peak_lr=t1['peak_lr'],
                                 warmup=t1['warmup'], clip=t1['clip'], best_epoch='?')
                 stab = dry_stab
-        if j['cond'] == 'stacked' and not stacked_ok:
-            skip(j, 'stacked GRU needs the two-layer change in the evaluation script, not '
-                    'approved/present', a.dry_run)
-            continue
         if j['cond'] == 'last10pct':
             if stab is None:
                 skip(j, 'no promoted run', a.dry_run)
@@ -405,13 +461,17 @@ def main():
             continue
         if not a.dry_run:
             while True:
-                procs = other_gpu_processes()
                 need = int(rj['need_host_gb'])
-                if not procs and host_avail_gb() >= need:
+                t0 = time.time()
+                ok, note = gpu_free_for_us()
+                if ok and host_avail_gb() >= need:
+                    log(f"GPU   {rj['name']}: {note}")
                     break
-                log(f"WAIT  {rj['name']}: GPU processes {procs or 'none'}; host available "
-                    f"{host_avail_gb()} GB (need {need}); re-check in {GPU_WAIT_S // 60} min")
+                kind = 'gpu_other_user_s' if not ok else 'host_memory_s'
+                log(f"WAIT  {rj['name']}: {note}; host available {host_avail_gb()} GB (need "
+                    f"{need}); re-check in {GPU_WAIT_S // 60} min")
                 time.sleep(GPU_WAIT_S)
+                add_blocked(kind, time.time() - t0)
         run_job(rj, threshold, a.dry_run)
 
 
