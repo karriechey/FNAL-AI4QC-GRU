@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine). Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored). Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -575,6 +575,13 @@ def run():
                          '--lr-end over the remaining updates. Default 0 = no warmup, as before.')
     ap.add_argument('--lr-end', type=float, default=3e-5,
                     help='final learning rate of --lr-schedule cosine.')
+    ap.add_argument('--ema-decay', type=float, default=None,
+                    help='keep an exponential moving average of the weights (Adam use_ema, '
+                         'ema_momentum = this value, e.g. 0.999). The val-LER checkpoint is '
+                         'chosen on, and saves, the EMA weights; at the end of fit() Keras '
+                         'copies the EMA weights into the model, so the end-of-fit score is '
+                         'also the EMA weights. Needs --lr, --val-start and alpha 1. '
+                         'Default None = no EMA, as before.')
     ap.add_argument('--global-clipnorm', type=float, default=None,
                     help='Adam global_clipnorm: when the global norm of all gradients of an '
                          'update exceeds this value, all of them are scaled down together '
@@ -941,18 +948,25 @@ def run():
         raise SystemExit(f"{LOG} --lr-warmup-epochs needs --lr. STOP.")
     log_gn = args.log_grad_norm or args.global_clipnorm is not None
     gn_stats = None
+    adam_kw = {}
+    if args.ema_decay is not None:
+        if lr_value is None or val_data is None or args.alpha < 1.0:
+            raise SystemExit(f"{LOG} --ema-decay needs --lr, --val-start/--val-n and alpha 1 "
+                             f"(the EMA weights' validation loss is the hard-label loss). STOP.")
+        adam_kw = dict(use_ema=True, ema_momentum=args.ema_decay)
     if log_gn:
         if lr_value is None:
             raise SystemExit('--log-grad-norm / --global-clipnorm need --lr')
         optimizer, gn_stats = make_adam_logging_grad_norm(
-            tf, lr_value, args.global_clipnorm, steps * args.epochs)
+            tf, lr_value, args.global_clipnorm, steps * args.epochs, **adam_kw)
     else:
-        optimizer = (tf.keras.optimizers.Adam(learning_rate=lr_value)
+        optimizer = (tf.keras.optimizers.Adam(learning_rate=lr_value, **adam_kw)
                      if lr_value is not None else 'adam')
     print(f"{LOG} optimizer Adam lr={args.lr} schedule={args.lr_schedule}"
           + (f" lr_end={args.lr_end} over {steps * args.epochs:,} updates"
              if args.lr_schedule == 'cosine' else '')
           + (f" warmup_epochs={args.lr_warmup_epochs:g}" if args.lr_warmup_epochs else '')
+          + (f" ema_decay={args.ema_decay:g}" if args.ema_decay is not None else '')
           + f" global_clipnorm={args.global_clipnorm} log_grad_norm={log_gn}", flush=True)
     model.compile(optimizer=optimizer,
                   loss=make_distillation_loss(args.alpha, args.temperature),
@@ -990,6 +1004,7 @@ def run():
                        f'lr{"teacher" if args.lr is None else format(args.lr, "g")}_'
                        f'{args.lr_schedule}_e{args.epochs}_ra{int(args.reset_after)}_'
                        + (f'wu{args.lr_warmup_epochs:g}_' if args.lr_warmup_epochs else '')
+                       + (f'ema{args.ema_decay:g}_' if args.ema_decay is not None else '')
                        + f'{pool_tag}')
     ck_name = args.run_tag or tag      # checkpoint and gradient-norm file prefix
 
@@ -1057,7 +1072,8 @@ def run():
             callbacks.insert(0, make_val_ler_checkpoint(
                 tf, make_dataset(tf, x_va, None, args.batch_size), f_va, _ck,
                 args.batch_size, LOG, previous_best=(json.load(open(args.resume_best_json))
-                                                     if args.resume_best_json else None)))
+                                                     if args.resume_best_json else None),
+                ema_optimizer=(optimizer if args.ema_decay is not None else None)))
             print(f"{LOG} checkpoints -> {_ck}.best.keras + .best.weights.h5 "
                   f"(lowest val LER, tiebreak val_loss; epoch in {_ck}.best.json) and "
                   f"{_ck}.lastepoch.weights.h5", flush=True)
@@ -1181,7 +1197,7 @@ def run():
 
     fields = ['architecture', 'student', 'inputs', 'd', 'p', 'rounds', 'seed', 'n_train',
               'n_test', 'alpha', 'temperature', 'lr', 'lr_schedule', 'lr_end', 'lr_warmup_epochs',
-              'global_clipnorm',
+              'ema_decay', 'global_clipnorm',
               'clip_frac',
               'weight_bits', 'act_bits',
               # architecture size, so a row is interpretable without parsing its tag
@@ -1205,6 +1221,7 @@ def run():
             lr_schedule=args.lr_schedule,
             lr_end=(args.lr_end if args.lr_schedule == 'cosine' else ''),
             lr_warmup_epochs=args.lr_warmup_epochs,
+            ema_decay=('' if args.ema_decay is None else args.ema_decay),
             global_clipnorm=('' if args.global_clipnorm is None else args.global_clipnorm),
             clip_frac=('' if gn_stats is None or not int(gn_stats['n_updates'].numpy())
                        else round(int(gn_stats['n_clipped'].numpy())
@@ -1220,8 +1237,9 @@ def run():
             # p_L above is from the weights the model holds when fit() returns: the last
             # epoch's, or with early stopping on, possibly the restored min-val_loss epoch.
             # The best-checkpoint number of record comes from eval_student_on_tail.py.
-            scored_weights=('end_of_fit' if args.no_early_stopping
-                            else 'end_of_fit_early_stopping_restore'),
+            scored_weights=(('end_of_fit' if args.no_early_stopping
+                             else 'end_of_fit_early_stopping_restore')
+                            + ('_ema' if args.ema_decay is not None else '')),
             mwpm_p_L=('' if mwpm is None else round(mwpm, 6)),
             ratio_vs_mwpm=('' if mwpm is None else round(pL / mwpm, 4)),
             base_rate=round(base_rate, 5), beats_base_rate=int(beats_base),

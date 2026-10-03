@@ -109,6 +109,52 @@ class Checks:
               and abs(m.get(119, 0) - 3e-5) < 2e-6 and h.get('lr', [None])[0] is not None)
         self.report('warmup_on', ok, f"lr marks {m}; history lr per epoch {h.get('lr')}")
 
+    def ema_on(self):
+        import h5py
+        import numpy as np
+
+        def weights(path):
+            out = {}
+            with h5py.File(path, 'r') as f:
+                f.visititems(lambda k, v: out.__setitem__(k, v[()])
+                             if isinstance(v, h5py.Dataset) and 'optimizer' not in k else None)
+            return out
+
+        def equal(a, b):
+            return a.keys() == b.keys() and all(np.array_equal(a[k], b[k]) for k in a)
+
+        rc, log, h = self.run_new('ema_on', ['--ema-decay', '0.9'], epochs=2)
+        o = f'{self.a.out}/ema_on'
+        best_ep = json.load(open(f'{o}/ckpt/t.best.json'))['best_epoch'] if rc == 0 else None
+        best, last, end = (weights(f'{o}/ckpt/t.best.weights.h5'),
+                           weights(f'{o}/ckpt/t.lastepoch.weights.h5'),
+                           weights(f'{o}/runs/t.weights.h5')) if rc == 0 else ({}, {}, {})
+        import csv
+        row = next(csv.DictReader(open(f'{o}/runs/t.csv'))) if rc == 0 else {}
+        # EMA weights differ from the raw weights; when the best epoch is the last one, the
+        # saved best equals the end-of-fit weights (Keras copies the EMA into the model at
+        # the end of fit), so the checkpoint holds the EMA weights.
+        ok = (rc == 0 and not equal(best, last) and not equal(end, last)
+              and (best_ep != 2 or equal(best, end))
+              and len(h.get('val_loss_ema', [])) == 2
+              and h['val_loss_ema'] != h['val_loss']
+              and row.get('scored_weights') == 'end_of_fit_ema')
+        # One epoch: the best epoch is necessarily the last, so the saved best must equal
+        # the end-of-fit (EMA) weights exactly and differ from the raw weights.
+        rc1, _, _ = self.run_new('ema_on_1ep', ['--ema-decay', '0.9'], epochs=1)
+        o1 = f'{self.a.out}/ema_on_1ep'
+        b1, l1, e1 = ((weights(f'{o1}/ckpt/t.best.weights.h5'),
+                       weights(f'{o1}/ckpt/t.lastepoch.weights.h5'),
+                       weights(f'{o1}/runs/t.weights.h5')) if rc1 == 0 else ({}, {1: 1}, {}))
+        ok = ok and rc1 == 0 and equal(b1, e1) and not equal(b1, l1)
+        # Training itself is unchanged by EMA: same raw val_loss as without it.
+        ok = ok and h.get('val_loss') == getattr(self, 'defaults_hist', h).get('val_loss')
+        self.report('ema_on', ok,
+                    f"[1 epoch: best==EMA end-of-fit {equal(b1, e1)}, best==raw {equal(b1, l1)}] "
+                    f"best epoch {best_ep}; best==raw last-epoch {equal(best, last)}; "
+                    f"best==end-of-fit {equal(best, end)}; val_loss raw {h.get('val_loss')} "
+                    f"ema {h.get('val_loss_ema')}; scored_weights {row.get('scored_weights')}")
+
     def run(self, names):
         for n in names:
             getattr(self, n)()
@@ -124,6 +170,6 @@ if __name__ == '__main__':
     ap.add_argument('--pool-dir', required=True)
     ap.add_argument('--base-ref', required=True)
     ap.add_argument('--out', required=True)
-    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on'])
+    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on', 'ema_on'])
     a = ap.parse_args()
     sys.exit(Checks(a).run(a.checks))
