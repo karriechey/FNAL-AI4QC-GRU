@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
+# Last modified: 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint). Earlier 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
 """Score a saved student on a fixed partition and run the paired McNemar test vs MWPM.
 
 Why a separate script from eval_on_tail.py
@@ -46,8 +46,10 @@ def run():
                     help='.weights.h5 written by train_student.py')
     ap.add_argument('--student', choices=['mlp', 'gru'], required=True)
     ap.add_argument('--inputs', choices=['evts', 'evts+bits'], default='evts')
-    ap.add_argument('--hidden', type=int, nargs='*', default=[],
-                    help='MLP: the Dense stack (e.g. 209 209). GRU: post-GRU Dense layers.')
+    ap.add_argument('--hidden', type=int, nargs='*', default=None,
+                    help='MLP: the Dense stack (e.g. 209 209). GRU: post-GRU Dense layers. '
+                         'Not given: GRU none, MLP 128 128 (train_student.py defaults). '
+                         'Given with no values: none.')
     ap.add_argument('--units', type=int, default=140, help='GRU hidden state size')
     ap.add_argument('--reset-after', action='store_true',
                     help='the checkpoint was trained with reset_after=True')
@@ -99,6 +101,15 @@ def run():
         raise SystemExit(f"[student-eval] MISSING pool {args.pool}")
     if not os.path.exists(args.weights):
         raise SystemExit(f"[student-eval] MISSING weights {args.weights}")
+    # The pool's d, p, rounds (fingerprint, else file name) must be the ones given here.
+    import partitions as P
+    try:
+        src = P.check_pool_geometry(args.pool, d, p, r)
+    except ValueError as e:
+        raise SystemExit(f"[student-eval] {e}")
+    if src is None:
+        print(f"[student-eval] WARNING: {os.path.basename(args.pool)} has no fingerprint and "
+              f"no data_d*_p*_r* name; d/p/rounds not checked", flush=True)
 
     z = np.load(args.pool)
     N = z['measurements'].shape[0]
@@ -121,14 +132,16 @@ def run():
 
     # Rebuild the SAME architecture the weights were trained with, then load. A mismatch
     # in units/hidden raises on load rather than silently producing a wrong score.
+    # --hidden: same defaults as train_student.py (resolve_hidden).
+    from train_student import resolve_hidden
+    hidden = resolve_hidden(args.student, args.hidden)
     if args.student == 'gru':
         model = build_gru_student(d=d, rounds=r, inputs=args.inputs, units=args.units,
-                                  hidden=tuple(args.hidden), p=p,
+                                  hidden=hidden, p=p,
                                   weight_bits=args.weight_bits, act_bits=args.act_bits,
                                   reset_after=args.reset_after, unroll=args.unroll)
     else:
-        model = build_student('mlp', d=d, rounds=r, inputs=args.inputs,
-                              hidden=tuple(args.hidden) or (209, 209),
+        model = build_student('mlp', d=d, rounds=r, inputs=args.inputs, hidden=hidden,
                               weight_bits=args.weight_bits, act_bits=args.act_bits)
     model.load_weights(args.weights)
     print(f"[student-eval] {args.student} params={model.count_params():,}", flush=True)
@@ -184,8 +197,17 @@ def run():
                 'n_params', 'p_L', 'mwpm_p_L', 'ratio', 'base_rate',
                 'both_right', 'student_only', 'mwpm_only', 'both_wrong', 'n_discordant',
                 'net_student_wins', 'mcnemar_chi2_cc', 'p_chi2', 'p_exact',
-                'reset_after', 'unroll', 'tf32']
+                'reset_after', 'unroll', 'tf32', 'weights_path', 'is_best_ckpt']
         new = not os.path.exists(args.out_csv)
+        n_cols = len(cols)
+        if not new:
+            # An older file has the header without the two weights columns. Appending the
+            # longer row would shift its columns, so the row is cut to that header's width.
+            with open(args.out_csv, newline='') as f:
+                n_cols = len(next(csv.reader(f), cols))
+            if n_cols < len(cols):
+                print(f"[student-eval] WARNING: {args.out_csv} has the older header; "
+                      f"weights_path and is_best_ckpt are not written to it", flush=True)
         with open(args.out_csv, 'a', newline='') as f:
             w = csv.writer(f)
             if new:
@@ -198,7 +220,10 @@ def run():
                         mc['both_wrong'], mc['n_discordant'], mc['net_rcnn_wins'],
                         round(mc['mcnemar_chi2_cc'], 3), mc['p_chi2'], mc['p_exact'],
                         int(args.reset_after), int(args.unroll),
-                        'off' if args.no_tf32 else 'on'])
+                        'off' if args.no_tf32 else 'on',
+                        os.path.abspath(args.weights),
+                        int(os.path.basename(args.weights).endswith(('.best.weights.h5',
+                                                                     '.best.keras')))][:n_cols])
         print(f"[student-eval] appended -> {args.out_csv}", flush=True)
 
 

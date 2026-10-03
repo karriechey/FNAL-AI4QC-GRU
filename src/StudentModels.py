@@ -172,17 +172,26 @@ def build_mlp_student(d=5, rounds=3, inputs='evts', hidden=(128, 128),
 def build_gru_student(d=5, rounds=3, inputs='evts', units=64, hidden=(), p=0.010,
                       weight_bits=None, act_bits=None, name='gru_student', reset_after=False,
                       unroll=False):
-    """Recurrent student: one GRU timestep per detector round.
+    """Recurrent student: one GRU timestep per detector timestep, then a logit.
 
-    Input is [n_timesteps, n_positions] as produced by to_sequence() -- for d=5, r=3 that
-    is (4, 24). The scatter happens in the data pipeline, so this model takes the sequence
-    directly and contains no reshape or gather.
+    Input is [n_timesteps, n_positions] as produced by to_sequence(), with r + 1 timesteps
+    (detector_sequence_layout reads the layout off the stim circuit for d, rounds, p):
+    d=5 r=5 (6, 24), d=7 r=7 (8, 48), d=9 r=9 (10, 80); d=5 r=3 is (4, 24). The scatter
+    happens in the data pipeline, so this model takes the sequence directly and contains
+    no reshape or gather.
 
-    `hidden` optionally adds Dense layers between the GRU and the head; empty by default.
+    Layers: GRU(units, return_sequences=False) -> for each width in `hidden`, Dense + ReLU
+    -> Dense(1) logit. `hidden` defaults to () (no Dense layers); build_student and the
+    scripts' --hidden use the same default for the GRU. reset_after and unroll are passed
+    to the GRU (defaults False; see below). weight_bits / act_bits swap in QGRU and QDense.
 
-    inputs='evts+bits' is not supported here: det_bits is 3 rounds x 24 raw stabilizer
-    measurements, a different time base from det_evts' 4 detector timesteps, and there is
-    no correct way to align them without a decision about which to resample.
+    Parameters: GRU 3 * (units * (n_positions + units) + units) with reset_after=False
+    (one more bias row per gate with True), plus the Dense layers and units + 1 for the head.
+
+    inputs='evts+bits' is not supported here: det_bits holds `rounds` rounds of raw
+    stabilizer measurements, a different time base from det_evts' r + 1 detector
+    timesteps, and there is no correct way to align them without a decision about which to
+    resample.
     """
     if inputs != 'evts':
         raise ValueError("the GRU student supports inputs='evts' only "
@@ -223,15 +232,20 @@ def build_gru_student(d=5, rounds=3, inputs='evts', units=64, hidden=(), p=0.010
     return Model(x_in, out, name=name)
 
 
-def build_student(student, d=5, rounds=3, inputs='evts', hidden=(128, 128), units=64,
+def build_student(student, d=5, rounds=3, inputs='evts', hidden=None, units=64,
                   weight_bits=None, act_bits=None, reset_after=False, unroll=False):
-    """Dispatch on the student name so trainers take a plain string argument."""
+    """Dispatch on the student name so trainers take a plain string argument.
+
+    hidden=None means the architecture's default: (128, 128) for the MLP, () for the GRU.
+    A given tuple, including (), is used as it is.
+    """
     if student == 'mlp':
-        return build_mlp_student(d=d, rounds=rounds, inputs=inputs, hidden=hidden,
+        return build_mlp_student(d=d, rounds=rounds, inputs=inputs,
+                                 hidden=(128, 128) if hidden is None else tuple(hidden),
                                  weight_bits=weight_bits, act_bits=act_bits)
     if student == 'gru':
         return build_gru_student(d=d, rounds=rounds, inputs=inputs, units=units,
-                                 hidden=hidden if hidden else (),
+                                 hidden=() if hidden is None else tuple(hidden),
                                  weight_bits=weight_bits, act_bits=act_bits,
                                  reset_after=reset_after, unroll=unroll)
     raise ValueError(f"unknown student={student!r} (expected 'mlp' or 'gru')")
