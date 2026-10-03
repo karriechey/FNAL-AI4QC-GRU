@@ -2,54 +2,7 @@
 # from FNAL-QCDecoding-FPGA/StudentModels.py @ d5ee86f
 # Created: 2026-07-29
 # Last modified: 2026-09-26 (reset_after and unroll are build arguments, default False)
-"""hls4ml-native student architectures for distillation from the custom RCNN teacher.
 
-Why train a student model?
-The teacher (CNNModel.FullRCNNModel) cannot be parsed by hls4ml's automated QKeras flow:
-its state-combiner math uses pow/sqrt/log/gather ops that sit outside hls4ml's supported
-layer set. A student built only from layers hls4ml supports is synthesizable by
-construction, and the combiner math is never implemented in HLS at all -- it survives
-only as the supervision signal that shaped the student's weights.
-
-The two students
-Both consume the same per-shot syndrome information as the teacher and emit one score.
-  mlp -- flatten the syndrome and push it through QDense/ReLU layers. The simplest thing
-         that could work, and the cheapest to synthesize. Serves as the floor: if the GRU
-         cannot beat it, the recurrence is not earning its resource cost.
-  gru -- treat the syndrome as a sequence over detector timesteps. Structurally matches
-         how the error information arrives in a real decoder and what the teacher's
-         round-recurrent structure encodes. hls4ml supports recurrent layers (QGRU parses).
-
-Input layout (d=5, r=3)
-The pool stores two per-shot arrays, each 72 wide:
-  det_bits -- raw stabilizer measurement outcomes, 3 rounds x 24 stabilizers
-  det_evts -- detector events, the round-to-round XOR of those outcomes
-
-The two differ in layout. det_evts is not 3x24: its 72 detectors span 4 timesteps over 24
-plaquette positions with unequal occupancy (12/24/24/12), since the first round detects
-only Z stabilizers and the last comes from the data-qubit measurements.
-detector_sequence_layout() reads this off the stim circuit. The MLP flattens and is
-unaffected; the GRU takes the scattered [4, 24] form.
-
-det_evts is the default input -- what MWPM consumes, and the smallest to route on-chip.
-The teacher sees both arrays, so `--inputs evts+bits` keeps "does the raw measurement
-channel matter" a measured question rather than an assumption.
-
-Output is a logit, not a probability
-The final layer is linear; the sigmoid is not part of the model. Distillation is defined
-in logit space, so emitting logits avoids inverting a sigmoid, and since sigmoid is
-monotonic, thresholding the logit at 0 is the same decision as thresholding p at 0.5 --
-on FPGA it would be pure cost. Apply sigmoid() only when a calibrated probability is
-wanted.
-
-Quantization hooks:
-weight_bits / act_bits default to None, which builds plain float Keras layers -- that is
-the Phase-2 distillation setting, where the only question is how well the student can
-imitate the teacher at full precision. Passing bit-widths swaps in the QKeras equivalents
-so the Phase-3 sweep reuses this exact file rather than a divergent copy of the
-architecture. The quantizer convention matches the teacher sweep: quantized_bits(B, 1),
-i.e. ap_fixed<B,2> = 1 sign + 1 integer + (B-2) fractional bits.
-"""
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers as KL
