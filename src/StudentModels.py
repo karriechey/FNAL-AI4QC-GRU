@@ -34,10 +34,6 @@ _LAYOUT_CACHE = {}
 def detector_sequence_layout(d, rounds, p):
     """Map the flat det_evts vector onto (timestep, plaquette position).
 
-    At d=5, r=3 the 72 detectors are not 3 rounds x 24 stabilizers but 4 timesteps over 24
-    plaquette positions, occupancy 12/24/24/12 (the first round detects only Z
-    stabilizers; the last comes from the data-qubit measurements).
-
     The short timesteps' positions are subsets of the full 24, so each timestep fits a
     fixed 24-wide slot vector, zero where nothing was measured. Column j then means the
     same plaquette at every timestep, and the input stays rectangular for hls4ml.
