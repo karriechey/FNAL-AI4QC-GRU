@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -21,6 +21,8 @@ set -euo pipefail
 D="${D:-7}"
 ROUNDS="${ROUNDS:-$D}"
 P="${P:-0.004}"
+# p in tags and folder names: 0.004 -> p004, 0.003 -> p003 (was a fixed "p004").
+PTAG="p$(printf '%03d' "$(awk -v p="$P" 'BEGIN{printf "%d", p*1000 + 0.5}')")"
 SEEDS="${SEEDS:-0 1 2}"
 NTRAIN="${NTRAIN:-10000000}"
 BATCH="${BATCH:-10000}"
@@ -113,7 +115,7 @@ export TF_CUDNN_DETERMINISTIC=1
 export TF_FORCE_GPU_ALLOW_GROWTH=true
 
 STAMP="${STAMP:-$(date -u +%Y%m%dT%H%M%SZ)}"
-OUT="${OUT:-$HOME/rcnn_threshold/results/gh200_${STUDENT}_d${D}_p004_b${BATCH}_${STAMP}}"
+OUT="${OUT:-$HOME/rcnn_threshold/results/gh200_${STUDENT}_d${D}_${PTAG}_b${BATCH}_${STAMP}}"
 LOG="$OUT/driver.log"        # preflight and scheduling; per-seed logs sit in $OUT/seed<N>/
 mkdir -p "$OUT"
 
@@ -360,7 +362,7 @@ run_seed () {
   [ "$UNROLL" = "1" ] && QTAG="${QTAG}_ur1"
   [ "$LR_SCHEDULE" = "cosine" ] && QTAG="${QTAG}_cos${LR_END}"
   [ -n "$GLOBAL_CLIPNORM" ] && QTAG="${QTAG}_gclip${GLOBAL_CLIPNORM}"
-  local TAG="${STUDENT}_d${D}_p004_${SIZE}${QTAG}_hard_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
+  local TAG="${STUDENT}_d${D}_${PTAG}_${SIZE}${QTAG}_hard_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
   local SEEDDIR="$OUT/seed${SEED}"
   local SRUNS="$SEEDDIR/runs"
   local SCKPT="$SEEDDIR/ckpt"

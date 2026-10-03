@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -335,6 +335,58 @@ def cap_gpu_memory(tf, mib):
     print(f"[gpu] per-process limit {mib} MiB on {len(gpus)} device(s)", flush=True)
 
 
+def load_extension_features(zex, take, d, r, p, inputs, student, idx_t, binary_t,
+                            chunk=2_000_000, out=None):
+    """Features and labels of the first `take` shots of a training-only pool.
+
+    Two file formats:
+      full    : measurements, det_evts, flips (as written by sample_pool)
+      compact : det_evts_packed (np.packbits along the detector axis), n_det, flips
+                (as written by sample_pool_compact; same shots for the same seed)
+    The GRU's input is built from the detection events only, so both formats give the
+    same features (tests/compact_pool_check.sh checks this tensor for tensor). The compact
+    format has no measurements, so it serves the GRU with inputs='evts' only.
+
+    The features are built `chunk` shots at a time straight into a preallocated uint8
+    array. assemble_features returns float32, 4 bytes per value, so converting a whole
+    50M-shot pool at once held a float32 copy about 4x the size of the final array; per
+    chunk the values are the same and the float32 copy stays small.
+
+    out: optional uint8 array of shape (take, ...) to fill in place (a slice of the
+    preallocated training array), so no separate copy of these features is made. Also
+    used for the primary pool's training prefix (full format, shots [0, take)).
+    """
+    from circuit_partition import split_measurements
+    from StudentModels import assemble_features
+    f_ex = zex['flips'][0:take].astype(binary_t).reshape(-1)
+    compact = 'det_evts_packed' in zex.files
+    if compact:
+        if not (student == 'gru' and inputs == 'evts'):
+            raise SystemExit(f"{LOG} compact pool (detection events only) serves the GRU "
+                             f"with inputs='evts' only; got student={student} inputs={inputs}")
+        n_det = int(zex['n_det'])
+        src = zex['det_evts_packed'][0:take]
+    else:
+        src_m = zex['measurements'][0:take]
+        src = zex['det_evts'][0:take]
+    x_ex = out
+    for a in range(0, take, chunk):
+        b = min(a + chunk, take)
+        if compact:
+            e_c = np.unpackbits(src[a:b], axis=1, count=n_det).astype(binary_t)
+            b_c = None
+        else:
+            e_c = src[a:b].astype(binary_t)
+            b_c, _, _ = split_measurements(src_m[a:b].astype(binary_t), d, idx_t)
+        x_c = to_host_uint8(assemble_features(b_c, e_c, inputs, student=student,
+                                              d=d, rounds=r, p=p))
+        if x_ex is None:
+            x_ex = np.empty((take,) + x_c.shape[1:], dtype=np.uint8)
+        x_ex[a:b] = x_c
+        del e_c, b_c, x_c
+    return x_ex, f_ex
+
+
 def run():
     ap = argparse.ArgumentParser()
     # --- problem config (must match the teacher's) ---
@@ -568,14 +620,59 @@ def run():
         # Same-pool split: the tail is the last nte shots, so the prefix must stop short.
         assert ntr <= N - nte, f"train/test overlap: ntr={ntr} > N-nte={N - nte}"
 
-    m_tr = ztr['measurements'][0:ntr].astype(binary_t)
-    e_tr = ztr['det_evts'][0:ntr].astype(binary_t)
-    f_tr = ztr['flips'][0:ntr].astype(binary_t).reshape(-1)
-    b_tr, _, _ = split_measurements(m_tr, d, idx_t)
+    # --- training-only extensions: checks and sizes first ----------------------------
+    # (2026-10-01) The pools are checked and their sizes read before any features are
+    # built, so the whole training set can be allocated once as uint8 and filled in place:
+    # primary prefix first, then each extension in the order given (the same order and
+    # values as before, when each pool was converted whole and concatenated). That removes
+    # the full-size intermediate copies that set the host-memory peak.
+    # Several extension pools are appended one after another, in the order given; one pool
+    # behaves exactly as before. Each must have its own generation seed (checked against
+    # the primary pool and against the other extensions) and no file may appear twice.
+    ext_pools = list(args.extra_train_pool or [])
+    ext_counts = list(args.extra_train_n or [])
+    if ext_counts and len(ext_counts) != len(ext_pools):
+        raise SystemExit(f"{LOG} --extra-train-n has {len(ext_counts)} values for "
+                         f"{len(ext_pools)} --extra-train-pool files. STOP.")
+    if len(set(map(os.path.abspath, ext_pools))) != len(ext_pools):
+        raise SystemExit(f"{LOG} the same extension pool is listed twice. STOP.")
+    ext_seeds = set()
+    ext_plan = []                       # (path, take)
+    for i_ex, ext_pool in enumerate(ext_pools):
+        if not os.path.exists(ext_pool):
+            raise SystemExit(f"{LOG} MISSING extra pool {ext_pool}")
+        zex = np.load(ext_pool)
+        n_ex = zex['flips'].shape[0]
+        take = min((ext_counts[i_ex] if ext_counts else None) or n_ex, n_ex)
+        fp = ext_pool.replace('.npz', '.fingerprint.json')
+        if os.path.exists(fp):
+            meta_ex = json.load(open(fp))
+            if meta_ex.get('gen_seed') == _primary_gen_seed(train_fn):
+                raise SystemExit(
+                    f"{LOG} extra pool shares gen_seed {meta_ex.get('gen_seed')} with the "
+                    f"primary pool. Same seed means the same shot stream -- the extension "
+                    f"would duplicate training data and could repeat evaluation shots.")
+            if meta_ex.get('gen_seed') in ext_seeds:
+                raise SystemExit(
+                    f"{LOG} two extension pools share gen_seed {meta_ex.get('gen_seed')}; "
+                    f"their shots would be duplicates. STOP.")
+            ext_seeds.add(meta_ex.get('gen_seed'))
+            print(f"{LOG} extra pool gen_seed={meta_ex.get('gen_seed')} "
+                  f"flips_sha={str(meta_ex.get('flips_sha256'))[:16]}", flush=True)
+        ext_plan.append((ext_pool, take))
+        del zex
+    n_all = ntr + sum(t for _, t in ext_plan)
+
+    # Primary training prefix, written into the start of the one training array.
     # Host-memory uint8 (see host_data.py): the features are 0/1, so this is exact.
-    x_tr = to_host_uint8(assemble_features(b_tr, e_tr, args.inputs, student=args.student,
-                                           d=d, rounds=r, p=p))
-    del m_tr, b_tr, e_tr
+    x_first, _ = load_extension_features(ztr, 1, d, r, p, args.inputs, args.student,
+                                         idx_t, binary_t)          # shape of one shot
+    x_tr = np.empty((n_all,) + x_first.shape[1:], dtype=np.uint8)
+    del x_first
+    _, f_tr = load_extension_features(ztr, ntr, d, r, p, args.inputs, args.student,
+                                      idx_t, binary_t, out=x_tr[0:ntr])
+    print(f"{LOG} training array {x_tr.shape} uint8 ({x_tr.nbytes / 1024 ** 3:.1f} GB) "
+          f"allocated once; primary prefix [0, {ntr:,}) filled", flush=True)
 
     # --- targets: pack [hard_label, teacher_logit] ----------------------------------
     if args.alpha >= 1.0 and not args.teacher_cache:
@@ -608,52 +705,18 @@ def run():
     # shots from a different pool.
     ntr_primary = ntr
 
-    # Several extension pools are appended one after another, in the order given; one pool
-    # behaves exactly as before. Each must have its own generation seed (checked against
-    # the primary pool and against the other extensions) and no file may appear twice.
-    ext_pools = list(args.extra_train_pool or [])
-    ext_counts = list(args.extra_train_n or [])
-    if ext_counts and len(ext_counts) != len(ext_pools):
-        raise SystemExit(f"{LOG} --extra-train-n has {len(ext_counts)} values for "
-                         f"{len(ext_pools)} --extra-train-pool files. STOP.")
-    if len(set(map(os.path.abspath, ext_pools))) != len(ext_pools):
-        raise SystemExit(f"{LOG} the same extension pool is listed twice. STOP.")
-    ext_seeds = set()
-    for i_ex, ext_pool in enumerate(ext_pools):
-        if not os.path.exists(ext_pool):
-            raise SystemExit(f"{LOG} MISSING extra pool {ext_pool}")
+    # Extensions, each written into its slice of the training array (checked above).
+    for ext_pool, take in ext_plan:
         zex = np.load(ext_pool)
-        n_ex = zex['measurements'].shape[0]
-        take = min((ext_counts[i_ex] if ext_counts else None) or n_ex, n_ex)
-        fp = ext_pool.replace('.npz', '.fingerprint.json')
-        if os.path.exists(fp):
-            meta_ex = json.load(open(fp))
-            if meta_ex.get('gen_seed') == _primary_gen_seed(train_fn):
-                raise SystemExit(
-                    f"{LOG} extra pool shares gen_seed {meta_ex.get('gen_seed')} with the "
-                    f"primary pool. Same seed means the same shot stream -- the extension "
-                    f"would duplicate training data and could repeat evaluation shots.")
-            if meta_ex.get('gen_seed') in ext_seeds:
-                raise SystemExit(
-                    f"{LOG} two extension pools share gen_seed {meta_ex.get('gen_seed')}; "
-                    f"their shots would be duplicates. STOP.")
-            ext_seeds.add(meta_ex.get('gen_seed'))
-            print(f"{LOG} extra pool gen_seed={meta_ex.get('gen_seed')} "
-                  f"flips_sha={str(meta_ex.get('flips_sha256'))[:16]}", flush=True)
-        m_ex = zex['measurements'][0:take].astype(binary_t)
-        e_ex = zex['det_evts'][0:take].astype(binary_t)
-        f_ex = zex['flips'][0:take].astype(binary_t).reshape(-1)
-        b_ex, _, _ = split_measurements(m_ex, d, idx_t)
-        x_ex = to_host_uint8(assemble_features(b_ex, e_ex, args.inputs, student=args.student,
-                                               d=d, rounds=r, p=p))
-        del m_ex, b_ex, e_ex
-        x_tr = np.concatenate([x_tr, x_ex], axis=0)
+        _, f_ex = load_extension_features(zex, take, d, r, p, args.inputs, args.student,
+                                          idx_t, binary_t, out=x_tr[ntr:ntr + take])
         f_tr = np.concatenate([f_tr, f_ex], axis=0)
         z_teach = np.concatenate([z_teach, np.zeros(take, dtype=np.float32)], axis=0)
         ntr = ntr + take
-        del x_ex
+        del zex
         print(f"{LOG} training set extended by {take:,} shots from "
               f"{os.path.basename(ext_pool)}; total {ntr:,}", flush=True)
+    assert ntr == n_all, (ntr, n_all)
 
     prov = run_provenance(args, train_fn, teacher_npz)
     print(f"{LOG} provenance: pool={prov['train_pool_dir']}/{prov['train_pool']} "

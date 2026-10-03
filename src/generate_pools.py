@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/generate_pools.py @ d5ee86f
-# Last modified: 2026-09-25 (build_circuit delegates to circuit_generators.build_circuit)
+# Last modified: 2026-09-30 (sample_pool_compact: same shots as sample_pool, detection events bit-packed, no measurements). Earlier 2026-09-25 (build_circuit delegates to circuit_generators.build_circuit)
 """Generate the 8 CORE dataset pools for the across-threshold RCNN-vs-MWPM study,
 and compute the deterministic MWPM p_L baseline ONCE per (d,p) at generation time.
 
@@ -79,6 +79,37 @@ def sample_pool(circ, n_total, seed):
         flips[done:done + k] = obs.astype(np.int8).reshape(k, -1)
         done += k
     return measurements, det_evts, flips
+
+
+def sample_pool_compact(circ, n_total, seed):
+    """The shots of sample_pool(circ, n_total, seed), kept as detection events only.
+
+    Same sampler, same seed, same chunking and the same measurement-to-detector
+    conversion as sample_pool, so shot i here is shot i there. The measurements are not
+    kept, and the detection events are stored bit-packed along the detector axis
+    (np.packbits, big-endian bit order): 8 detectors per byte. The GRU reads detection
+    events only, so this is all its training needs, at about 1/16 of the full pool's size.
+
+    Returns (det_evts_packed uint8 [n, ceil(n_det/8)], n_det, flips int8 [n, n_obs]).
+    Unpack with np.unpackbits(det_evts_packed, axis=1, count=n_det).
+    """
+    m_sampler = circ.compile_sampler(seed=seed)
+    converter = circ.compile_m2d_converter()
+    probe = m_sampler.sample(2, bit_packed=False)
+    det0, obs0 = converter.convert(measurements=probe, separate_observables=True, bit_packed=False)
+    n_det, n_obs = det0.shape[1], obs0.reshape(2, -1).shape[1]
+    det_packed = np.empty((n_total, (n_det + 7) // 8), dtype=np.uint8)
+    flips = np.empty((n_total, n_obs), dtype=np.int8)
+    m_sampler = circ.compile_sampler(seed=seed)     # fresh, as in sample_pool
+    done = 0
+    while done < n_total:
+        k = min(CHUNK, n_total - done)
+        meas = m_sampler.sample(k, bit_packed=False)
+        det, obs = converter.convert(measurements=meas, separate_observables=True, bit_packed=False)
+        det_packed[done:done + k] = np.packbits(det.astype(np.uint8), axis=1)
+        flips[done:done + k] = obs.astype(np.int8).reshape(k, -1)
+        done += k
+    return det_packed, n_det, flips
 
 
 def main():
