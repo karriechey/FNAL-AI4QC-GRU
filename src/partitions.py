@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last modified: 2026-10-02 (sealed_block, check_disjoint, check_pool_geometry: run-time guards used by train_student.py and eval_student_on_tail.py). Earlier 2026-09-25
+# Last modified: 2026-10-02 (sealed_block, check_disjoint, check_pool_geometry: run-time guards used by train_student.py and eval_student_on_tail.py; p in file names read in both the p0.004 and p004 styles; sealed-access log). Earlier 2026-09-25
 """Read configs/partitions.yaml and configs/paths.yaml.
 
 This is the only code that knows the partition ranges. Python scripts call the functions
@@ -18,6 +18,9 @@ Run-time guards (2026-10-02), used by train_student.py and eval_student_on_tail.
                              .fingerprint.json partition_test_SEALED is a cross-check only
   check_disjoint(blocks)     no two (pool, start, stop) blocks of the same pool overlap
   check_pool_geometry(...)   the pool's d, p, rounds equal the ones a script was given
+  sealed_log_path(), sealed_accesses(sha), record_sealed_access(row)
+                             configs/sealed_access.tsv: one row per scoring of the sealed
+                             block (eval_student_on_tail.py --score-sealed)
 They raise ValueError; the scripts turn that into SystemExit with their own log prefix.
 """
 import argparse
@@ -148,6 +151,13 @@ def check_disjoint(blocks):
 _NAME_RE = re.compile(r'data_d(\d+)_p([0-9.]+)_r(\d+)')
 
 
+def p_from_name(text):
+    """p from the p part of a pool or folder name, in either style used in this repo:
+    'p0.004' (pool files, data_d7_p0.004_r7_...) or 'p004' (folders and run tags,
+    pools_d7_p004_19M), where the digits are thousandths."""
+    return float(text) if '.' in text else int(text) / 1000.0
+
+
 def check_pool_geometry(pool, d, p, rounds):
     """Raise if the pool's d, p, rounds differ from the given ones; return a source note.
 
@@ -162,12 +172,47 @@ def check_pool_geometry(pool, d, p, rounds):
         m = _NAME_RE.search(name)
         if not m:
             return None
-        have, src = (int(m.group(1)), float(m.group(2)), int(m.group(3))), 'file name'
+        have, src = (int(m.group(1)), p_from_name(m.group(2)), int(m.group(3))), 'file name'
     want = (int(d), float(p), int(rounds))
     if have[0] != want[0] or abs(have[1] - want[1]) > 1e-9 or have[2] != want[2]:
         raise ValueError(f'{name}: {src} says d={have[0]} p={have[1]} r={have[2]}, the '
                          f'arguments say d={want[0]} p={want[1]} r={want[2]}. STOP.')
     return src
+
+
+SEALED_LOG_COLS = ['utc', 'weights_sha256', 'weights_path', 'student', 'units', 'hidden',
+                   'd', 'p', 'rounds', 'pool', 'block_start', 'block_stop', 'repeat']
+
+
+def sealed_log_path():
+    """configs/sealed_access.tsv, beside partitions.yaml. The environment variable
+    SEALED_ACCESS_LOG replaces the path (used by tests/guards_test.py only)."""
+    return os.environ.get('SEALED_ACCESS_LOG') or os.path.join(CONFIG_DIR, 'sealed_access.tsv')
+
+
+def sealed_accesses(weights_sha256):
+    """Earlier rows of the sealed-access log for these weights (list of dicts)."""
+    path = sealed_log_path()
+    if not os.path.exists(path):
+        return []
+    import csv
+    with open(path, newline='') as fh:
+        return [r for r in csv.DictReader(fh, delimiter='\t')
+                if r['weights_sha256'] == weights_sha256]
+
+
+def record_sealed_access(row):
+    """Append one row (a dict with SEALED_LOG_COLS) to the sealed-access log; the header is
+    written when the file is new. Returns the log path."""
+    import csv
+    path = sealed_log_path()
+    new = not os.path.exists(path)
+    with open(path, 'a', newline='') as fh:
+        w = csv.DictWriter(fh, fieldnames=SEALED_LOG_COLS, delimiter='\t')
+        if new:
+            w.writeheader()
+        w.writerow(row)
+    return path
 
 
 def shell_assignments(d):
