@@ -1,4 +1,4 @@
-<!-- Created: 2026-10-03 | Last updated: 2026-10-03 (amendments before launch) -->
+<!-- Created: 2026-10-03 | Last updated: 2026-10-04 (amendment 4, during 9-5) -->
 # Pre-registration: d=9 runs aimed at beating MWPM (October 2026)
 
 Written before any of these runs started. The queue is run by
@@ -42,7 +42,8 @@ STAB means the value comes from the Tier A promotion (see the promotion rule bel
 | 9-5 | B | STAB | STAB | STAB | 160 | 10,000 | 200M | | more data once stable |
 | 9-6 | B | STAB | STAB | STAB | 240 | 10,000 | 100M | only if the promoted run's best epoch is in the last 10% of its epochs; otherwise skipped, with the reason logged | longer only if still improving |
 | 9-7 | B | STAB | STAB | STAB | 160 | 10,000 | 100M | EMA of weights, decay 0.999; the EMA weights are checkpointed and scored | smooths the end of training |
-| 9-9 | B | STAB / √2 | STAB | STAB | 160 | 5,000 | 100M | | more updates per epoch |
+| 9-11 | A | 5e-4 | 3 | 0.64 | 160 | 10,000 | 100M | added by amendment 4; runs after 9-5 | is the best peak LR below 1e-3? |
+| 9-9 | B | STAB | STAB | STAB | 160 | 5,000 | 100M | amended: no ÷√2 | more updates per epoch; only the batch changes |
 | 9-10 | B | best so far | | | | | | seed 1 | replicate the best config among 9-1 to 9-9 |
 
 ## Rules
@@ -65,6 +66,14 @@ STAB means the value comes from the Tier A promotion (see the promotion rule bel
 1. **Tier A clipnorm 0.64 instead of 1.0.** R02, R16 and R17 already clipped at 0.64, so 1.0 would have relaxed clipping rather than added it. At 0.64, Tier A changes only the peak LR and the warmup relative to R02.
 2. **Kill rule replaced.** The earlier rule (epoch-20, or 25%-of-schedule, comparison against R02 at 1.25×) is replaced by the three conditions above. Reason: a lower peak LR with warmup is expected to trail R02 early, so an early comparison would stop exactly the runs meant to fix the divergence. The new rule catches a run that degrades and stays degraded (5 epochs at 1.5× its own best), and one that is far behind R02 well into training (2× at epoch 60).
 3. **9-8 (stacked GRU) declined.** It needed the evaluation script to rebuild two layers, and the evaluation path is not changed in this queue. Moved to Deferred.
+
+4. **2026-10-04, after 9-1 to 9-4 and during 9-5 (results seen; recorded as such).**
+   - **What we'd seen:** Tier A gave 1e-3: 2.54×, 1.5e-3: 2.83×, 3e-3: killed at epoch 43. The best peak LR sat at the low edge of the bracket.
+   - **9-11 added:** peak LR 5e-4, otherwise as 9-1. It is a Tier A row and runs right after 9-5.
+   - **Promotion redone:** after 9-11, over 9-1, 9-2 and 9-11. The first promotion (9-1) is kept in `stability_tierA_2026-10-04.json`. Rows 9-4 and 9-5 had already run with 9-1's settings.
+   - **9-9 changed:** batch 5,000 at the promoted peak LR, without the ÷√2. As first written it changed the LR and the batch together, so a difference couldn't be attributed to either.
+   - **Reason:** close the LR bracket before spending the remaining runs on a peak that may not be best.
+   - Because this amendment follows seen results, 9-11 and anything chosen through the redone promotion are exploratory relative to the original pre-registration.
 
 ## Deferred (not implemented, not run)
 

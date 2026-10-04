@@ -2,6 +2,7 @@
 # Defaults: r=9, p=0.004, cosine to 3e-5, reset_after=False, best checkpoint by min val p_L, primary FORMAL pool prefix 15M + training-only seeds as R02/R16.
 # STAB = taken from the Tier A promotion (stability.json); STAB/sqrt2 = promoted peak LR / sqrt(2).
 # cond: last10pct = run only if the promoted run's best epoch is in its last 10%; replicate = best finished config so far, seed 1.
+# 2026-10-04 amendment (after 9-1..9-4, during 9-5): 9-11 (peak 5e-4) added as Tier A, placed next; promotion redone over 9-1, 9-2, 9-11 after it; 9-9 uses the promoted peak LR without /sqrt2.
 # 2026-10-03 amendment (before launch): Tier A clipnorm 0.64 (as R02); 9-8 (stacked GRU) declined and moved to Deferred.
 name	tier	peak_lr	warmup	clip	epochs	batch	data	seed	ema	warm_start	units	need_host_gb	cond	note
 9-1	A	0.001	3	0.64	160	10000	100M	0	-	-	280	200	-	lower peak + warmup + clip, 160 ep
@@ -9,7 +10,8 @@ name	tier	peak_lr	warmup	clip	epochs	batch	data	seed	ema	warm_start	units	need_h
 9-3	A	0.003	3	0.64	160	10000	100M	0	-	-	280	200	-	warmup + clip alone at the known peak
 9-4	B	STAB	STAB	STAB	160	10000	100M	0	-	R01	280	200	-	warm start from best d7 u280 (R01), input kernel fresh
 9-5	B	STAB	STAB	STAB	160	10000	200M	0	-	-	280	380	-	200M
+9-11	A	0.0005	3	0.64	160	10000	100M	0	-	-	280	200	-	peak LR 5e-4 (amendment 2026-10-04): Tier A best was at the low edge (1e-3); runs after 9-5, then re-promotion
 9-6	B	STAB	STAB	STAB	240	10000	100M	0	-	-	280	200	last10pct	240 epochs
 9-7	B	STAB	STAB	STAB	160	10000	100M	0	0.999	-	280	200	-	EMA 0.999, EMA weights scored
-9-9	B	STAB/sqrt2	STAB	STAB	160	5000	100M	0	-	-	280	200	-	batch 5000, peak / sqrt2
+9-9	B	STAB	STAB	STAB	160	5000	100M	0	-	-	280	200	-	batch 5000 at the promoted peak LR (amended: no /sqrt2, so only the batch changes)
 9-10	B	-	-	-	-	-	-	1	-	-	-	200	replicate	best config so far, seed 1
