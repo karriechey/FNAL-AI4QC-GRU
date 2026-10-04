@@ -1,4 +1,4 @@
-<!-- Created: 2026-10-03 | Last updated: 2026-10-04 (amendment 4, during 9-5) -->
+<!-- Created: 2026-10-03 | Last updated: 2026-10-04 (amendments 4 and 5, during 9-5) -->
 # Pre-registration: d=9 runs aimed at beating MWPM (October 2026)
 
 Written before any of these runs started. The queue is run by
@@ -74,6 +74,8 @@ STAB means the value comes from the Tier A promotion (see the promotion rule bel
    - **9-9 changed:** batch 5,000 at the promoted peak LR, without the ÷√2. As first written it changed the LR and the batch together, so a difference couldn't be attributed to either.
    - **Reason:** close the LR bracket before spending the remaining runs on a peak that may not be best.
    - Because this amendment follows seen results, 9-11 and anything chosen through the redone promotion are exploratory relative to the original pre-registration.
+
+5. **2026-10-04, during 9-5: two runs at once.** The one-run-at-a-time rule is lifted for 9-11, which starts now alongside 9-5 (GPU about 40% busy, each job capped at 4 GB, host memory sufficient). It is started by `run_one.py` through the same code path as the queue, with the same kill rules, logging and results row. 9-7 now comes before 9-6 in `jobs.tsv`, so if 9-5 ends before 9-11 the driver waits for the redone promotion instead of skipping 9-6. Concurrency changes run times, not results (determinism is per process).
 
 ## Deferred (not implemented, not run)
 
