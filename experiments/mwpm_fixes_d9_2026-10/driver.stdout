@@ -1,0 +1,21 @@
+[mwpm-d9 2026-10-03T04:54:16Z] BEGIN repo=d835f65 baseline val p_L at epoch 60 = 0.012180; epoch-60 kill threshold 0.024360; streak rule 1.5 x own best for 5 epochs
+[mwpm-d9 2026-10-03T04:54:16Z] GPU   9-1: no other GPU process
+[mwpm-d9 2026-10-03T04:54:16Z] START 9-1 lr=0.001 warmup=3 clip=0.64 epochs=160 batch=10000 data=100M seed=0 ema=- warm_start=- -> /home/kchey/FNAL-AI4QC-GRU-mwpm/experiments/mwpm_fixes_d9_2026-10/9-1_20261003T045416Z
+[mwpm-d9 2026-10-03T09:42:16Z] CHECK 9-1 epoch 60: val p_L 0.006890 <= 0.024360; continues
+[mwpm-d9 2026-10-03T17:23:16Z] END   9-1 done: p_L 0.005762 MWPM 0.002267 ratio 2.5413 McNemar b=2316 c=8606 p=0
+[mwpm-d9 2026-10-03T17:23:16Z] GPU   9-2: no other GPU process
+[mwpm-d9 2026-10-03T17:23:16Z] START 9-2 lr=0.0015 warmup=3 clip=0.64 epochs=160 batch=10000 data=100M seed=0 ema=- warm_start=- -> /home/kchey/FNAL-AI4QC-GRU-mwpm/experiments/mwpm_fixes_d9_2026-10/9-2_20261003T172316Z
+[mwpm-d9 2026-10-03T22:05:16Z] CHECK 9-2 epoch 60: val p_L 0.008045 <= 0.024360; continues
+[mwpm-d9 2026-10-04T05:34:17Z] END   9-2 done: p_L 0.006415 MWPM 0.002267 ratio 2.8295 McNemar b=2277 c=9743 p=0
+[mwpm-d9 2026-10-04T05:34:17Z] GPU   9-3: no other GPU process
+[mwpm-d9 2026-10-04T05:34:17Z] START 9-3 lr=0.003 warmup=3 clip=0.64 epochs=160 batch=10000 data=100M seed=0 ema=- warm_start=- -> /home/kchey/FNAL-AI4QC-GRU-mwpm/experiments/mwpm_fixes_d9_2026-10/9-3_20261004T053417Z
+[mwpm-d9 2026-10-04T09:05:47Z] KILLED 9-3 at epoch 43: val p_L above 1.5 x the run's best so far (0.017215) for 5 consecutive epochs, epochs 39-43 (last 0.029160)
+[mwpm-d9 2026-10-04T09:05:47Z] END   9-3 killed
+[mwpm-d9 2026-10-04T09:05:47Z] PROMOTE 9-1 (ratio 2.5413): peak_lr=0.001 warmup=3 clip=0.64; best epoch 128 of 160
+[mwpm-d9 2026-10-04T09:05:47Z] GPU   9-4: no other GPU process
+[mwpm-d9 2026-10-04T09:05:47Z] START 9-4 lr=0.001 warmup=3 clip=0.64 epochs=160 batch=10000 data=100M seed=0 ema=- warm_start=R01 -> /home/kchey/FNAL-AI4QC-GRU-mwpm/experiments/mwpm_fixes_d9_2026-10/9-4_20261004T090547Z
+[mwpm-d9 2026-10-04T13:45:18Z] KILLED 9-4 at epoch 60: val p_L 0.048175 at epoch 60 > 2 x baseline 0.012180 = 0.024360
+[mwpm-d9 2026-10-04T13:45:18Z] END   9-4 killed
+[mwpm-d9 2026-10-04T13:45:18Z] GPU   9-5: no other GPU process
+[mwpm-d9 2026-10-04T13:45:18Z] START 9-5 lr=0.001 warmup=3 clip=0.64 epochs=160 batch=10000 data=200M seed=0 ema=- warm_start=- -> /home/kchey/FNAL-AI4QC-GRU-mwpm/experiments/mwpm_fixes_d9_2026-10/9-5_20261004T134518Z
+[mwpm-d9 2026-10-04T23:23:19Z] CHECK 9-5 epoch 60: val p_L 0.007675 <= 0.024360; continues

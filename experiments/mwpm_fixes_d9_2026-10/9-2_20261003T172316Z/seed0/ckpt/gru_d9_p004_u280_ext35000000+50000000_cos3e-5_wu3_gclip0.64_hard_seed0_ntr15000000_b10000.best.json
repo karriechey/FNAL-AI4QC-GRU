@@ -1,0 +1,8 @@
+{
+ "best_epoch": 108,
+ "val_ler": 0.00622,
+ "val_errors": 1244,
+ "val_n": 200000,
+ "val_loss": 0.017613111063838005,
+ "selection": "min val_errors, tiebreak min val_loss"
+}
