@@ -34,8 +34,17 @@ if a.resume:
         sys.exit(f'{a.name}: its container is still running')
 elif D.status(a.name):
     sys.exit(f'{a.name} already has a run folder ({D.status(a.name)}); not starting it again')
-if any(v == 'STAB' for v in (job['peak_lr'], job['warmup'], job['clip'])) or job['cond'] != '-':
-    sys.exit(f'{a.name} depends on the promotion or a condition; run it through the driver')
+if any(v == 'STAB' for v in (job['peak_lr'], job['warmup'], job['clip'])):
+    if not a.resume:
+        sys.exit(f'{a.name} depends on the promotion; run it through the driver')
+    # A resumed run keeps the settings it started with: the promotion in force at its launch,
+    # read from its own command.txt, so a later re-promotion cannot change a run mid-way.
+    env = dict(kv.split('=', 1) for kv in open(os.path.join(src, 'command.txt')).read().split()
+               if '=' in kv and kv.split('=', 1)[0] in ('LR', 'LR_WARMUP_EPOCHS', 'GLOBAL_CLIPNORM'))
+    job, _ = D.resolve(job, dict(peak_lr=env['LR'], warmup=env['LR_WARMUP_EPOCHS'],
+                                 clip=env['GLOBAL_CLIPNORM']), None)
+elif job['cond'] != '-':
+    sys.exit(f'{a.name} depends on a condition; run it through the driver')
 if D.host_avail_gb() < int(job['need_host_gb']):
     sys.exit(f"host available {D.host_avail_gb()} GB < {job['need_host_gb']} GB")
 hb = json.load(open(a.baseline_history))
