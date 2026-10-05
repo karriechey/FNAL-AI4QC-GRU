@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # Created: 2026-10-03
-# Last modified: 2026-10-05 (run_job resumes a paused run: resume_from). Earlier 2026-10-03 (amended before launch: kill rules replaced; 9-8 removed)
+# Last modified: 2026-10-05 (rows run concurrently when host memory allows; GPU-sharing wait removed: the GPU is not shared. Earlier the same day: run_job resumes a paused run). Earlier 2026-10-03 (amended before launch: kill rules replaced; 9-8 removed)
 """Queue driver for the d=9 MWPM-fix runs (prereg/mwpm_fixes_d9_2026-10.md).
 
 One run on the GPU at a time, in the order of jobs.tsv, with the rules fixed in the
 pre-registration:
 
-  GPU       before each launch (none of ours running): if other compute processes are on
-            the GPU, launch only if together they hold < 10 GB and GPU utilization stays near
-            0% (mean < 5%, max < 20%) over a 5-minute check; otherwise wait and re-check every
-            15 minutes. Time spent waiting is added up in blocked.json.
+  launch    (2026-10-05) rows run concurrently, each in its own thread: the next row starts
+            when it can be resolved, host memory available >= its need_host_gb, no queue run
+            is still loading its data, and swap in use has not grown by more than 2 GB over
+            the last ~10 minutes. The GPU is not shared with other users, so the earlier
+            wait for other users' GPU processes is gone (gpu_free_for_us is kept, unused).
   host      host memory available >= the job's need_host_gb
   budget    MAX_PARAMS = the single-layer u280 count at d=9 (303,521); the launcher and
             train_student.py refuse a model over it
@@ -45,6 +46,7 @@ import os
 import re
 import subprocess
 import sys
+import threading
 import time
 
 DIR = os.path.dirname(os.path.abspath(__file__))
@@ -89,14 +91,16 @@ def now():
 
 
 DRY = False
+LOCK = threading.Lock()             # log lines and results rows from concurrent runs
 
 
 def log(msg):
     line = f'[mwpm-d9 {now()}] {msg}'
-    print(line, flush=True)
-    if not DRY:                       # a dry run writes no file
-        with open(LOGF, 'a') as fh:
-            fh.write(line + '\n')
+    with LOCK:
+        print(line, flush=True)
+        if not DRY:                   # a dry run writes no file
+            with open(LOGF, 'a') as fh:
+                fh.write(line + '\n')
 
 
 def sh(cmd):
@@ -209,6 +213,27 @@ def gpu_free_for_us():
                 f'{peak:.0f}% -> {"idle, launching alongside" if ok else "busy"}')
 
 
+def swap_used_gb():
+    for l in open('/proc/meminfo'):
+        if l.startswith('SwapTotal'):
+            tot = int(l.split()[1])
+        elif l.startswith('SwapFree'):
+            free = int(l.split()[1])
+    return (tot - free) / 1048576
+
+
+def queue_run_loading(jobs):
+    """Name of a queue run whose container runs but whose log has no epoch line yet."""
+    up = sh("podman ps --format '{{.Names}}'").split()
+    for j in jobs:
+        if PREFIX + j['name'] in up:
+            out = run_dir(j['name'])
+            f = glob.glob(os.path.join(out, 'seed*', 'run.log')) if out else []
+            if not f or not re.search(r'\] epoch \d+: val_loss', open(f[0], errors='replace').read()):
+                return j['name']
+    return None
+
+
 def add_blocked(kind, seconds):
     b = json.load(open(BLOCKED)) if os.path.exists(BLOCKED) else {}
     b[kind] = b.get(kind, 0) + seconds
@@ -300,12 +325,13 @@ def write_result(j, out, done):
            (round(float(r['p_L']) / float(r['mwpm_p_L']), 3) if r else ''),
            round(b['val_loss'], 5) if b else '', 'FALSE', criterion(j, r, note),
            round((t1 - t0) / 3600, 2), now()[:10]]
-    new = not os.path.exists(RESULTS)
-    with open(RESULTS, 'a', newline='') as fh:
-        w = csv.writer(fh, delimiter='\t')
-        if new:
-            w.writerow(CSV_COLS)
-        w.writerow(row)
+    with LOCK:
+        new = not os.path.exists(RESULTS)
+        with open(RESULTS, 'a', newline='') as fh:
+            w = csv.writer(fh, delimiter='\t')
+            if new:
+                w.writerow(CSV_COLS)
+            w.writerow(row)
 
 
 def prepare_resume(src, out):
@@ -437,6 +463,9 @@ def main():
         f"threshold {threshold:.6f}; streak rule {STREAK_FACTOR:g} x own best for "
         f"{STREAK_EPOCHS} epochs" + ('  (dry run)' if a.dry_run else ''))
     dry_stab = None
+    threads = {}                       # rows started by this driver, run in threads
+    swap_hist = []
+    last_wait = None
     while True:
         jobs = read_jobs()
         by = {j['name']: j for j in jobs}
@@ -462,10 +491,13 @@ def main():
                    if j['cond'] != 'replicate' and status(j['name']) == 'done']
         best_so_far = min(fin_all, key=lambda t: t[0])[1] if fin_all else None
         any_win = any(wins(eval_row(run_dir(j['name']))) for _, j in fin_all)
-        pending = [j for j in jobs if status(j['name']) == '']
+        pending = [j for j in jobs if status(j['name']) == '' and j['name'] not in threads]
         if a.dry_run:
             pending = [j for j in jobs if j['name'] not in getattr(main, 'seen', set())]
         if not pending:
+            if any(t.is_alive() for t in threads.values()):
+                time.sleep(POLL_S)
+                continue
             log('END   queue finished')
             return
         rep = [j for j in pending if j['cond'] == 'replicate']
@@ -473,6 +505,16 @@ def main():
         j = order[0]
         if j['cond'] == 'replicate' and len(pending) > 1 and not any_win:
             j = [x for x in pending if x['cond'] != 'replicate'][0]
+        # 9-10 replicates the best of all the other rows, so (unless a run won) it waits until
+        # none of them is still running.
+        if (j['cond'] == 'replicate' and not any_win and not a.dry_run
+                and any(status(x['name']) == 'running' for x in jobs if x['cond'] != 'replicate')):
+            msg = f"WAIT  {j['name']}: replicate waits until every other row has finished"
+            if msg != last_wait:
+                log(msg)
+                last_wait = msg
+            time.sleep(POLL_S)
+            continue
         if a.dry_run:
             main.seen = getattr(main, 'seen', set()) | {j['name']}
             if j['tier'] == 'B' and dry_stab is None:
@@ -493,23 +535,37 @@ def main():
             if a.dry_run:
                 log(f"DRY   {j['name']}: {why}")
                 continue
-            log(f"WAIT  {j['name']}: {why}")
+            msg = f"WAIT  {j['name']}: {why}"
+            if msg != last_wait:           # log a waiting reason once, not every minute
+                log(msg)
+                last_wait = msg
             time.sleep(POLL_S)
             continue
-        if not a.dry_run:
-            while True:
-                need = int(rj['need_host_gb'])
-                t0 = time.time()
-                ok, note = gpu_free_for_us()
-                if ok and host_avail_gb() >= need:
-                    log(f"GPU   {rj['name']}: {note}")
-                    break
-                kind = 'gpu_other_user_s' if not ok else 'host_memory_s'
-                log(f"WAIT  {rj['name']}: {note}; host available {host_avail_gb()} GB (need "
-                    f"{need}); re-check in {GPU_WAIT_S // 60} min")
-                time.sleep(GPU_WAIT_S)
-                add_blocked(kind, time.time() - t0)
-        run_job(rj, threshold, a.dry_run)
+        if a.dry_run:
+            run_job(rj, threshold, True)
+            continue
+        # Concurrent launch, when memory allows and no other queue run is loading.
+        sw = swap_used_gb()
+        swap_hist = (swap_hist + [sw])[-10:]
+        need = int(rj['need_host_gb'])
+        loading = queue_run_loading(jobs)
+        why = ('' if host_avail_gb() >= need else f'host available {host_avail_gb()} GB < {need}')
+        why = why or (f'{loading} still loading' if loading else '')
+        why = why or (f'swap grew {sw - min(swap_hist):.1f} GB' if sw - min(swap_hist) > 2 else '')
+        if why:
+            msg = f"WAIT  {rj['name']}: {why}"
+            if msg != last_wait:
+                log(msg)
+                last_wait = msg
+            time.sleep(POLL_S)
+            continue
+        last_wait = None
+        log(f"LAUNCH {rj['name']} alongside {sorted(n for n, t in threads.items() if t.is_alive()) or 'nothing of this driver'}; "
+            f"host available {host_avail_gb()} GB (need {need}), swap {sw:.0f} GB")
+        t = threading.Thread(target=run_job, args=(rj, threshold, False), name=rj['name'])
+        t.start()
+        threads[rj['name']] = t
+        time.sleep(POLL_S)
 
 
 if __name__ == '__main__':

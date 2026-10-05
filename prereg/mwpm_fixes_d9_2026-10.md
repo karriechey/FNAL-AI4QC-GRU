@@ -1,4 +1,4 @@
-<!-- Created: 2026-10-03 | Last updated: 2026-10-04 (amendments 4 and 5, during 9-5) -->
+<!-- Created: 2026-10-03 | Last updated: 2026-10-05 (amendment 6) -->
 # Pre-registration: d=9 runs aimed at beating MWPM (October 2026)
 
 Written before any of these runs started. The queue is run by
@@ -76,6 +76,12 @@ STAB means the value comes from the Tier A promotion (see the promotion rule bel
    - Because this amendment follows seen results, 9-11 and anything chosen through the redone promotion are exploratory relative to the original pre-registration.
 
 5. **2026-10-04, during 9-5: two runs at once.** The one-run-at-a-time rule is lifted for 9-11, which starts now alongside 9-5 (GPU about 40% busy, each job capped at 4 GB, host memory sufficient). It is started by `run_one.py` through the same code path as the queue, with the same kill rules, logging and results row. 9-7 now comes before 9-6 in `jobs.tsv`, so if 9-5 ends before 9-11 the driver waits for the redone promotion instead of skipping 9-6. Concurrency changes run times, not results (determinism is per process).
+
+6. **2026-10-05: concurrency throughout; pauses for the d7 ceiling probe.**
+   - **Concurrent rows:** the driver now starts rows concurrently whenever host memory allows: at least `need_host_gb` free, no queue run still loading, and swap not growing. The GPU is not shared with other users, so the GPU-sharing wait is removed.
+   - **9-10:** still waits until every other row has finished, unless a run wins.
+   - **Pauses:** 9-11 (after epoch 68) and 9-5 were paused at epoch boundaries to free memory for the d7 ceiling probe (diagnostic, outside this queue). They resume from their last-epoch weights and optimizer state, which carries the update count and so the LR-schedule step. Their histories are rebuilt from the run logs, as for the earlier paused runs. The kill rules see the epochs from before the pause.
+   - Run times change; results do not (determinism is per process).
 
 ## Deferred (not implemented, not run)
 
