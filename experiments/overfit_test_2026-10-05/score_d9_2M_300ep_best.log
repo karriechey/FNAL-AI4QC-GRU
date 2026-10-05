@@ -1,0 +1,33 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+2026-10-05 04:24:29.669936: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-10-05 04:24:29.669998: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-10-05 04:24:29.671011: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+[student-eval] tf32=off reset_after=False unroll=False
+[gpu] per-process limit 4000 MiB on 1 device(s)
+[student-eval] scoring shots [0, 2,000,000) of data_d9_p0.004_r9_FORMAL.npz
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+[student-eval] gru params=303,521
+[student-eval] student p_L=0.064667  MWPM p_L=0.002410  ratio=26.8270x  base_rate=0.39243
+[mcnemar] 2x2 on 2,000,000 shared shots:
+[mcnemar]   both-right   = 1,867,462
+[mcnemar]   student-only = 3,205   (student wins these)
+[mcnemar]   MWPM-only    = 127,717   (MWPM wins these)
+[mcnemar]   both-wrong   = 1,616
+[mcnemar]   net student wins = -124,512  (= n_test x (p_L_MWPM - p_L_student) = -124512)
+[mcnemar]   chi2(cc)=118413.9  p_chi2=0.000e+00  p_exact=0.000e+00
+[student-eval] appended -> /home/kchey/FNAL-AI4QC-GRU-mwpm/experiments/overfit_test_2026-10-05/train_slice_scores.csv

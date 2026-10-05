@@ -1,0 +1,30 @@
+{
+  "path": "/home/kchey/pools_d9_p004_19M/data_d9_p0.004_r9_FORMAL.npz",
+  "d": 9,
+  "p": 0.004,
+  "rounds": 9,
+  "n_total": 19000000,
+  "partition_train": [
+    0,
+    15000000
+  ],
+  "partition_val": [
+    15000000,
+    17000000
+  ],
+  "partition_test_SEALED": [
+    17000000,
+    19000000
+  ],
+  "protocol": "Option A: dedicated validation block, disjoint from training and from the sealed test. Stricter than the r=3 exploratory protocol, which used Keras validation_split inside the prefix.",
+  "n_test": 2000000,
+  "n_val": 2000000,
+  "train_capacity": 15000000,
+  "gen_seed": 42,
+  "flips_sha256": "4ff74414c88cf5a75e3a195a8da83d9137e81785ef36c053ec231db4438a8ca3",
+  "measurements_shape": "(19000000, 801)",
+  "det_evts_shape": "(19000000, 720)",
+  "mwpm_p_L": 0.0022745,
+  "mwpm_resid_errors_test": 4549,
+  "size_gb": 26.93
+}
