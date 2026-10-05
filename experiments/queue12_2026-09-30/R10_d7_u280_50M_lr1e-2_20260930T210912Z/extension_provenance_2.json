@@ -1,0 +1,27 @@
+{
+  "path": "/home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed44.npz",
+  "d": 7,
+  "p": 0.004,
+  "rounds": 7,
+  "n_total": 30000000,
+  "gen_seed": 44,
+  "flips_sha256": "b8a202961bc0dbe295220aa3f62097ea26b25559d886fe132ea8df8533a35eae",
+  "purpose": "training_only",
+  "partition_train": [
+    0,
+    30000000
+  ],
+  "partition_val": null,
+  "partition_test_SEALED": null,
+  "protocol": "Training-only augmentation pool. Every shot is training data; no validation, evaluation or sealed region exists here. The primary pool supplies all three of those and is unmodified.",
+  "measurements_shape": "(30000000, 385)",
+  "det_evts_shape": "(30000000, 336)",
+  "base_rate": 0.30526,
+  "size_gb": 20.17,
+  "generated_utc": "2026-09-26T05:37:30Z",
+  "range_used": [
+    0,
+    30000000
+  ],
+  "note": "Augmented training set: this range is appended to the primary pool prefix. Validation, evaluation and sealed blocks come from the primary pool only."
+}

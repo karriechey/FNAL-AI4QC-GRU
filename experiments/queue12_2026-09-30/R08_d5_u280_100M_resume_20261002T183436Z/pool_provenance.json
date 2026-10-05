@@ -1,0 +1,30 @@
+{
+  "path": "/pools/data_d5_p0.004_r5_FORMAL.npz",
+  "d": 5,
+  "p": 0.004,
+  "rounds": 5,
+  "n_total": 19000000,
+  "partition_train": [
+    0,
+    15000000
+  ],
+  "partition_val": [
+    15000000,
+    17000000
+  ],
+  "partition_test_SEALED": [
+    17000000,
+    19000000
+  ],
+  "protocol": "Option A: dedicated validation block, disjoint from training and from the sealed test. Stricter than the r=3 exploratory protocol, which used Keras validation_split inside the prefix.",
+  "n_test": 2000000,
+  "n_val": 2000000,
+  "train_capacity": 15000000,
+  "gen_seed": 42,
+  "flips_sha256": "1c22b8a5960584162e21a833e622707c7d30d337435894ac6d973d1ddadfc79b",
+  "measurements_shape": "(19000000, 145)",
+  "det_evts_shape": "(19000000, 120)",
+  "mwpm_p_L": 0.007548,
+  "mwpm_resid_errors_test": 15096,
+  "size_gb": 4.71
+}

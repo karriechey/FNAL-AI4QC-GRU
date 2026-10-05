@@ -1,0 +1,1 @@
+paused at 2026-10-01T18:49:09Z after 31 completed epochs: host memory (RAM + swap) of the four running jobs exceeded RAM and swap was growing (204 GB used, 59 GB free); R04 was growing ~6 GB per epoch. lastepoch weights + optimizer state at epoch 31 kept for a resume.

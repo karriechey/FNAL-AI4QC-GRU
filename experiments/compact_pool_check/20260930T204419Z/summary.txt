@@ -1,0 +1,8 @@
+repo_head 910ac63f453edfb26c3412b78e2b37ff5c7ced35 branch 
+2026-09-30 20:44:21.814769: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-30 20:44:21.814803: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-30 20:44:21.815420: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+d=5: flips identical True; unpacked det_evts == full det_evts True; take 30000: features (30000, 6, 24) uint8, full and compact, chunked, == original loader True; take 12345: features (12345, 6, 24) uint8, full and compact, chunked, == original loader True; file bytes full 7,980,768 compact 480,776 (16.6x smaller)
+d=7: flips identical True; unpacked det_evts == full det_evts True; take 30000: features (30000, 8, 48) uint8, full and compact, chunked, == original loader True; take 12345: features (12345, 8, 48) uint8, full and compact, chunked, == original loader True; file bytes full 21,660,768 compact 1,290,776 (16.8x smaller)
+d=9: flips identical True; unpacked det_evts == full det_evts True; take 30000: features (30000, 10, 80) uint8, full and compact, chunked, == original loader True; take 12345: features (12345, 10, 80) uint8, full and compact, chunked, == original loader True; file bytes full 45,660,768 compact 2,730,776 (16.7x smaller)
+COMPACT POOL CHECK: PASS

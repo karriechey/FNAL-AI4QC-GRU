@@ -1,0 +1,8 @@
+repo_head ef8715d50166fe40d9a7e568d620839283c80ce3 branch 
+2026-09-30 20:41:32.365983: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-09-30 20:41:32.366017: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-09-30 20:41:32.366619: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+d=5: flips identical True; unpacked det_evts == full det_evts True; take 30000: features (30000, 6, 24) uint8 identical True; take 12345: features (12345, 6, 24) uint8 identical True; file bytes full 7,980,768 compact 480,776 (16.6x smaller)
+d=7: flips identical True; unpacked det_evts == full det_evts True; take 30000: features (30000, 8, 48) uint8 identical True; take 12345: features (12345, 8, 48) uint8 identical True; file bytes full 21,660,768 compact 1,290,776 (16.8x smaller)
+d=9: flips identical True; unpacked det_evts == full det_evts True; take 30000: features (30000, 10, 80) uint8 identical True; take 12345: features (12345, 10, 80) uint8 identical True; file bytes full 45,660,768 compact 2,730,776 (16.7x smaller)
+COMPACT POOL CHECK: PASS

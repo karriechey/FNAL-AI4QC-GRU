@@ -1,0 +1,23 @@
+{
+  "path": "/home/kchey/FNAL-AI4QC-GRU-compact/experiments/compact_pool_check/20260930T204129Z/full/data_d9_p0.004_r9_TRAINONLY_seed9001.npz",
+  "d": 9,
+  "p": 0.004,
+  "rounds": 9,
+  "n_total": 30000,
+  "gen_seed": 9001,
+  "flips_sha256": "78dbad1894ebdb6dd4d1cd32cb626c15c1c99abfeb0d06b1b5ecf45bcc25eb3f",
+  "purpose": "training_only",
+  "partition_train": [
+    0,
+    30000
+  ],
+  "partition_val": null,
+  "partition_test_SEALED": null,
+  "protocol": "Training-only augmentation pool. Every shot is training data; no validation, evaluation or sealed region exists here. The primary pool supplies all three of those and is unmodified.",
+  "format": "full: measurements, det_evts, flips",
+  "measurements_shape": "(30000, 801)",
+  "det_evts_shape": "(30000, 720)",
+  "base_rate": 0.39747,
+  "size_gb": 0.04,
+  "generated_utc": "2026-09-30T20:41:31Z"
+}
