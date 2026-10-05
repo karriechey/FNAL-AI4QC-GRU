@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -65,7 +65,7 @@ OPT=(--lr-schedule "$LR_SCHEDULE")
 [ -n "$GLOBAL_CLIPNORM" ] && OPT+=(--global-clipnorm "$GLOBAL_CLIPNORM")
 
 STUDENT="${STUDENT:-gru}"  # gru or mlp
-UNITS="${UNITS:-140}"      # GRU state width
+UNITS="${UNITS:-140}"      # GRU state width; several, space separated = stacked layers
 HIDDEN="${HIDDEN:-}"       # MLP layer widths, space separated, e.g. "160 160"
 
 # Quantization-aware training. Empty = float32 layers, the anchor every quantized run is
@@ -272,7 +272,9 @@ done
 "$PY" - "$STUDENT" "$UNITS" "$D" "$ROUNDS" "$P" "${MAX_PARAMS:-0}" $HIDDEN <<'PYPARAM'
 import os, sys
 os.environ['CUDA_VISIBLE_DEVICES'] = ''      # shape check, no GPU needed
-student, units = sys.argv[1], int(sys.argv[2])
+student = sys.argv[1]
+units = [int(u) for u in sys.argv[2].split()]
+units = units[0] if len(units) == 1 else tuple(units)
 d, r, p = int(sys.argv[3]), int(sys.argv[4]), float(sys.argv[5])
 max_params = int(sys.argv[6])
 hidden = tuple(int(h) for h in sys.argv[7:])
@@ -337,7 +339,8 @@ QUIET='cuda_|Unable to register|^Total number|^Number of unique'
 # Architecture flags, identical between the training call and the scoring call so the
 # model rebuilt for scoring is the one that was trained.
 if [ "$STUDENT" = "gru" ]; then
-  ARCH=(--student gru --inputs evts --hidden --units "$UNITS")
+  read -r -a UNITS_LIST <<< "$UNITS"
+  ARCH=(--student gru --inputs evts --hidden --units "${UNITS_LIST[@]}")
 else
   ARCH=(--student mlp --inputs evts --hidden $HIDDEN)
 fi
@@ -378,7 +381,7 @@ fi
 # both modes, so sequential and concurrent runs produce the same layout.
 run_seed () {
   local SEED="$1"
-  local SIZE; [ "$STUDENT" = "gru" ] && SIZE="u${UNITS}" || SIZE="h$(echo $HIDDEN | tr ' ' '-')"
+  local SIZE; [ "$STUDENT" = "gru" ] && SIZE="u$(echo $UNITS | tr ' ' 'x')" || SIZE="h$(echo $HIDDEN | tr ' ' '-')"
   # Float runs keep their original tag, so finished results still match the skip guard.
   local QTAG=""
   [ -n "$W_BITS$A_BITS" ] && QTAG="_w${W_BITS:-f32}_a${A_BITS:-f32}"

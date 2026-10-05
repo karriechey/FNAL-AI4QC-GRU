@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/StudentModels.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-09-26 (reset_after and unroll are build arguments, default False)
+# Last modified: 2026-10-05 (units may be a sequence: stacked GRU layers; a single int builds exactly the model as before). Earlier 2026-09-26 (reset_after and unroll are build arguments, default False)
 
 import numpy as np
 import tensorflow as tf
@@ -184,6 +184,11 @@ def build_gru_student(d=5, rounds=3, inputs='evts', units=64, hidden=(), p=0.010
     Parameters: GRU 3 * (units * (n_positions + units) + units) with reset_after=False
     (one more bias row per gate with True), plus the Dense layers and units + 1 for the head.
 
+    units may also be a sequence, e.g. (280, 280): stacked GRU layers, each but the last
+    returning its full sequence to the next. The first layer is named 'gru' as in the
+    single-layer model, the others 'gru_1', 'gru_2', ... A single int (or a one-element
+    sequence) builds exactly the single-layer model.
+
     inputs='evts+bits' is not supported here: det_bits holds `rounds` rounds of raw
     stabilizer measurements, a different time base from det_evts' r + 1 detector
     timesteps, and there is no correct way to align them without a decision about which to
@@ -203,9 +208,24 @@ def build_gru_student(d=5, rounds=3, inputs='evts', units=64, hidden=(), p=0.010
     # unroll=True unrolls the r+1 timesteps into plain ops, which also keeps Keras off the
     # cuDNN GRU kernel: TF 2.15's cuDNN GRU call fails under the image's cuDNN 9. Same
     # equations either way; default False.
+    widths = [int(u) for u in units] if isinstance(units, (list, tuple)) else [int(units)]
+    h = seq
+    for i, u in enumerate(widths):
+        h = _gru_layer(u, i < len(widths) - 1, 'gru' if i == 0 else f'gru_{i}', weight_bits,
+                       act_bits, reset_after, unroll)(h)
+
+    for i, n in enumerate(hidden):
+        h = _dense(n, f'dense_{i}', weight_bits)(h)
+        h = _relu(f'relu_{i}', act_bits)(h)
+    out = _dense(1, 'logit', weight_bits)(h)
+    return Model(x_in, out, name=name)
+
+
+def _gru_layer(units, return_sequences, name, weight_bits, act_bits, reset_after, unroll):
+    """One GRU layer, quantized (QGRU) when a weight word length is given."""
     if weight_bits is None or weight_bits >= 32:
-        h = KL.GRU(units, return_sequences=False, reset_after=reset_after, unroll=unroll,
-                   name='gru')(seq)
+        return KL.GRU(units, return_sequences=return_sequences, reset_after=reset_after,
+                      unroll=unroll, name=name)
     else:
         from qkeras.qrecurrent import QGRU
         q = _quantizers(weight_bits)
@@ -215,17 +235,11 @@ def build_gru_student(d=5, rounds=3, inputs='evts', units=64, hidden=(), p=0.010
         a_tanh = f'quantized_tanh({act_bits})' if act_bits else 'tanh'
         a_sigm = f'quantized_sigmoid({act_bits})' if act_bits else 'sigmoid'
         state_q = _quantizers(act_bits) if act_bits else _quantizers(weight_bits)
-        h = QGRU(units, return_sequences=False, reset_after=reset_after, unroll=unroll,
-                 kernel_quantizer=q, recurrent_quantizer=q, bias_quantizer=q,
-                 state_quantizer=state_q,
-                 activation=a_tanh, recurrent_activation=a_sigm,
-                 name='gru')(seq)
-
-    for i, n in enumerate(hidden):
-        h = _dense(n, f'dense_{i}', weight_bits)(h)
-        h = _relu(f'relu_{i}', act_bits)(h)
-    out = _dense(1, 'logit', weight_bits)(h)
-    return Model(x_in, out, name=name)
+        return QGRU(units, return_sequences=return_sequences, reset_after=reset_after,
+                    unroll=unroll, kernel_quantizer=q, recurrent_quantizer=q, bias_quantizer=q,
+                    state_quantizer=state_q,
+                    activation=a_tanh, recurrent_activation=a_sigm,
+                    name=name)
 
 
 def build_student(student, d=5, rounds=3, inputs='evts', hidden=None, units=64,

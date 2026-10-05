@@ -207,7 +207,7 @@ class TestHidden(unittest.TestCase):
 
 
 def eval_args(**kw):
-    a = dict(pool=Pools.formal, weights=Pools.weights, student='gru', units=280, d=5,
+    a = dict(pool=Pools.formal, weights=Pools.weights, student='gru', units=[280], d=5,
              p=0.004, rounds=5, eval_start=15_200_000, n_test=1_800_000,
              score_sealed=False, score_sealed_again=False)
     a.update(kw)

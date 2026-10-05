@@ -194,6 +194,35 @@ class Checks:
               and 'Epoch 1' not in log_no and '40/40' not in log_no)
         self.report('max_params_on', ok, f"cap 5505 exit {rc_ok}; cap 5504 exit {rc_no}")
 
+    def stacked_on(self):
+        # Parameter counts at d=7: one u560 layer and two stacked u280 layers (the ceiling
+        # probe arms), and the u280 single layer, which must be unchanged (276,641).
+        code = ("import os; os.environ['CUDA_VISIBLE_DEVICES']=''\n"
+                "from StudentModels import build_student\n"
+                "for u in (280, (280,), 560, (280, 280)):\n"
+                "    m = build_student('gru', d=7, rounds=7, hidden=(), units=u)\n"
+                "    print(u, m.count_params(), [l.name for l in m.layers])\n")
+        r = subprocess.run([self.a.py, '-c', code], cwd=self.new_src, capture_output=True,
+                           text=True, env=dict(os.environ, TF_CPP_MIN_LOG_LEVEL='3'))
+        counts = dict(re.findall(r'^(\S+(?: \S+)?) (\d+) ', r.stdout, re.M))
+        # Train two stacked layers for one epoch, then rebuild and score with the eval script.
+        rc, log, _ = self.run_new('stacked_train', ['--units', '16', '16'], epochs=1)
+        w = glob.glob(f'{self.a.out}/stacked_train/ckpt/*.best.weights.h5')
+        ev = subprocess.run([self.a.py, 'eval_student_on_tail.py', '--student', 'gru', '--hidden',
+                             '--units', '16', '16', '--d', '5', '--p', '0.004', '--rounds', '5',
+                             '--pool', self.pool[5], '--weights', w[0] if w else 'missing',
+                             '--eval-start', '50000', '--n-test', '10000', '--cpu'],
+                            cwd=self.new_src, capture_output=True, text=True,
+                            env=dict(os.environ, TF_CPP_MIN_LOG_LEVEL='2'))
+        ok = (r.returncode == 0 and counts.get('280') == '276641' and counts.get('(280,)') == '276641'
+              and counts.get('560') == '1023681' and counts.get('(280, 280)') == '747881'
+              and "'gru', 'gru_1'" in r.stdout and rc == 0 and ev.returncode == 0
+              and 'student p_L=' in ev.stdout)
+        layers = re.findall(r'\[.*\]', r.stdout)[-1:]
+        score = (re.findall(r'student p_L=\S+', ev.stdout) or [ev.stderr[-300:]])[0]
+        self.report('stacked_on', ok, f"params {counts}; layers: {layers}; "
+                    f"train 16x16 exit {rc}, eval exit {ev.returncode} {score}")
+
     def run(self, names):
         for n in names:
             getattr(self, n)()
@@ -209,6 +238,6 @@ if __name__ == '__main__':
     ap.add_argument('--pool-dir', required=True)
     ap.add_argument('--base-ref', required=True)
     ap.add_argument('--out', required=True)
-    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on', 'ema_on', 'warm_start_on', 'max_params_on'])
+    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on', 'ema_on', 'warm_start_on', 'max_params_on', 'stacked_on'])
     a = ap.parse_args()
     sys.exit(Checks(a).run(a.checks))

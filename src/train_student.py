@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -480,7 +480,9 @@ def run():
     ap.add_argument('--hidden', type=int, nargs='*', default=None,
                     help='MLP: the Dense stack. GRU: optional Dense layers after the GRU. '
                          'Not given: GRU none, MLP 128 128. Given with no values: none.')
-    ap.add_argument('--units', type=int, default=64, help='GRU hidden state size')
+    ap.add_argument('--units', type=int, nargs='+', default=[64],
+                    help='GRU hidden state size; several values = stacked GRU layers '
+                         '(e.g. 280 280). One value builds the single-layer model as before.')
     ap.add_argument('--reset-after', action='store_true',
                     help='GRU with reset_after=True (cuDNN form); default False as before')
     ap.add_argument('--unroll', action='store_true',
@@ -678,6 +680,9 @@ def run():
         raise SystemExit(f"{LOG} give --eval-start (scored block in the primary pool) or "
                          f"--test-pool (a separate pool). STOP.")
     hidden = resolve_hidden(args.student, args.hidden)
+    # One value: the int, so the model and every name built from it are as before.
+    units = args.units[0] if len(args.units) == 1 else tuple(args.units)
+    units_str = 'x'.join(str(u) for u in args.units)
     train_fn = args.pool or os.path.join(args.data_dir,
                                          f'data_d{args.d}_p{args.p:.3f}_r{args.rounds}.npz')
     if not os.path.exists(train_fn):
@@ -930,7 +935,7 @@ def run():
     # --- build, compile, fit --------------------------------------------------------
     set_seeds(seed)
     model = build_student(args.student, d=d, rounds=r, inputs=args.inputs,
-                          hidden=hidden, units=args.units,
+                          hidden=hidden, units=units,
                           weight_bits=args.weight_bits, act_bits=args.act_bits,
                           reset_after=args.reset_after, unroll=args.unroll)
     print(f"{LOG} reset_after={args.reset_after} unroll={args.unroll}", flush=True)
@@ -1036,7 +1041,7 @@ def run():
     tag = args.tag or (f'student_{args.student}_{args.inputs.replace("+", "-")}_'
                        f'{wb}_{ab}_alpha{args.alpha:g}_T{args.temperature:g}_'
                        f'seed{seed}_ntr{ntr}_'
-                       + (f'u{args.units}_' if args.student == 'gru' else '')
+                       + (f'u{units_str}_' if args.student == 'gru' else '')
                        + f'h{"-".join(str(h) for h in hidden) or 0}_'
                        f'lr{"teacher" if args.lr is None else format(args.lr, "g")}_'
                        f'{args.lr_schedule}_e{args.epochs}_ra{int(args.reset_after)}_'
@@ -1268,7 +1273,7 @@ def run():
             weight_bits=('' if args.weight_bits is None else args.weight_bits),
             act_bits=('' if args.act_bits is None else args.act_bits),
             hidden='-'.join(str(h) for h in hidden),
-            units=(args.units if args.student == 'gru' else ''),
+            units=(units_str if args.student == 'gru' else ''),
             n_params=n_params, reset_after=int(args.reset_after), unroll=int(args.unroll),
             tf32=('off' if args.no_tf32 else 'on'),
             epochs=args.epochs, epochs_ran=epochs_ran,

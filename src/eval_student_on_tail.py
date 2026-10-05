@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint; the sealed block is scored only with --score-sealed, logged in configs/sealed_access.tsv, once per weights file unless --score-sealed-again; an existing CSV with an older header is left as it is and the row goes to <name>.v2.csv). Earlier 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
+# Last modified: 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint; the sealed block is scored only with --score-sealed, logged in configs/sealed_access.tsv, once per weights file unless --score-sealed-again; an existing CSV with an older header is left as it is and the row goes to <name>.v2.csv). 2026-10-05: --units takes several values for stacked GRU layers. Earlier 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
 """Score a saved student on a fixed partition and run the paired McNemar test vs MWPM.
 
 Why a separate script from eval_on_tail.py
@@ -114,7 +114,7 @@ def check_eval_block(args, hidden):
     log = P.record_sealed_access(dict(
         utc=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
         weights_sha256=sha, weights_path=os.path.abspath(args.weights),
-        student=args.student, units=(args.units if args.student == 'gru' else ''),
+        student=args.student, units=('x'.join(map(str, args.units)) if args.student == 'gru' else ''),
         hidden='-'.join(str(h) for h in hidden), d=args.d, p=args.p, rounds=args.rounds,
         pool=os.path.abspath(args.pool), block_start=lo, block_stop=hi,
         repeat=int(bool(earlier))))
@@ -163,7 +163,8 @@ def run():
                     help='MLP: the Dense stack (e.g. 209 209). GRU: post-GRU Dense layers. '
                          'Not given: GRU none, MLP 128 128 (train_student.py defaults). '
                          'Given with no values: none.')
-    ap.add_argument('--units', type=int, default=140, help='GRU hidden state size')
+    ap.add_argument('--units', type=int, nargs='+', default=[140],
+                    help='GRU hidden state size; several values = stacked GRU layers')
     ap.add_argument('--reset-after', action='store_true',
                     help='the checkpoint was trained with reset_after=True')
     ap.add_argument('--unroll', action='store_true', help='build the GRU with unroll=True')
@@ -241,7 +242,8 @@ def run():
     # Rebuild the SAME architecture the weights were trained with, then load. A mismatch
     # in units/hidden raises on load rather than silently producing a wrong score.
     if args.student == 'gru':
-        model = build_gru_student(d=d, rounds=r, inputs=args.inputs, units=args.units,
+        units = args.units[0] if len(args.units) == 1 else tuple(args.units)
+        model = build_gru_student(d=d, rounds=r, inputs=args.inputs, units=units,
                                   hidden=hidden, p=p,
                                   weight_bits=args.weight_bits, act_bits=args.act_bits,
                                   reset_after=args.reset_after, unroll=args.unroll)
