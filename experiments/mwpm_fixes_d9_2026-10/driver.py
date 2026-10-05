@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-03
-# Last modified: 2026-10-03 (amended before launch: kill rules replaced; 9-8 removed)
+# Last modified: 2026-10-05 (run_job resumes a paused run: resume_from). Earlier 2026-10-03 (amended before launch: kill rules replaced; 9-8 removed)
 """Queue driver for the d=9 MWPM-fix runs (prereg/mwpm_fixes_d9_2026-10.md).
 
 One run on the GPU at a time, in the order of jobs.tsv, with the rules fixed in the
@@ -308,7 +308,38 @@ def write_result(j, out, done):
         w.writerow(row)
 
 
-def run_job(j, threshold, dry):
+def prepare_resume(src, out):
+    """Set up `out` to continue the paused run in `src` (as resume_paused.sh did for the
+    earlier pauses): .best.* into out/seed0/ckpt, the last-epoch weights (model + optimizer
+    state, which carries the update count and so the LR-schedule step) and the history of
+    epochs 1..N rebuilt from run.log into out/resume_from. Returns (resume env, N, earlier
+    val p_L by epoch)."""
+    import shutil
+    sd = os.path.join(src, 'seed0')
+    txt = open(os.path.join(sd, 'run.log'), errors='replace').read()
+    lines = [l for l in txt.splitlines() if 'ms/step' in l]
+    n = len(lines)
+    tag = os.path.basename(glob.glob(os.path.join(sd, 'ckpt', '*.best.json'))[0])[:-len('.best.json')]
+    ck, rf = os.path.join(out, 'seed0', 'ckpt'), os.path.join(out, 'resume_from')
+    os.makedirs(ck)
+    os.makedirs(rf)
+    for ext in ('.best.keras', '.best.weights.h5', '.best.json'):
+        shutil.copy2(os.path.join(sd, 'ckpt', tag + ext), ck)
+    shutil.copy2(os.path.join(sd, 'ckpt', tag + '.lastepoch.weights.h5'), rf)
+    h = {}
+    for l in lines:
+        for k, v in re.findall(r' - ([a-z_]+): ([-0-9.e+]+)', l):
+            h.setdefault(k, []).append(float(v))
+    if not all(len(v) == n for v in h.values()):
+        raise SystemExit('history rebuild: unequal lengths ' + str({k: len(v) for k, v in h.items()}))
+    json.dump(h, open(os.path.join(rf, tag + '.history.json'), 'w'))
+    env = dict(RESUME_WEIGHTS=os.path.join(rf, tag + '.lastepoch.weights.h5'), INITIAL_EPOCH=n,
+               RESUME_BEST_JSON=os.path.join(ck, tag + '.best.json'),
+               RESUME_HISTORY=os.path.join(rf, tag + '.history.json'))
+    return env, n, epoch_val_ler(src)
+
+
+def run_job(j, threshold, dry, resume_from=None):
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     out = os.path.join(DIR, f"{j['name']}_{stamp}")
     env = launch_env(j, out, stamp)
@@ -322,6 +353,12 @@ def run_job(j, threshold, dry):
                                              if k not in ('OUT', 'STAMP', 'HOME')))
         return 'dry'
     os.makedirs(out)
+    prior, n_done = {}, 0
+    if resume_from:
+        renv, n_done, prior = prepare_resume(resume_from, out)
+        env.update(renv)
+        cmd = cmd[:cmd.index('bash')] + [f'{k}={v}' for k, v in renv.items()] + cmd[cmd.index('bash'):]
+        log(f"RESUME {j['name']} from {resume_from} after epoch {n_done}")
     with open(os.path.join(out, 'command.txt'), 'w') as fh:
         fh.write(' '.join(cmd) + '\n')
     with open(os.path.join(out, 'code_commit.txt'), 'w') as fh:
@@ -331,7 +368,7 @@ def run_job(j, threshold, dry):
         f"ema={j['ema']} warm_start={j['warm_start']} -> {out}")
     with open(os.path.join(out, 'podman.log'), 'w') as pl:
         proc = subprocess.Popen(cmd, stdout=pl, stderr=subprocess.STDOUT)
-    checked = False
+    checked = n_done >= KILL_EPOCH      # a resumed run past epoch 60 was checked before
     k_epoch = None
     while proc.poll() is None:
         time.sleep(POLL_S)
@@ -345,7 +382,7 @@ def run_job(j, threshold, dry):
                 f"training loss nan at epoch {ep}; last finite epoch loss {last[-1] if last else 'none'}")
             log(f"DIVERGED {j['name']} at epoch {ep}")
             break
-        vl = epoch_val_ler(out)
+        vl = {**prior, **epoch_val_ler(out)}     # epochs before a pause count too
         reason = streak_reason(vl)
         if reason is None and not checked and KILL_EPOCH in vl:
             checked = True

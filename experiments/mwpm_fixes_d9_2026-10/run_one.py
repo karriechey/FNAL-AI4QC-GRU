@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-04
-# Last modified: 2026-10-04
+# Last modified: 2026-10-05 (--resume: continue a run paused by pause_run.sh)
 """Run one row of jobs.tsv now, alongside the job the queue driver is running (amendment 5).
 
 Uses driver.run_job, so the run gets exactly the queue's launcher settings, kill rules (NaN,
@@ -13,6 +13,7 @@ sees this row's run folder and does not start it again.
 """
 import argparse
 import json
+import os
 import sys
 
 import driver as D
@@ -20,9 +21,18 @@ import driver as D
 ap = argparse.ArgumentParser()
 ap.add_argument('name')
 ap.add_argument('--baseline-history', required=True)
+ap.add_argument('--resume', action='store_true',
+                help='continue the paused run of this row (its latest folder has PAUSED) in a '
+                     'new folder; the paused folder is not changed')
 a = ap.parse_args()
 job = {j['name']: j for j in D.read_jobs()}[a.name]
-if D.status(a.name):
+src = D.run_dir(a.name)
+if a.resume:
+    if not (src and os.path.exists(os.path.join(src, 'PAUSED'))):
+        sys.exit(f'{a.name}: no paused run folder to resume')
+    if os.popen(f"podman ps -q --filter name=^md9_{a.name}$").read().strip():
+        sys.exit(f'{a.name}: its container is still running')
+elif D.status(a.name):
     sys.exit(f'{a.name} already has a run folder ({D.status(a.name)}); not starting it again')
 if any(v == 'STAB' for v in (job['peak_lr'], job['warmup'], job['clip'])) or job['cond'] != '-':
     sys.exit(f'{a.name} depends on the promotion or a condition; run it through the driver')
@@ -30,6 +40,6 @@ if D.host_avail_gb() < int(job['need_host_gb']):
     sys.exit(f"host available {D.host_avail_gb()} GB < {job['need_host_gb']} GB")
 hb = json.load(open(a.baseline_history))
 threshold = D.KILL_FACTOR * hb['val_ler'][D.KILL_EPOCH - 1]
-D.log(f"NOTE  run_one: starting {a.name} alongside the queue's running job (amendment 5); "
-      f"epoch-{D.KILL_EPOCH} kill threshold {threshold:.6f}")
-D.run_job(job, threshold, False)
+D.log(f"NOTE  run_one: {'resuming' if a.resume else 'starting'} {a.name} alongside the queue's "
+      f"running job (amendment 5); epoch-{D.KILL_EPOCH} kill threshold {threshold:.6f}")
+D.run_job(job, threshold, False, resume_from=(src if a.resume else None))
