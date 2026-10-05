@@ -1,0 +1,15 @@
+d,width,N,n_seeds,mean_ratio,cv_pct,mwpm,recipe,seeds,runs
+5,u140,10M,3,1.131,2.23,0.007571,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1,2",line 23; line 24; line 26
+5,u140,15M,3,0.992,0.34,0.007571,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1,2",line 13; line 14; line 15
+5,u140,20M,3,0.947,0.98,0.007571,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1,2",line 9; line 10; line 11
+5,u140,20M,3,1.052,0.32,0.007571,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val p_L, new pipeline, reset_after=True, no warmup, p=0.004, grace1 pool","0,1,2",line 17; line 18; line 19
+7,u140,2M,3,9.737,6.9,0.004291,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1,2",line 71; line 72; line 74
+7,u140,5M,3,5.13,5.48,0.004291,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1,2",line 63; line 65; line 67
+7,u140,10M,3,2.872,3.63,0.004291,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1,2",line 55; line 57; line 58
+7,u140,15M,3,2.303,11.01,0.004291,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1,2",line 45; line 48; line 54
+7,u140,20M,2,2.109,10.25,0.004291,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1",line 44; line 49
+7,u140,20M,2,2.416,0.03,0.004291,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val p_L, new pipeline, reset_after=True, no warmup, p=0.004, grace1 pool","0,1",line 50; line 51
+7,u280,20M,2,1.842,4.68,0.004291,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val p_L, new pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1",line 40; line 42
+7,u280,50M,2,1.246,0.42,0.004291,"cosine, peak 3e-3, 80 ep, batch 10000, ckpt val p_L, new pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1",line 31; line 32
+9,u140,10M,3,12.701,4.65,0.002267,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1,2",line 77; line 80; line 82
+9,u280,10M,3,10.638,3.81,0.002267,"constant, peak 3e-3, 200 ep, batch 10000, ckpt val loss, old pipeline, reset_after=False, no warmup, p=0.004, grace1 pool","0,1,2",line 73; line 75; line 76

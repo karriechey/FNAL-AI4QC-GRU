@@ -1,0 +1,7 @@
+run_id,d,width,params,train_shots,schedule,peak_lr,epochs,warmup_epochs,clipnorm,status,val_p_L,val_source,run_log_glob,note
+arm a,7,u560,1023681,200M,cosine,0.001,80,3,0.64,pending,,,experiments/ceiling_probe_d7_2026-10-05/a_u560_*/**/run.log,d7 capacity probe; exceeds the FPGA budget on purpose
+arm b,7,2xu280,747881,200M,cosine,0.001,80,3,0.64,pending,,,experiments/ceiling_probe_d7_2026-10-05/b_u280x280_*/**/run.log,two stacked GRU layers of 280 units
+C1,7,u280,276641,200M,cosine,0.001,80,3,0.64,pending,,,experiments/**/C1_*/**/run.log,u280 control at the probe's peak LR
+9-5,9,u280,303521,200M,cosine,0.001,160,3,0.64,pending,,,experiments/mwpm_fixes_d9_2026-10/9-5_*/**/run.log,d9 MWPM-fix queue; promoted peak LR
+9-11,9,u280,303521,100M,cosine,0.0005,160,3,0.64,pending,,,experiments/mwpm_fixes_d9_2026-10/9-11_*/**/run.log,d9 MWPM-fix queue; peak LR 5e-4
+9-3,9,u280,303521,100M,cosine,0.003,160,3,0.64,killed,0.017215,"all-runs CSV note: best val p_L at epoch 14, killed at epoch 43 by the pre-registered divergence rule",experiments/mwpm_fixes_d9_2026-10/9-3_*/**/run.log,never scored on the eval block

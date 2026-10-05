@@ -1,0 +1,11 @@
+series,from_d,to_d,Lambda,Lambda_lo,Lambda_hi,runs
+MWPM,5,7,1.764,1.716,1.814,
+MWPM,7,9,1.893,1.823,1.964,
+best GRU per d,5,7,1.267,1.232,1.305,line 2 (d5 u280 100M s0 cosine 3e-3 80ep); line 20 (d7 u280 200M s0 cosine 3e-3 80ep)
+best GRU per d,7,9,0.789,0.768,0.812,line 20 (d7 u280 200M s0 cosine 3e-3 80ep); line 53 (d9 u280 100M s0 cosine 1e-3 160ep)
+"u140 constant 3e-3, 10M (older pipeline)",5,7,0.695,0.666,0.723,line 23 (d5 u140 10M s1 constant 3e-3 200ep); line 24 (d5 u140 10M s0 constant 3e-3 200ep); line 26 (d5 u140 10M s2 constant 3e-3 200ep); line 55 (d7 u140 10M s1 constant 3e-3 200ep); line 57 (d7 u140 10M s2 constant 3e-3 200ep); line 58 (d7 u140 10M s0 constant 3e-3 200ep)
+"u140 constant 3e-3, 10M (older pipeline)",7,9,0.428,0.406,0.454,line 55 (d7 u140 10M s1 constant 3e-3 200ep); line 57 (d7 u140 10M s2 constant 3e-3 200ep); line 58 (d7 u140 10M s0 constant 3e-3 200ep); line 77 (d9 u140 10M s0 constant 3e-3 200ep); line 80 (d9 u140 10M s2 constant 3e-3 200ep); line 82 (d9 u140 10M s1 constant 3e-3 200ep)
+"u280 constant 3e-3, 10M (older pipeline)",5,7,0.673,0.66,0.687,line 29 (d5 u280 10M s0 constant 3e-3 200ep); line 60 (d7 u280 10M s0 constant 3e-3 200ep)
+"u280 constant 3e-3, 10M (older pipeline)",7,9,0.553,0.536,0.577,line 60 (d7 u280 10M s0 constant 3e-3 200ep); line 73 (d9 u280 10M s1 constant 3e-3 200ep); line 75 (d9 u280 10M s2 constant 3e-3 200ep); line 76 (d9 u280 10M s0 constant 3e-3 200ep)
+"u280 cosine 3e-3, 80 ep, 100M",5,7,1.265,1.229,1.303,line 2 (d5 u280 100M s0 cosine 3e-3 80ep); line 21 (d7 u280 100M s0 cosine 3e-3 80ep)
+"u280 cosine 3e-3, 80 ep, 100M",7,9,0.4,0.39,0.41,line 21 (d7 u280 100M s0 cosine 3e-3 80ep); line 64 (d9 u280 100M s0 cosine 3e-3 80ep)
