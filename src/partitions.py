@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last modified: 2026-10-02 (sealed_block, check_disjoint, check_pool_geometry: run-time guards used by train_student.py and eval_student_on_tail.py; p in file names read in both the p0.004 and p004 styles; sealed-access log). Earlier 2026-09-25
+# Last modified: 2026-10-06 (used_seeds, held-out files sealed whole, spent_blocks, checks over the complete pool table). Earlier 2026-10-02 (sealed_block, check_disjoint, check_pool_geometry: run-time guards used by train_student.py and eval_student_on_tail.py; p in file names read in both the p0.004 and p004 styles; sealed-access log). Earlier 2026-09-25
 """Read configs/partitions.yaml and configs/paths.yaml.
 
 This is the only code that knows the partition ranges. Python scripts call the functions
@@ -62,7 +62,37 @@ def check(cfg):
     if cfg['trainonly']['gen_seed'] == f['gen_seed']:
         raise ValueError("TRAINONLY gen_seed equals FORMAL gen_seed; the extension would "
                          "reproduce FORMAL shots")
+    # (2026-10-06) The complete pool table: within one (d, p) every pool has its own seed, and
+    # a held-out block's seed is used by nothing else at all.
+    seen = {}
+    for e in cfg.get('pools', []):
+        key = (int(e['d']), float(e['p']), int(e['gen_seed']))
+        if key in seen:
+            raise ValueError(f"two pools with d={key[0]} p={key[1]} gen_seed={key[2]}")
+        seen[key] = e
+    others = {int(e['gen_seed']) for e in cfg.get('pools', [])} | \
+             {int(k) for k in (cfg.get('seeds_used_elsewhere') or {})}
+    ho = [int(e['gen_seed']) for e in (cfg.get('held_out') or [])]
+    if len(set(ho)) != len(ho) or set(ho) & others:
+        raise ValueError(f"held-out seeds {ho} are reused (other seeds in use: {sorted(others)})")
     return True
+
+
+def used_seeds(cfg=None):
+    """Every generation seed used for any pool or held-out block, or listed as used elsewhere."""
+    cfg = cfg or load()
+    return ({int(e['gen_seed']) for e in cfg.get('pools', [])}
+            | {int(e['gen_seed']) for e in (cfg.get('held_out') or [])}
+            | {int(k) for k in (cfg.get('seeds_used_elsewhere') or {})})
+
+
+def spent_blocks(pool, cfg=None):
+    """[(start, stop, note)] of blocks of this pool that a decoder has already read."""
+    cfg = cfg or load()
+    ap = os.path.abspath(pool)
+    return [(int(b['range'][0]), int(b['range'][1]), f"spent {b['spent']} by {b['by']}; {b['use']}")
+            for b in (cfg.get('spent_blocks') or [])
+            if os.path.abspath(os.path.expanduser(b['pool'])) == ap]
 
 
 def block(name, cfg=None):
@@ -105,6 +135,10 @@ def sealed_block(pool, n_pool, cfg=None):
     cfg = cfg or load()
     fp = read_fingerprint(pool) or {}
     name = os.path.basename(pool)
+    # (2026-10-06) A held-out block is its own file and every shot of it is sealed.
+    ho = {os.path.abspath(os.path.expanduser(e['path'])) for e in (cfg.get('held_out') or [])}
+    if fp.get('purpose') == 'held_out' or 'HELDOUT' in name or os.path.abspath(pool) in ho:
+        return (0, int(n_pool)), 'held-out block: the whole file is sealed'
     if fp.get('purpose') == 'training_only' or 'TRAINONLY' in name:
         return None, 'training-only pool: no sealed block'
     formal = ('FORMAL' in name or fp.get('purpose') == 'formal'

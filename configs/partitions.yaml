@@ -1,54 +1,129 @@
 # Created: 2026-09-25
-# Last updated: 2026-09-26
+# Last updated: 2026-10-06 (the single complete record of every pool: all FORMAL and TRAINONLY
+# pools for d = 5, 7, 9 and p = 0.003, 0.004, 0.005 with seeds, sizes, formats and flips
+# SHA-256; the held-out blocks; spent blocks; seeds used outside these pools)
 #
 # The single definition of the data partitions. Launchers and scripts read this file
 # (through src/partitions.py); no other file may write these ranges as literals.
+# Pool .fingerprint.json files (beside each pool on grace1) are cross-checks; where they
+# disagree with this file, this file holds (see `fingerprint_notes`).
 #
-# FORMAL pools: one 19,000,000-shot Stim pool per distance at p=0.004, rounds = d,
-# generated on grace1 (aarch64) with gen_seed 42. Ranges are half-open shot indices.
-# The sealed block is defined here so its definition can be checked; nothing in
-# Stages 0-1 reads its contents.
-#
-# TRAINONLY pools: independent 5,000,000-shot training-only extensions, gen_seed 43.
-# Different seed from the FORMAL pools, so they share no sampled shot with any FORMAL
-# partition. They contribute training shots only.
-#
-# flips_sha256 values are copied from each pool's .fingerprint.json on grace1 (2026-09-25).
+# All pools: generated on grace1 (aarch64) with src/generate_pools.py's circuit (rotated
+# memory-Z, rounds = d, all four Stim noise channels = p) and sampler. Stim output differs
+# between architectures, so pools made on EAF (x86) with the same seeds are different shots
+# (see `seeds_used_elsewhere`). Ranges are half-open shot indices.
 
 p: 0.004
 
+# FORMAL layout, shared by every FORMAL pool (all p, all d): 19M shots.
 formal:
-  gen_seed: 42
+  gen_seed: 42            # the p = 0.004 FORMAL pools; p = 0.003 / 0.005 use 52 / 55 (pools below)
   n_total: 19000000
   ranges:
     train:  [0, 15000000]
     val:    [15000000, 15200000]
     eval:   [15200000, 17000000]
     sealed: [17000000, 19000000]
-  flips_sha256:
+  flips_sha256:           # p = 0.004 FORMAL pools, by d
     5: 1c22b8a5960584162e21a833e622707c7d30d337435894ac6d973d1ddadfc79b
     7: b49fbe40786da9e62b84ffb2c1937e17855f798b3d7edb1917d0d165880b166e
     9: 4ff74414c88cf5a75e3a195a8da83d9137e81785ef36c053ec231db4438a8ca3
 
+# Kept for the code that reads it (partitions.check): the first TRAINONLY seed.
 trainonly:
   gen_seed: 43
   n_total: 5000000
   purpose: training_only
-  flips_sha256:
-    5: 705f765819feb00f876eca5bd41bd1e95860502550d6237753ae4a4dd4db8c57
-    7: 83122704a44ae6b5a42b1e5c420fd5429d88efb8464271a92c42cb43256e8d5d
 
-# Additional d=7 TRAINONLY pools, generated on grace1 2026-09-26 with
-# src/gen_train_extension.py (same circuit_generators.build_circuit, p=0.004, r=7).
-# Training only; no validation, evaluation or sealed region exists in them. Seeds 44 and
-# 45 were unused anywhere before this (FORMAL 42, TRAINONLY 43). Not trained on yet.
-# File: ~/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed<gen_seed>.npz
-trainonly_d7_extra:
-  - gen_seed: 44
-    n_total: 30000000
-    purpose: training_only
-    flips_sha256: b8a202961bc0dbe295220aa3f62097ea26b25559d886fe132ea8df8533a35eae
-  - gen_seed: 45
-    n_total: 50000000
-    purpose: training_only
-    flips_sha256: 136a297b372aba08bdba18fc53d5be9151f65ea41d7f3a256c4b40f85d77e88c
+# Every pool. kind: formal (the FORMAL layout above) | training_only (every shot is training
+# data). format: full = measurements, det_evts, flips; compact = det_evts bit-packed, flips.
+pools:
+  - {d: 5, p: 0.004, gen_seed: 42, n_total: 19000000, kind: formal, format: full,
+     flips_sha256: 1c22b8a5960584162e21a833e622707c7d30d337435894ac6d973d1ddadfc79b,
+     path: "~/pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz"}
+  - {d: 5, p: 0.004, gen_seed: 43, n_total: 5000000, kind: training_only, format: full,
+     flips_sha256: 705f765819feb00f876eca5bd41bd1e95860502550d6237753ae4a4dd4db8c57,
+     path: "~/pools_d5_p004_19M/data_d5_p0.004_r5_TRAINONLY_seed43.npz"}
+  - {d: 5, p: 0.004, gen_seed: 50, n_total: 30000000, kind: training_only, format: compact,
+     flips_sha256: 691fa5011b4f6ea7830a6591bdb2090da335fed4c430b243b4b943de256c5fe3,
+     path: "~/pools_d5_p004_19M/data_d5_p0.004_r5_TRAINONLY_seed50.npz"}
+  - {d: 5, p: 0.004, gen_seed: 51, n_total: 50000000, kind: training_only, format: compact,
+     flips_sha256: 7187ffef79040cc0a6e8405f522dd6b96b4bb69132dce64b794fdf4657c760ed,
+     path: "~/pools_d5_p004_19M/data_d5_p0.004_r5_TRAINONLY_seed51.npz"}
+  - {d: 7, p: 0.003, gen_seed: 52, n_total: 19000000, kind: formal, format: full,
+     flips_sha256: d3cd19068e2a506640dbfffad920a2c028d40dce2f4b87d0cedee0b12cc83e14,
+     path: "~/pools_d7_p003_19M/data_d7_p0.003_r7_FORMAL_seed52.npz"}
+  - {d: 7, p: 0.003, gen_seed: 53, n_total: 35000000, kind: training_only, format: compact,
+     flips_sha256: 808d32e7ad066aeb9352270d792eace0f369f8f23741a8598bcdedac4b20a11c,
+     path: "~/pools_d7_p003_19M/data_d7_p0.003_r7_TRAINONLY_seed53.npz"}
+  - {d: 7, p: 0.003, gen_seed: 54, n_total: 50000000, kind: training_only, format: compact,
+     flips_sha256: c545d6446b8981d54173c68be69dd0e57ebef533a184f25c65e0e4f18e366615,
+     path: "~/pools_d7_p003_19M/data_d7_p0.003_r7_TRAINONLY_seed54.npz"}
+  - {d: 7, p: 0.004, gen_seed: 42, n_total: 19000000, kind: formal, format: full,
+     flips_sha256: b49fbe40786da9e62b84ffb2c1937e17855f798b3d7edb1917d0d165880b166e,
+     path: "~/pools_d7_p004_19M/data_d7_p0.004_r7_FORMAL.npz"}
+  - {d: 7, p: 0.004, gen_seed: 43, n_total: 5000000, kind: training_only, format: full,
+     flips_sha256: 83122704a44ae6b5a42b1e5c420fd5429d88efb8464271a92c42cb43256e8d5d,
+     path: "~/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed43.npz"}
+  - {d: 7, p: 0.004, gen_seed: 44, n_total: 30000000, kind: training_only, format: full,
+     flips_sha256: b8a202961bc0dbe295220aa3f62097ea26b25559d886fe132ea8df8533a35eae,
+     path: "~/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed44.npz"}
+  - {d: 7, p: 0.004, gen_seed: 45, n_total: 50000000, kind: training_only, format: full,
+     flips_sha256: 136a297b372aba08bdba18fc53d5be9151f65ea41d7f3a256c4b40f85d77e88c,
+     path: "~/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed45.npz"}
+  - {d: 7, p: 0.004, gen_seed: 46, n_total: 50000000, kind: training_only, format: compact,
+     flips_sha256: 2b63dc81924f639aa515c263157358c00ca20b02b97152ec4bac517549f407fa,
+     path: "~/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed46.npz"}
+  - {d: 7, p: 0.004, gen_seed: 47, n_total: 50000000, kind: training_only, format: compact,
+     flips_sha256: 647ac70de81a77ad6e8c641d9fca4f11bd5002ede13fca334b32638e09180024,
+     path: "~/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed47.npz"}
+  - {d: 7, p: 0.005, gen_seed: 55, n_total: 19000000, kind: formal, format: full,
+     flips_sha256: 72b2ec115d035d98b68d2aefc85e5baa8385f6835a45be81365c9ea3e37e4f4a,
+     path: "~/pools_d7_p005_19M/data_d7_p0.005_r7_FORMAL_seed55.npz"}
+  - {d: 7, p: 0.005, gen_seed: 56, n_total: 35000000, kind: training_only, format: compact,
+     flips_sha256: e7b389b75e8c5212791d581a70dfeba3acd1bcd6649b5ff6df2321b140bb21ca,
+     path: "~/pools_d7_p005_19M/data_d7_p0.005_r7_TRAINONLY_seed56.npz"}
+  - {d: 7, p: 0.005, gen_seed: 57, n_total: 50000000, kind: training_only, format: compact,
+     flips_sha256: 3786620f5745cebb3c8153051ea2695592167e11bfb3841e2963de0631cb9903,
+     path: "~/pools_d7_p005_19M/data_d7_p0.005_r7_TRAINONLY_seed57.npz"}
+  - {d: 9, p: 0.004, gen_seed: 42, n_total: 19000000, kind: formal, format: full,
+     flips_sha256: 4ff74414c88cf5a75e3a195a8da83d9137e81785ef36c053ec231db4438a8ca3,
+     path: "~/pools_d9_p004_19M/data_d9_p0.004_r9_FORMAL.npz"}
+  - {d: 9, p: 0.004, gen_seed: 48, n_total: 35000000, kind: training_only, format: compact,
+     flips_sha256: baa35f84b42a1a314d215beb86b58d5789b87a01d891e0fd668fee2c7cfa0035,
+     path: "~/pools_d9_p004_19M/data_d9_p0.004_r9_TRAINONLY_seed48.npz"}
+  - {d: 9, p: 0.004, gen_seed: 49, n_total: 50000000, kind: training_only, format: compact,
+     flips_sha256: 961d0c287d1f2113a94c08569aec629b8ae02937d74c40d1ffa29971def715ad,
+     path: "~/pools_d9_p004_19M/data_d9_p0.004_r9_TRAINONLY_seed49.npz"}
+  - {d: 9, p: 0.004, gen_seed: 58, n_total: 50000000, kind: training_only, format: compact,
+     flips_sha256: a40ba73852676f7f964a96165108b5a099d6bc3e66fa7988b431b8dc01cc9edc,
+     path: "~/pools_d9_p004_19M/data_d9_p0.004_r9_TRAINONLY_seed58.npz"}
+  - {d: 9, p: 0.004, gen_seed: 59, n_total: 50000000, kind: training_only, format: compact,
+     flips_sha256: 9ffe1c68187fc1c9afd7f937af2657cfec37d6aa89a717177f7e26a7b43d655c,
+     path: "~/pools_d9_p004_19M/data_d9_p0.004_r9_TRAINONLY_seed59.npz"}
+
+# Held-out blocks: separate files, every shot sealed (partitions.sealed_block covers the whole
+# file; scoring needs eval_student_on_tail.py --score-sealed and is logged). Not scored.
+held_out: []    # filled by src/gen_heldout_block.py runs, below this line
+
+# Blocks that have been read by a decoder and so are no longer clean test sets.
+spent_blocks:
+  - {d: 5, p: 0.004, pool: "~/pools_d5_p004_19M/data_d5_p0.004_r5_FORMAL.npz", range: [17000000, 19000000],
+     spent: "2026-08-21", by: "MWPM decode (pools_d5_p004_19M/mwpm_sealed_17M_19M.json, p_L 0.0075005)",
+     use: "not for headline use; the 2M-shot held-out block below replaces it"}
+
+# Generation seeds used for pools outside this table (never reuse for a new pool).
+seeds_used_elsewhere:
+  12345: "old repo pools (FNAL-QCDecoding-FPGA generate_pools.py GEN_SEED)"
+  42: "EAF (x86) d5 FORMAL pool used by the 2026-09-23 distillation grid (flips 8b45765e...)"
+  43: "EAF (x86) d5 TRAINONLY pool of the same grid (flips 49a61e6f...)"
+
+# Corrections to fields in the pool fingerprints (2026-10-06).
+fingerprint_notes:
+  - "The p = 0.004 FORMAL fingerprints (d5, d7, d9) were written before the validation block was
+     split: their partition_val [15M, 17M] covers validation [15.0M, 15.2M) and evaluation
+     [15.2M, 17M). The ranges above hold. Their MWPM field, originally mwpm_resid_errors_test with
+     n_test 2M, was decoded on [15M, 17M); renamed mwpm_resid_errors_15M_17M on 2026-10-06."
+
+# Older notes (2026-09-26): the d7 TRAINONLY pools with seeds 44 and 45 were generated with
+# src/gen_train_extension.py; files ~/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed<gen_seed>.npz.
