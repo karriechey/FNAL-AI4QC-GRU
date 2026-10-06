@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-02
-# Last modified: 2026-10-02
+# Last modified: 2026-10-06 (held-out files sealed whole; seed reuse caught)
 """Unit tests for the run-time guards of train_student.py, eval_student_on_tail.py and
 partitions.py, including the sealed-block rule of eval_student_on_tail.py (--score-sealed,
 the sealed-access log) and its CSV writer. CPU only, no TensorFlow, no real pools: every pool is a small file written to
@@ -87,6 +87,22 @@ def ns(**kw):
 def check(**kw):
     a = ns(**kw)
     T.check_pools_and_partitions(a, a.pool)
+
+
+class TestHeldOut(unittest.TestCase):
+    def test_heldout_file_sealed_whole_and_refused(self):
+        ho = write_pool(os.path.join(Pools.tmp, 'data_d5_p0.004_r5_HELDOUT_seed7001.npz'), 5000,
+                        dict(d=5, p=0.004, rounds=5, gen_seed=7001, purpose='held_out'))
+        self.assertEqual(P.sealed_block(ho, 5000)[0], (0, 5000))
+        with self.assertRaises(SystemExit):
+            E.check_eval_block(eval_args(pool=ho, eval_start=0, n_test=100), ())
+
+    def test_seed_reuse_caught(self):
+        cfg = P.load()
+        cfg = dict(cfg, held_out=list(cfg.get('held_out') or []) + [dict(gen_seed=42)])
+        with self.assertRaises(ValueError):
+            P.check(cfg)
+        self.assertIn(7001, P.used_seeds())
 
 
 class TestDisjoint(unittest.TestCase):

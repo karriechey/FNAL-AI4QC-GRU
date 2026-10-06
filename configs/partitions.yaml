@@ -104,7 +104,19 @@ pools:
 
 # Held-out blocks: separate files, every shot sealed (partitions.sealed_block covers the whole
 # file; scoring needs eval_student_on_tail.py --score-sealed and is logged). Not scored.
-held_out: []    # filled by src/gen_heldout_block.py runs, below this line
+held_out:
+  - {d: 5, p: 0.004, rounds: 5, gen_seed: 7001, n_total: 2000000, range: [0, 2000000],
+     path: "~/pools_d5_p004_19M/data_d5_p0.004_r5_HELDOUT_seed7001.npz",
+     flips_sha256: 7f673477963fd48d036e6a8d01735404430a6767afdf143a17059871d23162f6,
+     file_sha256: 2bd1baf6d5e847e45b2e99e9c859db01f637ebb497734dc52280e5f66656522d,
+     generated_utc: "2026-10-06T14:31:27Z", scored: false,
+     note: "replaces the spent d5 FORMAL sealed block [17M, 19M) for headline use"}
+  - {d: 9, p: 0.004, rounds: 9, gen_seed: 7002, n_total: 4000000, range: [0, 4000000],
+     path: "~/pools_d9_p004_19M/data_d9_p0.004_r9_HELDOUT_seed7002.npz",
+     flips_sha256: 2e2fe90f986c38ff83d7f6a7ec224f11f41578aca4220c1c09b2903e8c0e04f1,
+     file_sha256: 6e7e075abeb3443d84472ae5f561de062c7cb759f91b8582e519f74a7f2e8084,
+     generated_utc: "2026-10-06T14:31:31Z", scored: false,
+     note: "additional d9 test block, for power in GRU-vs-GRU comparisons; in addition to the d9 FORMAL sealed block"}
 
 # Blocks that have been read by a decoder and so are no longer clean test sets.
 spent_blocks:
@@ -120,10 +132,17 @@ seeds_used_elsewhere:
 
 # Corrections to fields in the pool fingerprints (2026-10-06).
 fingerprint_notes:
-  - "The p = 0.004 FORMAL fingerprints (d5, d7, d9) were written before the validation block was
-     split: their partition_val [15M, 17M] covers validation [15.0M, 15.2M) and evaluation
-     [15.2M, 17M). The ranges above hold. Their MWPM field, originally mwpm_resid_errors_test with
-     n_test 2M, was decoded on [15M, 17M); renamed mwpm_resid_errors_15M_17M on 2026-10-06."
+  - "The p = 0.004 FORMAL fingerprints (d5, d7, d9) were written by gen_pool_r5.py before the
+     validation block was split: partition_val [15M, 17M] covered validation [15.0M, 15.2M) and
+     evaluation [15.2M, 17M). Their MWPM field mwpm_resid_errors_test was decoded on [15M, 17M)
+     (gen_pool_r5.py: te = slice(VAL0, VAL1)), not on the sealed block; re-decoded 2026-10-06 with
+     src/mwpm_on_block.py on [15M, 17M): d5 15,096, d7 8,538, d9 4,549 residual errors of 2M,
+     equal to the stored values. Corrected 2026-10-06 by src/fix_pool_metadata.py in the three
+     fingerprints (originals kept beside them as *.fingerprint.json.bak_2026-10-06 and inside
+     each file under as_written_before_2026-10-06) and in the 50 pool_provenance.json copies in
+     run folders: partition_val [15.0M, 15.2M), partition_eval [15.2M, 17M), n_val 200000,
+     n_eval 1800000, n_test -> n_sealed, mwpm_resid_errors_test -> mwpm_resid_errors_15M_17M,
+     mwpm_block [15M, 17M)."
 
 # Older notes (2026-09-26): the d7 TRAINONLY pools with seeds 44 and 45 were generated with
 # src/gen_train_extension.py; files ~/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed<gen_seed>.npz.
