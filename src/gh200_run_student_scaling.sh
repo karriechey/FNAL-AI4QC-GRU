@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -47,6 +47,12 @@ WARM_START="${WARM_START:-}"
 # MAX_PARAMS=<n> stops before training when the model has more than n parameters (checked
 # in the parameter-count step below and again by train_student.py). Default empty = none.
 MAX_PARAMS="${MAX_PARAMS:-}"
+# Distillation: TEACHER_MODEL=<.keras GRU teacher> with ALPHA < 1 trains on the teacher's
+# logits, computed by train_student.py on the training array itself. Adds _kd<ALPHA>_T<T> to
+# the tag. Defaults ALPHA=1.0 (hard labels, as before), no teacher.
+ALPHA="${ALPHA:-1.0}"
+TEMPERATURE="${TEMPERATURE:-1.0}"
+TEACHER_MODEL="${TEACHER_MODEL:-}"
 # GLOBAL_CLIPNORM=<v> passes Adam global_clipnorm=<v> (norm of all gradients together; the
 # per-update norms and clipped fraction are logged) and adds _gclip<v> to the tag.
 # Default empty = no clipping, as before.
@@ -310,7 +316,7 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "pool         : $POOL"
   echo "pool prov    : $PROV"
   echo "$GEOMETRY"
-  echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=1.0 hard labels"
+  echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=$ALPHA T=$TEMPERATURE teacher=${TEACHER_MODEL:-none}"
   echo "             : batch=$BATCH lr=$LR epochs=$EPOCHS early_stop=$EARLY_STOP"
   echo "optimizer    : lr_schedule=$LR_SCHEDULE lr_end=$LR_END warmup_epochs=$LR_WARMUP_EPOCHS ema_decay=${EMA_DECAY:-none} global_clipnorm=${GLOBAL_CLIPNORM:-none}"
   echo "gru layer    : reset_after=$RESET_AFTER unroll=$UNROLL"
@@ -359,6 +365,7 @@ fi
 
 [ -n "$WARM_START" ] && TRAIN_ONLY+=(--warm-start "$WARM_START")
 [ -n "$MAX_PARAMS" ] && TRAIN_ONLY+=(--max-params "$MAX_PARAMS")
+[ -n "$TEACHER_MODEL" ] && TRAIN_ONLY+=(--teacher-model "$TEACHER_MODEL")
 
 if [ -n "$RESUME_WEIGHTS" ]; then
   TRAIN_ONLY+=(--resume-weights "$RESUME_WEIGHTS" --initial-epoch "$INITIAL_EPOCH")
@@ -392,8 +399,10 @@ run_seed () {
   [ "$LR_WARMUP_EPOCHS" != "0" ] && QTAG="${QTAG}_wu${LR_WARMUP_EPOCHS}"
   [ -n "$EMA_DECAY" ] && QTAG="${QTAG}_ema${EMA_DECAY}"
   [ -n "$WARM_START" ] && QTAG="${QTAG}_ws"
+  [ "$ALPHA" != "1.0" ] && QTAG="${QTAG}_kd${ALPHA}_T${TEMPERATURE}"
   [ -n "$GLOBAL_CLIPNORM" ] && QTAG="${QTAG}_gclip${GLOBAL_CLIPNORM}"
-  local TAG="${STUDENT}_d${D}_${PTAG}_${SIZE}${QTAG}_hard_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
+  local MODE=hard; [ "$ALPHA" != "1.0" ] && MODE=soft
+  local TAG="${STUDENT}_d${D}_${PTAG}_${SIZE}${QTAG}_${MODE}_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
   local SEEDDIR="$OUT/seed${SEED}"
   local SRUNS="$SEEDDIR/runs"
   local SCKPT="$SEEDDIR/ckpt"
@@ -418,7 +427,7 @@ run_seed () {
       --n-train "$NTRAIN" \
       --val-start "$VAL_START" --val-n "$VAL_N" \
       --eval-start "$EVAL_START" --n-test "$EVAL_N" \
-      --alpha 1.0 --temperature 1.0 \
+      --alpha "$ALPHA" --temperature "$TEMPERATURE" \
       --batch-size "$BATCH" --lr "$LR" "${OPT[@]}" \
       --epochs "$EPOCHS" \
       --seed "$SEED" --require-determinism \

@@ -67,9 +67,10 @@ def same_history(h1, h2, keys=('loss', 'val_loss')):
 class Checks:
     def __init__(self, a):
         self.a = a
-        self.pool = {d: sorted(glob.glob(f'{a.pool_dir}/data_d{d}_p0.004_r{d}*.npz'))[0]
-                     for d in (5, 7, 9)
-                     if glob.glob(f'{a.pool_dir}/data_d{d}_p0.004_r{d}*.npz')}
+        prim = lambda d: sorted(f for f in glob.glob(f'{a.pool_dir}/data_d{d}_p0.004_r{d}*.npz')
+                                if 'TRAINONLY' not in f)
+        self.pool = {d: prim(d)[0] for d in (5, 7, 9) if prim(d)}
+        self.ext = sorted(glob.glob(f'{a.pool_dir}/data_d5_p0.004_r5_TRAINONLY*.npz'))
         self.base_src = os.path.join(a.out, 'base', 'src')
         if not os.path.exists(self.base_src):
             os.makedirs(os.path.join(a.out, 'base'), exist_ok=True)
@@ -223,6 +224,38 @@ class Checks:
         self.report('stacked_on', ok, f"params {counts}; layers: {layers}; "
                     f"train 16x16 exit {rc}, eval exit {ev.returncode} {score}")
 
+    def distill_on(self):
+        # Teacher: a d=5 u32 model trained for 2 epochs (the defaults_off run's best.keras).
+        # Student: u16, alpha 0 (soft targets only), primary prefix 40,000 + 30,000 extension
+        # shots. Every training shot must get a teacher logit (none exactly zero), and the
+        # validation and scored blocks too; the guard against extension pools with alpha < 1
+        # must not fire with --teacher-model.
+        teacher = glob.glob(f'{self.a.out}/defaults_new/ckpt/*.best.keras')
+        if not teacher:
+            self.defaults_off()
+            teacher = glob.glob(f'{self.a.out}/defaults_new/ckpt/*.best.keras')
+        rc, log, h = self.run_new('distill', ['--units', '16', '--alpha', '0', '--teacher-model',
+                                              teacher[0], '--extra-train-pool', self.ext[0]],
+                                  epochs=1)
+        n = re.search(r'logits for all ([\d,]+) training shots.*?exactly-zero logits (\d+)', log)
+        import csv
+        row = (next(csv.DictReader(open(glob.glob(f'{self.a.out}/distill/runs/*.csv')[0])))
+               if rc == 0 else {})
+        ok = (rc == 0 and n is not None and n.group(1) == '70,000' and n.group(2) == '0'
+              and 'teacher logits on the validation block' in log
+              and 'agreement vs teacher on the scored block' in log
+              and row.get('alpha') == '0.0' and row.get('teacher_cache', '').startswith('model:')
+              and row.get('agree_all', '') != '')
+        # Same run without --teacher-model must still be refused (extension, alpha < 1).
+        rc2, log2, _ = self.run_new('distill_refused', ['--units', '16', '--alpha', '0',
+                                                        '--teacher-cache', 'x.npz',
+                                                        '--extra-train-pool', self.ext[0]], epochs=1)
+        ok = ok and rc2 != 0 and 'no teacher logits' in log2
+        lines = [l for l in log.splitlines() if 'teacher' in l][:4]
+        self.report('distill_on', ok, f"{lines}; csv alpha={row.get('alpha')} teacher_cache="
+                    f"{row.get('teacher_cache')} agree_all={row.get('agree_all')}; "
+                    f"refused without model: {rc2 != 0}")
+
     def run(self, names):
         for n in names:
             getattr(self, n)()
@@ -238,6 +271,6 @@ if __name__ == '__main__':
     ap.add_argument('--pool-dir', required=True)
     ap.add_argument('--base-ref', required=True)
     ap.add_argument('--out', required=True)
-    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on', 'ema_on', 'warm_start_on', 'max_params_on', 'stacked_on'])
+    ap.add_argument('checks', nargs='*', default=['defaults_off', 'warmup_on', 'ema_on', 'warm_start_on', 'max_params_on', 'stacked_on', 'distill_on'])
     a = ap.parse_args()
     sys.exit(Checks(a).run(a.checks))

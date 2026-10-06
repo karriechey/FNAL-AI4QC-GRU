@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. 2026-10-06: --teacher-model: soft targets computed in this process from a saved GRU teacher, on the exact training array (primary prefix and every extension pool), the validation block and the scored block. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -498,6 +498,14 @@ def run():
     ap.add_argument('--teacher-cache', default=None,
                     help='npz from dump_teacher_probs.py over the TRAINING prefix. '
                          'Required unless --alpha 1.0.')
+    ap.add_argument('--teacher-model', default=None,
+                    help='a .keras GRU teacher (logit head, e.g. a .best.keras). Its logits are '
+                         'computed here, in this process, on the training array as built '
+                         '(primary prefix and every --extra-train-pool shot), on the '
+                         'validation block and on the scored block, so the soft targets are '
+                         'aligned with the training shots by construction. Replaces '
+                         '--teacher-cache / --val-teacher-cache / --teacher-tail-cache and '
+                         'allows alpha < 1 with extension pools.')
     ap.add_argument('--teacher-tail-cache', default=None,
                     help='npz from dump_teacher_probs.py over the EVALUATION TAIL. '
                          'Optional; enables the student-vs-teacher agreement columns, '
@@ -663,14 +671,18 @@ def run():
     if args.out_dir is None:
         args.out_dir = os.path.expanduser(f'~/rcnn_threshold/out_{args.student}')
 
-    if args.alpha < 1.0 and not args.teacher_cache:
-        raise SystemExit(f"{LOG} --teacher-cache is required unless --alpha 1.0 "
-                         "(pure hard-label control arm).")
+    if args.teacher_model and args.teacher_cache:
+        raise SystemExit(f"{LOG} give --teacher-model or --teacher-cache, not both. STOP.")
+    if args.alpha < 1.0 and not (args.teacher_cache or args.teacher_model):
+        raise SystemExit(f"{LOG} --teacher-cache or --teacher-model is required unless "
+                         "--alpha 1.0 (pure hard-label control arm).")
 
     # --- guards that need no TensorFlow (2026-10-02) ----------------------------------
     # Extension shots get a teacher logit of 0 (p = 0.5), so with alpha < 1 the soft term
     # would train them toward a coin flip. No teacher cache exists for them.
-    if args.extra_train_pool and args.alpha < 1.0:
+    # (2026-10-06) With --teacher-model every shot, extension shots included, gets the
+    # teacher's own logit, so the combination is allowed then.
+    if args.extra_train_pool and args.alpha < 1.0 and not args.teacher_model:
         raise SystemExit(f"{LOG} --extra-train-pool with alpha={args.alpha} < 1: the extension "
                          f"shots have no teacher logits (they would be filled with 0, p=0.5). "
                          f"Use --alpha 1.0 with extensions. STOP.")
@@ -795,7 +807,11 @@ def run():
           f"allocated once; primary prefix [0, {ntr:,}) filled", flush=True)
 
     # --- targets: pack [hard_label, teacher_logit] ----------------------------------
-    if args.alpha >= 1.0 and not args.teacher_cache:
+    if args.teacher_model:
+        # Filled after the training array is complete (below), from the teacher model.
+        z_teach = np.zeros(ntr, dtype=np.float32)
+        teacher_npz = None
+    elif args.alpha >= 1.0 and not args.teacher_cache:
         # Hard-label control arm with no teacher available: the teacher column is unused
         # by the loss (weight 1-alpha == 0), so fill it with zeros rather than requiring
         # a cache the arm does not need.
@@ -838,7 +854,33 @@ def run():
               f"{os.path.basename(ext_pool)}; total {ntr:,}", flush=True)
     assert ntr == n_all, (ntr, n_all)
 
+    teacher = None
+    if args.teacher_model:
+        # Soft targets from the teacher model, computed on the training array itself (the
+        # same uint8 features the student trains on, in the same order), so each shot's
+        # target is the teacher's logit for that very shot.
+        if not os.path.exists(args.teacher_model):
+            raise SystemExit(f"{LOG} MISSING teacher model {args.teacher_model}")
+        teacher = tf.keras.models.load_model(args.teacher_model, compile=False)
+        if tuple(teacher.input_shape[1:]) != tuple(x_tr.shape[1:]):
+            raise SystemExit(f"{LOG} teacher input {teacher.input_shape[1:]} != training "
+                             f"features {x_tr.shape[1:]}. STOP.")
+        t0_t = time.time()
+        z_teach = teacher.predict(make_dataset(tf, x_tr, None, args.batch_size),
+                                  verbose=0).reshape(-1).astype(np.float32)
+        if z_teach.shape[0] != ntr:
+            raise SystemExit(f"{LOG} teacher gave {z_teach.shape[0]} logits for {ntr} shots. STOP.")
+        t_err = float(((z_teach > 0).astype(np.int8) != f_tr.reshape(-1).astype(np.int8)).mean())
+        print(f"{LOG} teacher {os.path.basename(args.teacher_model)} "
+              f"({teacher.count_params():,} params): logits for all {ntr:,} training shots in "
+              f"{time.time() - t0_t:.0f}s; p_L on the training shots {t_err:.6f}; mean "
+              f"sigmoid {float(np.mean(1 / (1 + np.exp(-z_teach.astype(np.float64))))):.5f}; "
+              f"exactly-zero logits {int((z_teach == 0).sum())}", flush=True)
+
     prov = run_provenance(args, train_fn, teacher_npz)
+    if args.teacher_model:
+        prov['teacher_cache'] = 'model:' + os.path.basename(args.teacher_model)
+        prov['teacher_weights_sha'] = sha16(args.teacher_model)
     print(f"{LOG} provenance: pool={prov['train_pool_dir']}/{prov['train_pool']} "
           f"flips_sha={prov['train_pool_flips_sha']} teacher_sha={prov['teacher_weights_sha']} "
           f"code_sha={prov['code_sha']}", flush=True)
@@ -890,7 +932,13 @@ def run():
         # zeros are a teacher saying p=0.5 on every validation shot, which would make the
         # validation loss measure the wrong thing and, with early stopping, select on it.
         # So the logits must come from a cache covering the validation block.
-        if args.alpha < 1.0:
+        if args.alpha < 1.0 and teacher is not None:
+            z_va = teacher.predict(make_dataset(tf, x_va, None, args.batch_size),
+                                   verbose=0).reshape(-1).astype(np.float32)
+            print(f"{LOG} teacher logits on the validation block: p_L "
+                  f"{float(((z_va > 0).astype(np.int8) != f_va.reshape(-1).astype(np.int8)).mean()):.6f}",
+                  flush=True)
+        elif args.alpha < 1.0:
             if not args.val_teacher_cache:
                 raise SystemExit(
                     f"{LOG} --val-start with alpha={args.alpha} < 1 requires "
@@ -1205,7 +1253,14 @@ def run():
     ag = {k: '' for k in ('agree_all', 'agree_ambiguous', 'agree_confident', 'n_ambiguous',
                           'frac_ambiguous', 'student_p_L_ambiguous', 'teacher_p_L_ambiguous',
                           'teacher_tail_p_L')}
-    if args.teacher_tail_cache:
+    if teacher is not None:
+        # Teacher on the scored block, for the student-vs-teacher agreement columns.
+        z_te = teacher.predict(make_dataset(tf, x_te, None, args.batch_size),
+                               verbose=0).reshape(-1).astype(np.float64)
+        ag = teacher_agreement(pred, 1 / (1 + np.exp(-z_te)), f_te, tuple(args.ambiguous_band))
+        print(f"{LOG} agreement vs teacher on the scored block: all={ag['agree_all']}  "
+              f"ambiguous={ag['agree_ambiguous']}  teacher p_L={ag['teacher_tail_p_L']}", flush=True)
+    elif args.teacher_tail_cache:
         if not os.path.exists(args.teacher_tail_cache):
             raise SystemExit(f"{LOG} MISSING tail cache {args.teacher_tail_cache}")
         tc = np.load(args.teacher_tail_cache)

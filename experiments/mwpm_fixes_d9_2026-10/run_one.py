@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-04
-# Last modified: 2026-10-05 (--resume: continue a run paused by pause_run.sh)
+# Last modified: 2026-10-06 (--need-host-gb). Earlier 2026-10-05 (--resume: continue a run paused by pause_run.sh)
 """Run one row of jobs.tsv now, alongside the job the queue driver is running (amendment 5).
 
 Uses driver.run_job, so the run gets exactly the queue's launcher settings, kill rules (NaN,
@@ -21,6 +21,9 @@ import driver as D
 ap = argparse.ArgumentParser()
 ap.add_argument('name')
 ap.add_argument('--baseline-history', required=True)
+ap.add_argument('--need-host-gb', type=int, default=None,
+                help="host memory required to start, replacing the row's need_host_gb (set from the "
+                     "run's measured footprint plus a margin)")
 ap.add_argument('--resume', action='store_true',
                 help='continue the paused run of this row (its latest folder has PAUSED) in a '
                      'new folder; the paused folder is not changed')
@@ -45,8 +48,9 @@ if any(v == 'STAB' for v in (job['peak_lr'], job['warmup'], job['clip'])):
                                  clip=env['GLOBAL_CLIPNORM']), None)
 elif job['cond'] != '-':
     sys.exit(f'{a.name} depends on a condition; run it through the driver')
-if D.host_avail_gb() < int(job['need_host_gb']):
-    sys.exit(f"host available {D.host_avail_gb()} GB < {job['need_host_gb']} GB")
+need = a.need_host_gb or int(job['need_host_gb'])
+if D.host_avail_gb() < need:
+    sys.exit(f"host available {D.host_avail_gb()} GB < {need} GB")
 hb = json.load(open(a.baseline_history))
 threshold = D.KILL_FACTOR * hb['val_ler'][D.KILL_EPOCH - 1]
 D.log(f"NOTE  run_one: {'resuming' if a.resume else 'starting'} {a.name} alongside the queue's "

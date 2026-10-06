@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-03
-# Last modified: 2026-10-05 (rows run concurrently when host memory allows; GPU-sharing wait removed: the GPU is not shared. Earlier the same day: run_job resumes a paused run). Earlier 2026-10-03 (amended before launch: kill rules replaced; 9-8 removed)
+# Last modified: 2026-10-06 (a HOLD file in this folder stops new launches; its text is logged). Earlier 2026-10-05 (rows run concurrently when host memory allows; GPU-sharing wait removed: the GPU is not shared. Earlier the same day: run_job resumes a paused run). Earlier 2026-10-03 (amended before launch: kill rules replaced; 9-8 removed)
 """Queue driver for the d=9 MWPM-fix runs (prereg/mwpm_fixes_d9_2026-10.md).
 
 One run on the GPU at a time, in the order of jobs.tsv, with the rules fixed in the
@@ -543,6 +543,15 @@ def main():
             continue
         if a.dry_run:
             run_job(rj, threshold, True)
+            continue
+        # HOLD: no new launch while this file exists (runs already going are not touched).
+        hold = os.path.join(DIR, 'HOLD')
+        if os.path.exists(hold):
+            msg = f"WAIT  {rj['name']}: HOLD ({open(hold).read().strip()[:200]})"
+            if msg != last_wait:
+                log(msg)
+                last_wait = msg
+            time.sleep(POLL_S)
             continue
         # Concurrent launch, when memory allows and no other queue run is loading.
         sw = swap_used_gb()
