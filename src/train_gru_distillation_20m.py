@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_gru_distillation_20m.py @ d5ee86f
 # Created: 2026-09-22
-# Last modified: 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml; best checkpoint chosen by val LER, saved as full .keras)
+# Last modified: 2026-10-06 (pools read by row range with pool_rows: only the blocks used are loaded, never the sealed rows). Earlier: 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml; best checkpoint chosen by val LER, saved as full .keras)
 """Train one reduced GRU student from the 20M-shot u140 GRU teacher, d=5 r=5 p=0.004.
 
 Purpose
@@ -131,13 +131,14 @@ def read_pool(path, label, d, rounds, p):
         raise SystemExit(f"{LOG} {label} pool fingerprint says d={meta['d']} "
                          f"r={meta['rounds']} p={meta['p']}; this run is d={d} r={rounds} "
                          f"p={p}. STOP.")
-    z = np.load(path)
-    flips_sha, meas_shape = pool_fingerprint(z)
+    import pool_rows as PR
+    z = path                         # a path: blocks are read by row range (pool_rows)
+    flips_sha, meas_shape = pool_fingerprint(path)
     if flips_sha != meta['flips_sha256']:
         raise SystemExit(f"{LOG} {label} pool flips SHA-256 on disk {flips_sha[:16]} != "
                          f"fingerprint {meta['flips_sha256'][:16]}. File changed since it "
                          "was generated. STOP.")
-    n = int(z['flips'].shape[0])
+    n = PR.n_rows(path, 'flips')
     print(f"{LOG} {label} pool {path}", flush=True)
     print(f"{LOG}   shots={n:,}  gen_seed={meta['gen_seed']}  flips_sha256={flips_sha}  "
           f"measurements{meas_shape}  purpose={meta.get('purpose', 'primary')}", flush=True)
@@ -391,7 +392,8 @@ def run():
 
     # --- pools -----------------------------------------------------------------------
     zm, meta_m, sha_m = read_pool(args.main_pool, 'primary', d, r, p)
-    n_main_pool = int(zm['flips'].shape[0])
+    import pool_rows as PR
+    n_main_pool = PR.n_rows(zm, 'flips')
     check_partitions(n_main_pool, args.main_n_train, args.val_start, args.val_n,
                      args.eval_start, args.eval_n, args.sealed_start)
 
@@ -409,9 +411,9 @@ def run():
             print(f"{LOG}   note: extension fingerprint purpose="
                   f"{meta_x.get('purpose')!r}, expected 'training_only'", flush=True)
         n_extra = int(args.extra_n)
-        if n_extra > int(zx['flips'].shape[0]):
+        if n_extra > PR.n_rows(zx, 'flips'):
             raise SystemExit(f"{LOG} --extra-n {n_extra:,} exceeds extension pool size "
-                             f"{int(zx['flips'].shape[0]):,}. STOP.")
+                             f"{PR.n_rows(zx, 'flips'):,}. STOP.")
     else:
         zx, meta_x, sha_x = None, {}, ''
 
@@ -420,14 +422,13 @@ def run():
     n_t, n_pos, _ = detector_sequence_layout(d, r, p)
 
     # --- training set: preallocate, then fill [main | extension] ---------------------
-    flips_main_all = zm['flips'].astype(np.int8).reshape(-1)   # 19M int8, small
-    f_main = flips_main_all[0:n_main]
+    main_flips = lambda a, b: PR.rows(zm, 'flips', a, b).astype(np.int8).reshape(-1)
+    f_main = main_flips(0, n_main)
     x_tr = np.empty((n_train, n_t, n_pos), dtype=np.float32)
-    det_main = zm['det_evts']                                   # full array, int8
-    fill_sequences(x_tr, 0, det_main[0:n_main], d, r, p)
+    fill_sequences(x_tr, 0, PR.rows(zm, 'det_evts', 0, n_main), d, r, p)
     if use_extra:
-        f_extra = zx['flips'][0:n_extra].astype(np.int8).reshape(-1)
-        fill_sequences(x_tr, n_main, zx['det_evts'][0:n_extra], d, r, p)
+        f_extra = PR.rows(zx, 'flips', 0, n_extra).astype(np.int8).reshape(-1)
+        fill_sequences(x_tr, n_main, PR.rows(zx, 'det_evts', 0, n_extra), d, r, p)
     else:
         f_extra = np.zeros(0, np.int8)
     f_tr = np.concatenate([f_main, f_extra])
@@ -486,7 +487,7 @@ def run():
 
     # --- validation block ------------------------------------------------------------
     v0, v1 = args.val_start, args.val_start + args.val_n
-    f_va = flips_main_all[v0:v1]
+    f_va = main_flips(v0, v1)
     x_va = np.empty((args.val_n, n_t, n_pos), dtype=np.float32)
     fill_sequences(x_va, 0, det_main[v0:v1], d, r, p)
     if args.teacher_val_cache:
@@ -591,8 +592,8 @@ def run():
         raise SystemExit(f"{LOG} best checkpoint {best_path} was not written. STOP.")
     model.load_weights(best_path)
     e0, e1 = args.eval_start, args.eval_start + args.eval_n
-    det_te = zm['det_evts'][e0:e1].astype(np.int8)
-    truth = flips_main_all[e0:e1]
+    det_te = PR.rows(zm, 'det_evts', e0, e1).astype(np.int8)
+    truth = main_flips(e0, e1)
     x_te = np.empty((args.eval_n, n_t, n_pos), dtype=np.float32)
     fill_sequences(x_te, 0, det_te, d, r, p)
     logits = model.predict(x_te, batch_size=args.batch_size, verbose=0).reshape(-1)

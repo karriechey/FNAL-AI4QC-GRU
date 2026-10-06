@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. 2026-10-06: --teacher-model: soft targets computed in this process from a saved GRU teacher, on the exact training array (primary prefix and every extension pool), the validation block and the scored block. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. 2026-10-06: pool arrays read row-range by row-range (pool_rows), so rows outside the requested blocks, and the sealed rows in particular, are never loaded. --teacher-model: soft targets computed in this process from a saved GRU teacher, on the exact training array (primary prefix and every extension pool), the validation block and the scored block. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -358,26 +358,33 @@ def load_extension_features(zex, take, d, r, p, inputs, student, idx_t, binary_t
     """
     from circuit_partition import split_measurements
     from StudentModels import assemble_features
-    f_ex = zex['flips'][0:take].astype(binary_t).reshape(-1)
-    compact = 'det_evts_packed' in zex.files
+    import pool_rows as PR
+    if isinstance(zex, str):
+        # A pool path (2026-10-06): read only rows [a, b) of each array, chunk by chunk, so
+        # no row at or after `take` is ever read.
+        files = PR.keys(zex)
+        get = lambda key, a, b: PR.rows(zex, key, a, b)
+        n_det_of = lambda: int(PR.scalar(zex, 'n_det'))
+    else:
+        files = zex.files               # an open npz (tests/compact_pool_check.sh), as before
+        get = lambda key, a, b: zex[key][a:b]
+        n_det_of = lambda: int(zex['n_det'])
+    f_ex = get('flips', 0, take).astype(binary_t).reshape(-1)
+    compact = 'det_evts_packed' in files
     if compact:
         if not (student == 'gru' and inputs == 'evts'):
             raise SystemExit(f"{LOG} compact pool (detection events only) serves the GRU "
                              f"with inputs='evts' only; got student={student} inputs={inputs}")
-        n_det = int(zex['n_det'])
-        src = zex['det_evts_packed'][0:take]
-    else:
-        src_m = zex['measurements'][0:take]
-        src = zex['det_evts'][0:take]
+        n_det = n_det_of()
     x_ex = out
     for a in range(0, take, chunk):
         b = min(a + chunk, take)
         if compact:
-            e_c = np.unpackbits(src[a:b], axis=1, count=n_det).astype(binary_t)
+            e_c = np.unpackbits(get('det_evts_packed', a, b), axis=1, count=n_det).astype(binary_t)
             b_c = None
         else:
-            e_c = src[a:b].astype(binary_t)
-            b_c, _, _ = split_measurements(src_m[a:b].astype(binary_t), d, idx_t)
+            e_c = get('det_evts', a, b).astype(binary_t)
+            b_c, _, _ = split_measurements(get('measurements', a, b).astype(binary_t), d, idx_t)
         x_c = to_host_uint8(assemble_features(b_c, e_c, inputs, student=student,
                                               d=d, rounds=r, p=p))
         if x_ex is None:
@@ -409,6 +416,7 @@ def check_pools_and_partitions(args, train_fn):
        against the fingerprint). No two blocks of the same file may overlap.
     """
     import partitions as P
+    import pool_rows as PR
     pools = ([('primary', train_fn)] + ([('test', args.test_pool)] if args.test_pool else [])
              + [('extension', x) for x in (args.extra_train_pool or [])])
     for role, pool in pools:
@@ -426,7 +434,7 @@ def check_pools_and_partitions(args, train_fn):
 
     def n_of(pool):
         if pool not in sizes:
-            sizes[pool] = int(np.load(pool)['flips'].shape[0])
+            sizes[pool] = PR.n_rows(pool, 'flips')     # header only
         return sizes[pool]
 
     score_pool = args.test_pool or train_fn
@@ -740,8 +748,8 @@ def run():
     ntr, nte = args.n_train, args.n_test
     binary_t, _time_t, idx_t, _packed_t = get_types(d, r, k)
 
-    ztr = np.load(train_fn)
-    N = ztr['measurements'].shape[0]
+    import pool_rows as PR
+    N = PR.n_rows(train_fn, 'measurements')         # header only; no row is read here
 
     # --- training features ---------------------------------------------------------
     if args.test_pool:
@@ -773,8 +781,7 @@ def run():
     for i_ex, ext_pool in enumerate(ext_pools):
         if not os.path.exists(ext_pool):
             raise SystemExit(f"{LOG} MISSING extra pool {ext_pool}")
-        zex = np.load(ext_pool)
-        n_ex = zex['flips'].shape[0]
+        n_ex = PR.n_rows(ext_pool, 'flips')
         take = min((ext_counts[i_ex] if ext_counts else None) or n_ex, n_ex)
         fp = ext_pool.replace('.npz', '.fingerprint.json')
         if os.path.exists(fp):
@@ -792,16 +799,15 @@ def run():
             print(f"{LOG} extra pool gen_seed={meta_ex.get('gen_seed')} "
                   f"flips_sha={str(meta_ex.get('flips_sha256'))[:16]}", flush=True)
         ext_plan.append((ext_pool, take))
-        del zex
     n_all = ntr + sum(t for _, t in ext_plan)
 
     # Primary training prefix, written into the start of the one training array.
     # Host-memory uint8 (see host_data.py): the features are 0/1, so this is exact.
-    x_first, _ = load_extension_features(ztr, 1, d, r, p, args.inputs, args.student,
+    x_first, _ = load_extension_features(train_fn, 1, d, r, p, args.inputs, args.student,
                                          idx_t, binary_t)          # shape of one shot
     x_tr = np.empty((n_all,) + x_first.shape[1:], dtype=np.uint8)
     del x_first
-    _, f_tr = load_extension_features(ztr, ntr, d, r, p, args.inputs, args.student,
+    _, f_tr = load_extension_features(train_fn, ntr, d, r, p, args.inputs, args.student,
                                       idx_t, binary_t, out=x_tr[0:ntr])
     print(f"{LOG} training array {x_tr.shape} uint8 ({x_tr.nbytes / 1024 ** 3:.1f} GB) "
           f"allocated once; primary prefix [0, {ntr:,}) filled", flush=True)
@@ -821,7 +827,7 @@ def run():
               flush=True)
     else:
         z_teach, p_teach, f_cache = load_teacher_cache(args.teacher_cache, train_fn, 0, ntr,
-                                                       pool_npz=ztr)
+                                                       pool_npz=train_fn)
         teacher_npz = np.load(args.teacher_cache, allow_pickle=False)
         # The cache carries its own copy of `flips`; if it disagrees with the pool's, the
         # two files are not describing the same shots and every soft target is misaligned.
@@ -843,13 +849,11 @@ def run():
 
     # Extensions, each written into its slice of the training array (checked above).
     for ext_pool, take in ext_plan:
-        zex = np.load(ext_pool)
-        _, f_ex = load_extension_features(zex, take, d, r, p, args.inputs, args.student,
+        _, f_ex = load_extension_features(ext_pool, take, d, r, p, args.inputs, args.student,
                                           idx_t, binary_t, out=x_tr[ntr:ntr + take])
         f_tr = np.concatenate([f_tr, f_ex], axis=0)
         z_teach = np.concatenate([z_teach, np.zeros(take, dtype=np.float32)], axis=0)
         ntr = ntr + take
-        del zex
         print(f"{LOG} training set extended by {take:,} shots from "
               f"{os.path.basename(ext_pool)}; total {ntr:,}", flush=True)
     assert ntr == n_all, (ntr, n_all)
@@ -888,8 +892,8 @@ def run():
     y_tr = np.stack([f_tr.astype(np.float32), z_teach], axis=1)
 
     # --- evaluation tail ------------------------------------------------------------
-    zte = np.load(args.test_pool) if args.test_pool else ztr
-    Nte = zte['measurements'].shape[0]
+    zte = args.test_pool or train_fn                 # a path; rows are read per block below
+    Nte = PR.n_rows(zte, 'measurements')
     if args.eval_start is None:
         te = slice(Nte - nte, Nte)
     else:
@@ -898,9 +902,9 @@ def run():
                              f"exceeds pool size {Nte}")
         te = slice(args.eval_start, args.eval_start + nte)
     print(f"{LOG} scoring shots [{te.start:,}, {te.stop:,})", flush=True)
-    m_te = zte['measurements'][te].astype(binary_t)
-    e_te = zte['det_evts'][te].astype(binary_t)
-    f_te = zte['flips'][te].astype(binary_t).reshape(-1)
+    m_te = PR.rows(zte, 'measurements', te.start, te.stop).astype(binary_t)
+    e_te = PR.rows(zte, 'det_evts', te.start, te.stop).astype(binary_t)
+    f_te = PR.rows(zte, 'flips', te.start, te.stop).astype(binary_t).reshape(-1)
     b_te, _, _ = split_measurements(m_te, d, idx_t)
     x_te = to_host_uint8(assemble_features(b_te, e_te, args.inputs, student=args.student,
                                            d=d, rounds=r, p=p))
@@ -920,9 +924,9 @@ def run():
         # file as the scored block (zte), which is --test-pool when one is given.
         if v1 > Nte:
             raise SystemExit(f"{LOG} validation [{v0}, {v1}) exceeds pool size {Nte}")
-        m_va = zte['measurements'][v0:v1].astype(binary_t)
-        e_va = zte['det_evts'][v0:v1].astype(binary_t)
-        f_va = zte['flips'][v0:v1].astype(binary_t).reshape(-1)
+        m_va = PR.rows(zte, 'measurements', v0, v1).astype(binary_t)
+        e_va = PR.rows(zte, 'det_evts', v0, v1).astype(binary_t)
+        f_va = PR.rows(zte, 'flips', v0, v1).astype(binary_t).reshape(-1)
         b_va, _, _ = split_measurements(m_va, d, idx_t)
         x_va = to_host_uint8(assemble_features(b_va, e_va, args.inputs, student=args.student,
                                                d=d, rounds=r, p=p))

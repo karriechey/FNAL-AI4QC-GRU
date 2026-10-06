@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/dump_teacher_probs.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-08-17
+# Last modified: 2026-10-06 (pool arrays read by row range with pool_rows; pool_fingerprint takes a path and uses the pool's .fingerprint.json, so the sealed rows are never read). Earlier 2026-08-17
 """Cache the FP32 teacher's per-shot output over a pool, for knowledge distillation.
 
 The teacher is frozen, so its output for a shot never changes across epochs, seeds or
@@ -68,6 +68,22 @@ def pool_fingerprint(pool_npz):
     labels and on the shape means the same draw. The measurement arrays are left alone;
     hashing them would be ~1.7 GB of IO per run for no extra assurance.
     """
+    if isinstance(pool_npz, str):
+        # A path (2026-10-06): the flips SHA-256 and measurements shape recorded in the pool's
+        # .fingerprint.json at generation, so no row of the pool (sealed rows included) is
+        # read. Without a fingerprint the hash is computed by streaming the flips array.
+        import json
+        import pool_rows as PR
+        fp = pool_npz.replace('.npz', '.fingerprint.json')
+        if os.path.exists(fp):
+            m = json.load(open(fp))
+            if m.get('flips_sha256') and m.get('measurements_shape'):
+                return m['flips_sha256'], m['measurements_shape']
+        n = PR.n_rows(pool_npz, 'flips')
+        h = hashlib.sha256()
+        for a in range(0, n, 10_000_000):
+            h.update(np.ascontiguousarray(PR.rows(pool_npz, 'flips', a, min(a + 10_000_000, n))).tobytes())
+        return h.hexdigest(), str((n,) + tuple(PR.rows(pool_npz, 'measurements', 0, 1).shape[1:]))
     flips = np.ascontiguousarray(pool_npz['flips'])
     digest = hashlib.sha256(flips.tobytes()).hexdigest()
     return digest, str(pool_npz['measurements'].shape)
@@ -147,8 +163,9 @@ def run():
     if not os.path.exists(args.weights):
         raise SystemExit(f"[teacher] MISSING weights {args.weights}")
 
-    z = np.load(fn)
-    N = z['measurements'].shape[0]
+    import pool_rows as PR
+    z = fn                                         # a path; rows are read by range below
+    N = PR.n_rows(fn, 'measurements')
 
     # Identity fingerprints, computed once here and re-verified by train_student.py. These
     # catch "same filename, different content" -- a re-generated pool or a re-trained
@@ -166,8 +183,8 @@ def run():
 
     # Slice before the measurement split so only the requested shots are materialised;
     # the arrays are ~1 GB each at 10M.
-    det_evts = z['det_evts'][sl].astype(binary_t)
-    flips = z['flips'][sl].astype(binary_t)
+    det_evts = PR.rows(fn, 'det_evts', lo, hi).astype(binary_t)
+    flips = PR.rows(fn, 'flips', lo, hi).astype(binary_t)
 
     hidden = [args.hidden for _ in range(args.hidden_layers)]
     if args.teacher_arch == 'gru':
@@ -190,7 +207,7 @@ def run():
         p_teacher = (1.0 / (1.0 + np.exp(-logit_teacher.astype(np.float64)))).astype(np.float32)
         del x
     else:
-        measurements = z['measurements'][sl].astype(binary_t)
+        measurements = PR.rows(fn, 'measurements', lo, hi).astype(binary_t)
         det_bits, _obs_bits, _data_bits = split_measurements(measurements, d, idx_t)
         if args.weight_bits is None or args.weight_bits >= 32:
             from CNNModel import FullRCNNModel

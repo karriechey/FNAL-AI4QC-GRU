@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint; the sealed block is scored only with --score-sealed, logged in configs/sealed_access.tsv, once per weights file unless --score-sealed-again; an existing CSV with an older header is left as it is and the row goes to <name>.v2.csv). 2026-10-05: --units takes several values for stacked GRU layers. Earlier 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
+# Last modified: 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint; the sealed block is scored only with --score-sealed, logged in configs/sealed_access.tsv, once per weights file unless --score-sealed-again; an existing CSV with an older header is left as it is and the row goes to <name>.v2.csv). 2026-10-05: --units takes several values for stacked GRU layers. 2026-10-06: pool rows read by range (pool_rows), so only the scored block is loaded; a block that a decoder already read (partitions spent_blocks) is flagged. Earlier 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
 """Score a saved student on a fixed partition and run the paired McNemar test vs MWPM.
 
 Why a separate script from eval_on_tail.py
@@ -84,7 +84,8 @@ def check_eval_block(args, hidden):
         print(f"{LOG} WARNING: {os.path.basename(args.pool)} has no fingerprint and "
               f"no data_d*_p*_r* name; d/p/rounds not checked", flush=True)
 
-    n_pool = int(np.load(args.pool)['flips'].shape[0])
+    import pool_rows as PR
+    n_pool = PR.n_rows(args.pool, 'flips')         # header only
     lo, hi = args.eval_start, args.eval_start + args.n_test
     if hi > n_pool:
         raise SystemExit(f"{LOG} partition [{lo}, {hi}) exceeds pool size {n_pool}")
@@ -100,6 +101,9 @@ def check_eval_block(args, hidden):
             print(f"{LOG} --score-sealed given, but [{lo:,}, {hi:,}) does not touch the "
                   f"sealed block; nothing logged", flush=True)
         return lo, hi
+    for s0, s1, note in P.spent_blocks(args.pool):
+        if lo < s1 and s0 < hi:
+            print(f"{LOG} NOTE: [{s0:,}, {s1:,}) of this pool is {note}", flush=True)
     if not args.score_sealed:
         raise SystemExit(f"{LOG} block [{lo:,}, {hi:,}) overlaps the sealed block "
                          f"[{sealed[0]:,}, {sealed[1]:,}) of {os.path.basename(args.pool)} "
@@ -224,14 +228,14 @@ def run():
     d, p, r, k = args.d, args.p, args.rounds, args.kernel
     binary_t, _t, idx_t, _pk = get_types(d, r, k)
 
-    z = np.load(args.pool)
-    te = slice(lo, hi)            # checked in check_eval_block
+    import pool_rows as PR
+    te = slice(lo, hi)            # checked in check_eval_block; only these rows are read
     print(f"[student-eval] scoring shots [{lo:,}, {hi:,}) of {os.path.basename(args.pool)}",
           flush=True)
 
-    m_te = z['measurements'][te].astype(binary_t)
-    e_te = z['det_evts'][te].astype(binary_t)
-    truth = z['flips'][te].astype(np.int8).reshape(-1)
+    m_te = PR.rows(args.pool, 'measurements', lo, hi).astype(binary_t)
+    e_te = PR.rows(args.pool, 'det_evts', lo, hi).astype(binary_t)
+    truth = PR.rows(args.pool, 'flips', lo, hi).astype(np.int8).reshape(-1)
     b_te, _, _ = split_measurements(m_te, d, idx_t)
     from host_data import to_host_uint8, make_dataset
     x_te = assemble_features(b_te, e_te, args.inputs, student=args.student,
