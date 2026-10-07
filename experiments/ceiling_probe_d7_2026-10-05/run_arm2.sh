@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-10-05
-# Last modified: 2026-10-07 (arm 9s16: d9 2 x u160). Earlier 2026-10-06 (copy of run_arm.sh with arm 9se, so the copy in use by running jobs is not edited)
+# Last modified: 2026-10-07 (arms 9s16: d9 2 x u160; 9s316: d9 3 x u160; 9s3280: d9 3 x u280). Earlier 2026-10-06 (copy of run_arm.sh with arm 9se, so the copy in use by running jobs is not edited)
 #
 # d=7 capacity ceiling probe (diagnostic only, not a deployment candidate; both arms exceed
 # the u280 parameter budget on purpose). R01's data (FORMAL prefix 15M + training-only seeds
@@ -20,6 +20,7 @@
 #   arm d2: u280 distilled from arm b's best checkpoint (2 x u280, epoch 59), alpha 0, T 1
 #   arm s2: two stacked GRU layers of 140 units (197,541 parameters)
 #   arm 9s16 (2026-10-07): d=9, two stacked GRU layers of 160 units, the 9-1 / 9-S recipe
+#   arms 9s316, 9s3280 (2026-10-07): d=9, three stacked GRU layers of 160 / 280 units, same recipe
 #   arm 9se: 9s with EMA of the weights (decay 0.999), queued only if 9-7 (EMA) is clearly
 #           better than 9-1 on the evaluation block
 #   arm 9s: d=9, two stacked GRU layers of 280 units (774,761 parameters), the 9-1 recipe:
@@ -46,7 +47,9 @@ case "$arm" in
   9s) UNITS="280 280"; CAP=6000; D=9; EPOCHS=160 ;;
   9se) UNITS="280 280"; CAP=6000; D=9; EPOCHS=160; KD=(EMA_DECAY=0.999) ;;
   9s16) UNITS="160 160"; CAP=6000; D=9; EPOCHS=160 ;;
-  *) echo "arm a, b, c1, d1, s1, d2, s2, 9s, 9se or 9s16"; exit 1 ;;
+  9s316) UNITS="160 160 160"; CAP=6000; D=9; EPOCHS=160 ;;
+  9s3280) UNITS="280 280 280"; CAP=8000; D=9; EPOCHS=160 ;;
+  *) echo "arm a, b, c1, d1, s1, d2, s2, 9s, 9se, 9s16, 9s316 or 9s3280"; exit 1 ;;
 esac
 P7=$HOME/pools_d${D}_p004_19M
 S=$(date -u +%Y%m%dT%H%M%SZ); OUT="$HERE/${arm}_u$(echo $UNITS | tr ' ' 'x')_$S"; mkdir -p "$OUT"
