@@ -84,7 +84,7 @@ STAB means the value comes from the Tier A promotion (see the promotion rule bel
    - Run times change; results do not (determinism is per process).
 
 7. **2026-10-07: 9-9 stopped; stacked d9 runs added (results seen).**
-   - **9-9 (batch 5,000) stopped at epoch 39** by decision, not by a pre-registered rule. Its best val p_L (0.012445 at epoch 36) trailed 9-1's at the same epoch by about 50%, at about twice the wall time per epoch, and the 2-layer d9 probe (9-S) had moved the d9 question to depth. It is recorded as `Killed @ ep 39`, not scored on the evaluation block.
+   - **9-9 (batch 5,000) stopped after epoch 41** by decision, not by a pre-registered rule. Its best val p_L (0.012445 at epoch 36) trailed 9-1's at the same epoch by about 50%, at about twice the wall time per epoch, and the 2-layer d9 probe (9-S) had moved the d9 question to depth. It is recorded as `Killed @ ep 41`, not scored on the evaluation block.
    - **Stacked d9 runs (exploratory, outside this pre-registration):** 9-S (2 x u280), 9-S16 (2 x u160), 9-S3_160 (3 x u160), 9-S3_280 (3 x u280), all with the 9-1 recipe (100M, peak 1e-3, 3-epoch warmup, 160 epochs, no EMA). The parameter budget does not apply to them by decision (2026-10-07: find the d9 recipe that wins first).
    - **9-S+EMA was not queued.** 9-7 (EMA) vs 9-1 on the same evaluation shots: 9-7 only right 1,461, 9-1 only right 1,364, p = 0.071; the rule required p < 0.01.
 
