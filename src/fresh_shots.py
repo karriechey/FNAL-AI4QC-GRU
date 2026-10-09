@@ -25,8 +25,11 @@ Stim's output for a seed is fixed for one Stim version on one machine architectu
 pools are the same: stim-pools-not-arch-portable), so a run is reproducible on grace1.
 
 Workers are separate processes (multiprocessing 'spawn', so none inherits TensorFlow's
-state) that import only numpy and stim. Chunks come back in order (imap), so the batch
-order is deterministic.
+state) that import only numpy and stim. Chunks come back in submission order, so the batch
+order is deterministic. At most `in_flight` chunks are requested ahead of the one being
+consumed: the workers sample several times faster than the GPU trains, and without that
+limit the sampled chunks pile up in host memory (first full run, 2026-10-09: about 40 GB
+within minutes, on the way to a whole 100M-shot epoch, 80 GB).
 """
 import multiprocessing as mp
 
@@ -97,7 +100,7 @@ class FreshShots:
     """
 
     def __init__(self, d, p, rounds, shots_per_epoch, batch_size, chunk=100_000,
-                 workers=16, seed_base=SEED_BASE):
+                 workers=16, seed_base=SEED_BASE, in_flight=None):
         from StudentModels import detector_sequence_layout
         chunk = min(chunk, shots_per_epoch)          # small test runs: one chunk per epoch
         if chunk % batch_size or shots_per_epoch % chunk:
@@ -109,13 +112,24 @@ class FreshShots:
         self.shots_per_epoch, self.batch_size, self.chunk = shots_per_epoch, batch_size, chunk
         self.chunks_per_epoch = shots_per_epoch // chunk
         self.seed_base = seed_base
+        self.in_flight = in_flight or 2 * workers     # chunks requested ahead, at most
         self.pool = mp.get_context('spawn').Pool(workers, initializer=_init,
                                                  initargs=(d, p, rounds, index_map))
 
     def batches(self, epoch):
-        tasks = [(chunk_seed(epoch, c, self.seed_base), self.chunk)
-                 for c in range(self.chunks_per_epoch)]
-        for x, f in self.pool.imap(_sample, tasks):
+        import collections
+        tasks = iter([(chunk_seed(epoch, c, self.seed_base), self.chunk)
+                      for c in range(self.chunks_per_epoch)])
+        pending = collections.deque()
+        for t in tasks:                          # fill the window
+            pending.append(self.pool.apply_async(_sample, (t,)))
+            if len(pending) >= self.in_flight:
+                break
+        while pending:
+            x, f = pending.popleft().get()
+            t = next(tasks, None)
+            if t is not None:                    # one out, one in: the window stays bounded
+                pending.append(self.pool.apply_async(_sample, (t,)))
             y = np.stack([f, np.zeros_like(f)], axis=1)
             for a in range(0, self.chunk, self.batch_size):
                 yield x[a:a + self.batch_size], y[a:a + self.batch_size]

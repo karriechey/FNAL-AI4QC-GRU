@@ -15,6 +15,9 @@ train_student.py --fresh-shots-per-epoch). CPU only.
                    pool seed.
   4 keras epochs   model.fit over FreshShots.dataset samples epochs 0, 1, 2 in order, one per
                    fit epoch; first_epoch=2 starts at epoch 2 with the same batches.
+  6 bounded        with a slow consumer, never more than in_flight chunks are requested
+                   ahead of the one consumed (an unbounded queue held ~40 GB in the first
+                   full run).
   5 train_student  --fresh-shots-per-epoch runs end to end (2 epochs), twice with identical
                    per-epoch losses, writes fresh_shots = shots x epochs in its CSV, and is
                    refused with --n-train > 0 or alpha < 1.
@@ -122,6 +125,27 @@ def main():
     report('keras_epochs', ok, f'fit 3 epochs sampled epochs {order}; fit resumed at epoch 2 '
            f'sampled {resumed}; its batches equal epoch 2 sampled directly')
     rs.close()
+
+    # 6 ------------------------------------------------------------------------------
+    import time
+    submitted, consumed, ahead = [0], [0], []
+
+    def counting(*args, **kw):          # uses `real`, bound below to the new pool's method
+        submitted[0] += 1
+        ahead.append(submitted[0] - consumed[0])
+        return real(*args, **kw)
+
+    fs.close()
+    fs = F.FreshShots(d, p, d, 200_000, 1_000, chunk=10_000, workers=2, in_flight=3)
+    real = fs.pool.apply_async
+    fs.pool.apply_async = counting
+    for i, _ in enumerate(fs.batches(7)):
+        if i % 10 == 0:                     # 10 batches per chunk: one chunk consumed
+            consumed[0] += 1
+            time.sleep(0.05)
+    report('bounded', max(ahead) <= 3 + 1 and submitted[0] == fs.chunks_per_epoch,
+           f'{submitted[0]} chunks requested, at most {max(ahead)} ahead of consumption '
+           f'(window 3)')
     fs.close()
 
     # 5 ------------------------------------------------------------------------------
