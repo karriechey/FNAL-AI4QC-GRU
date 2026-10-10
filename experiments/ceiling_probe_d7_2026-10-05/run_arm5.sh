@@ -27,7 +27,7 @@
 #           shots each (16B distinct shots; train_student.py --fresh-shots-per-epoch). Same
 #           recipe as 9s316 / 9s3100, which train on a fixed 100M and are the controls: 9s
 #           scores 0.78x MWPM on its own training shots and 1.62x on the evaluation block.
-#   arm fsmoke: 3 x u160, 2 epochs of 5M fresh shots; checks the sampling keeps up with the GPU
+#   arm fsmoke: 3 x u160, 5 epochs of 5M fresh shots (more than the 3 warmup epochs); checks the sampling keeps up with the GPU
 #   arm 9s3100 (2026-10-09): 3 x u100 at d9, peak LR 1e-3 (same recipe as 9s316); 175,001 params,
 #           a teacher size closer to the FPGA students it will be distilled into
 #   arm 9se: 9s with EMA of the weights (decay 0.999), queued only if 9-7 (EMA) is clearly
@@ -62,7 +62,7 @@ case "$arm" in
   9s3100) UNITS="100 100 100"; CAP=8000; D=9; EPOCHS=160 ;;
   f3160) UNITS="160 160 160"; CAP=6000; D=9; EPOCHS=160; FRESH=100000000 ;;
   f3100) UNITS="100 100 100"; CAP=6000; D=9; EPOCHS=160; FRESH=100000000 ;;
-  fsmoke) UNITS="160 160 160"; CAP=6000; D=9; EPOCHS=2; FRESH=5000000 ;;
+  fsmoke) UNITS="160 160 160"; CAP=6000; D=9; EPOCHS=5; FRESH=5000000 ;;
   *) echo "arm a, b, c1, d1, s1, d2, s2, 9s, 9se, 9s16, 9s316, 9s3280, 9s3280lr5, 9s3100, f3160, f3100 or fsmoke"; exit 1 ;;
 esac
 P7=$HOME/pools_d${D}_p004_19M
