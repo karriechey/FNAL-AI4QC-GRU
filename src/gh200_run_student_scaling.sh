@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-10-09 (FRESH_SHOTS=<n>: n new Stim shots per epoch replace the training array; needs NTRAIN=0 and no EXTRA_POOL; tag _fresh<n>). Earlier 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-11 (FRESH_SEED_BASE: first Stim seed of the fresh shots, for replicates on different shots; tag _fsb<base> when set). Earlier 2026-10-09 (FRESH_SHOTS=<n>: n new Stim shots per epoch replace the training array; needs NTRAIN=0 and no EXTRA_POOL; tag _fresh<n>). Earlier 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -59,6 +59,9 @@ TEACHER_MODEL="${TEACHER_MODEL:-}"
 # (default 8). Adds _fresh<n> to the tag. Default empty = the training array, as before.
 FRESH_SHOTS="${FRESH_SHOTS:-}"
 FRESH_WORKERS="${FRESH_WORKERS:-8}"
+# FRESH_SEED_BASE=<n>: first Stim seed of the fresh shots (default 10**12 in fresh_shots.py).
+# A replicate on different shots sets another base, e.g. 2000000000000. Adds _fsb<n> to the tag.
+FRESH_SEED_BASE="${FRESH_SEED_BASE:-}"
 # GLOBAL_CLIPNORM=<v> passes Adam global_clipnorm=<v> (norm of all gradients together; the
 # per-update norms and clipped fraction are logged) and adds _gclip<v> to the tag.
 # Default empty = no clipping, as before.
@@ -331,7 +334,7 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "gpu cap      : ${GPU_MEM_MIB:-none} MiB per process"
   echo "quantization : weights=${W_BITS:-float32} activations=${A_BITS:-float32}"
   echo "extension    : ${EXTRA_POOL:-none} n=${EXTRA_N:-all}"
-  echo "fresh shots  : ${FRESH_SHOTS:-none} per epoch (new Stim shots every epoch; ${FRESH_WORKERS} workers)"
+  echo "fresh shots  : ${FRESH_SHOTS:-none} per epoch (new Stim shots every epoch; ${FRESH_WORKERS} workers; seed base ${FRESH_SEED_BASE:-default 10**12})"
   echo "selection    : min val_loss checkpoint, scored once on the evaluation block"
   if [ "$STUDENT" = "mlp" ]; then
     echo "reading      : size-matched feed-forward comparison against the GRU at this"
@@ -374,6 +377,7 @@ fi
 [ -n "$MAX_PARAMS" ] && TRAIN_ONLY+=(--max-params "$MAX_PARAMS")
 [ -n "$TEACHER_MODEL" ] && TRAIN_ONLY+=(--teacher-model "$TEACHER_MODEL")
 [ -n "$FRESH_SHOTS" ] && TRAIN_ONLY+=(--fresh-shots-per-epoch "$FRESH_SHOTS" --fresh-workers "$FRESH_WORKERS")
+[ -n "$FRESH_SEED_BASE" ] && TRAIN_ONLY+=(--fresh-seed-base "$FRESH_SEED_BASE")
 
 if [ -n "$RESUME_WEIGHTS" ]; then
   TRAIN_ONLY+=(--resume-weights "$RESUME_WEIGHTS" --initial-epoch "$INITIAL_EPOCH")
@@ -402,6 +406,7 @@ run_seed () {
   [ -n "$W_BITS$A_BITS" ] && QTAG="_w${W_BITS:-f32}_a${A_BITS:-f32}"
   [ -n "$EXTRA_POOL" ] && QTAG="${QTAG}_ext$(echo "${EXTRA_N:-all}" | tr ' ' '+')"
   [ -n "$FRESH_SHOTS" ] && QTAG="${QTAG}_fresh${FRESH_SHOTS}"
+  [ -n "$FRESH_SEED_BASE" ] && QTAG="${QTAG}_fsb${FRESH_SEED_BASE}"
   [ "$RESET_AFTER" = "1" ] && QTAG="${QTAG}_ra1"
   [ "$UNROLL" = "1" ] && QTAG="${QTAG}_ur1"
   [ "$LR_SCHEDULE" = "cosine" ] && QTAG="${QTAG}_cos${LR_END}"

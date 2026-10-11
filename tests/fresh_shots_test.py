@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-09
-# Last modified: 2026-10-09
+# Last modified: 2026-10-11 (checks 7 and 8: fresh-shot distillation)
 """Checks of the fresh-shot training input (src/fresh_shots.py,
 train_student.py --fresh-shots-per-epoch). CPU only.
 
@@ -20,7 +20,13 @@ train_student.py --fresh-shots-per-epoch). CPU only.
                    full run).
   5 train_student  --fresh-shots-per-epoch runs end to end (2 epochs), twice with identical
                    per-epoch losses, writes fresh_shots = shots x epochs in its CSV, and is
-                   refused with --n-train > 0 or alpha < 1.
+                   refused with --n-train > 0 or with a teacher cache.
+  7 teacher step   a student whose training step fills the teacher column
+                   (train_student.attach_teacher_to_train_step) takes exactly the update of
+                   a copy trained on the same batch with the teacher's logits given
+                   explicitly; the student's weights do not include the teacher's.
+  8 distill run    train_student.py --fresh-shots-per-epoch --teacher-model (the model of
+                   check 5) --alpha 0 runs end to end and logs the per-batch teacher.
 
     python3 tests/fresh_shots_test.py --py <python with TF 2.15> --pool-dir <dir> --out <dir>
 """
@@ -177,7 +183,7 @@ def main():
         and hist[0].get('val_ler') == hist[1].get('val_ler')
     refusals = []
     for extra in (['--n-train', '40000', '--alpha', '1.0'], ['--n-train', '0', '--alpha', '0.5',
-                                                         '--teacher-model', '/nonexistent.keras']):
+                                                         '--teacher-cache', '/nonexistent.npz']):
         r = subprocess.run([a.py, 'train_student.py'] + common + extra
                            + ['--ckpt-dir', a.out + '/x', '--out-dir', a.out + '/x'],
                            cwd=src, env=env, capture_output=True, text=True)
@@ -187,6 +193,48 @@ def main():
     report('train_student', ok, f"exit {rcs}; loss {hist[0].get('loss')} twice equal: {bool(same)}; "
            f"fresh_shots {rows[0].get('fresh_shots')}; train_pool {rows[0].get('train_pool')}; "
            f"refusals {refusals}")
+
+    # 7 ------------------------------------------------------------------------------
+    import train_student as TS
+    from StudentModels import build_student
+    from train_student import make_distillation_loss
+    tf.keras.utils.set_random_seed(3)
+    teacher = build_student('gru', d=d, rounds=d, inputs='evts', hidden=(), units=8)
+    stud_a = build_student('gru', d=d, rounds=d, inputs='evts', hidden=(), units=6)
+    stud_b = build_student('gru', d=d, rounds=d, inputs='evts', hidden=(), units=6)
+    stud_b.set_weights(stud_a.get_weights())
+    n_w = len(stud_a.weights)
+    TS.attach_teacher_to_train_step(tf, stud_a, teacher)
+    for m_ in (stud_a, stud_b):
+        m_.compile(optimizer=tf.keras.optimizers.SGD(0.1), loss=make_distillation_loss(0.0, 1.0))
+    fs7 = F.FreshShots(d, p, d, 2_000, 1_000, chunk=2_000, workers=1)
+    xb, yb = next(iter(fs7.batches(0)))
+    xb = xb.astype(np.float32)
+    yb_t = yb.copy()
+    yb_t[:, 1] = teacher.predict(xb, verbose=0).reshape(-1)
+    stud_a.fit(xb, yb, batch_size=1_000, epochs=1, shuffle=False, verbose=0)
+    stud_b.fit(xb, yb_t, batch_size=1_000, epochs=1, shuffle=False, verbose=0)
+    diff = max(float(np.max(np.abs(u - v))) for u, v in zip(stud_a.get_weights(), stud_b.get_weights()))
+    report('teacher_step', diff < 1e-6 and len(stud_a.weights) == n_w,
+           f'max weight difference vs explicit teacher logits {diff:.2e}; student tensors '
+           f'{len(stud_a.weights)} (teacher not included)')
+    fs7.close()
+
+    # 8 ------------------------------------------------------------------------------
+    tk = glob.glob(os.path.join(a.out, 'train0', 'ckpt', '*.best.keras'))
+    o = os.path.join(a.out, 'distill')
+    r = subprocess.run([a.py, 'train_student.py'] + common
+                       + ['--n-train', '0', '--alpha', '0.0', '--teacher-model', tk[0] if tk else '/missing',
+                          '--ckpt-dir', o + '/ckpt', '--out-dir', o + '/runs'],
+                       cwd=src, env=env, capture_output=True, text=True)
+    out = r.stdout + r.stderr
+    open(os.path.join(a.out, 'distill.log'), 'w').write(out)
+    cp = glob.glob(o + '/runs/*.csv')
+    row8 = next(csv.DictReader(open(cp[0]))) if cp else {}
+    report('distill_run', r.returncode == 0 and 'fresh-shot distillation: teacher' in out
+           and row8.get('alpha') == '0.0' and row8.get('fresh_shots') == '40000',
+           f"exit {r.returncode}; alpha {row8.get('alpha')}; fresh_shots {row8.get('fresh_shots')}; "
+           f"p_L {row8.get('p_L')}; agreement with teacher on scored block {row8.get('agree_all')}")
 
     print(f"\n{sum(results)}/{len(results)} checks passed", flush=True)
     sys.exit(0 if all(results) else 1)

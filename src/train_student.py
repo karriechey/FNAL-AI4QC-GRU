@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-09 (--fresh-shots-per-epoch: training shots sampled new from Stim for every epoch, src/fresh_shots.py, so no training shot is seen twice; validation and scored blocks still from the pool). Earlier 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. 2026-10-06: pool arrays read row-range by row-range (pool_rows), so rows outside the requested blocks, and the sealed rows in particular, are never loaded. --teacher-model: soft targets computed in this process from a saved GRU teacher, on the exact training array (primary prefix and every extension pool), the validation block and the scored block. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-11 (--fresh-shots-per-epoch with --teacher-model: distillation on fresh shots, the teacher's logit for each training batch computed on the GPU inside the training step). Earlier 2026-10-09 (--fresh-shots-per-epoch: training shots sampled new from Stim for every epoch, src/fresh_shots.py, so no training shot is seen twice; validation and scored blocks still from the pool). Earlier 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. 2026-10-06: pool arrays read row-range by row-range (pool_rows), so rows outside the requested blocks, and the sealed rows in particular, are never loaded. --teacher-model: soft targets computed in this process from a saved GRU teacher, on the exact training array (primary prefix and every extension pool), the validation block and the scored block. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -213,6 +213,30 @@ def teacher_agreement(student_pred, teacher_prob, truth, band):
         out['student_p_L_ambiguous'] = ''
         out['teacher_p_L_ambiguous'] = ''
     return out
+
+
+def attach_teacher_to_train_step(tf, model, teacher):
+    """Fill the teacher column of each training batch with the teacher's logit, on the GPU,
+    inside the student's own training step (fresh-shot distillation, 2026-10-11).
+
+    Fresh batches are sampled during training, so no stored teacher logits exist for them.
+    The batch target arrives as [hard_label, 0]; this replaces the 0 with teacher(x) and then
+    runs Keras' normal training step on the student. The teacher is held in a closure, not
+    as an attribute of the student, so it is not tracked by the student: saved weights,
+    checkpoints and the parameter count are the student's alone. Validation batches already
+    carry the teacher's logits (computed once on the validation block), so test_step is
+    unchanged.
+    """
+    teacher.trainable = False
+    base_train_step = type(model).train_step
+
+    def train_step(self, data):
+        x, y = data
+        z = tf.cast(tf.reshape(teacher(x, training=False), (-1, 1)), y.dtype)
+        return base_train_step(self, (x, tf.concat([y[:, :1], z], axis=1)))
+
+    import types
+    model.train_step = types.MethodType(train_step, model)
 
 
 def make_hard_accuracy():
@@ -706,13 +730,14 @@ def run():
         raise SystemExit(f"{LOG} --extra-train-pool with alpha={args.alpha} < 1: the extension "
                          f"shots have no teacher logits (they would be filled with 0, p=0.5). "
                          f"Use --alpha 1.0 with extensions. STOP.")
-    # (2026-10-09) Fresh shots replace the training array: hard labels only (no teacher
-    # logits exist for shots sampled during training), no training prefix or extension, and
-    # an explicit validation block for the checkpoint rule.
+    # (2026-10-09) Fresh shots replace the training array: no training prefix or extension,
+    # and an explicit validation block for the checkpoint rule. (2026-10-11) Distillation is
+    # allowed with --teacher-model: the teacher scores each fresh batch inside the training
+    # step. A --teacher-cache covers stored shots only, so it cannot be used.
     if args.fresh_shots_per_epoch:
         bad = [why for cond, why in (
-            (args.n_train != 0, '--n-train 0'), (args.alpha < 1.0, 'alpha 1'),
-            (bool(args.teacher_model or args.teacher_cache), 'no teacher'),
+            (args.n_train != 0, '--n-train 0'),
+            (bool(args.teacher_cache), '--teacher-model (a teacher cache covers stored shots only)'),
             (bool(args.extra_train_pool), 'no --extra-train-pool'),
             (args.val_start is None, '--val-start/--val-n'),
             (args.student != 'gru' or args.inputs != 'evts', 'the GRU with inputs evts'))
@@ -894,6 +919,9 @@ def run():
         if tuple(teacher.input_shape[1:]) != tuple(x_tr.shape[1:]):
             raise SystemExit(f"{LOG} teacher input {teacher.input_shape[1:]} != training "
                              f"features {x_tr.shape[1:]}. STOP.")
+    if teacher is not None and not args.fresh_shots_per_epoch:
+        # Fresh-shot runs have no training array (n_train 0); their teacher logits are
+        # computed per batch in the training step (attach_teacher_to_train_step, below).
         t0_t = time.time()
         z_teach = teacher.predict(make_dataset(tf, x_tr, None, args.batch_size),
                                   verbose=0).reshape(-1).astype(np.float32)
@@ -1082,6 +1110,11 @@ def run():
           + (f" warmup_epochs={args.lr_warmup_epochs:g}" if args.lr_warmup_epochs else '')
           + (f" ema_decay={args.ema_decay:g}" if args.ema_decay is not None else '')
           + f" global_clipnorm={args.global_clipnorm} log_grad_norm={log_gn}", flush=True)
+    if fresh is not None and teacher is not None:
+        attach_teacher_to_train_step(tf, model, teacher)
+        print(f"{LOG} fresh-shot distillation: teacher {os.path.basename(args.teacher_model)} "
+              f"({teacher.count_params():,} params) scores every training batch inside the "
+              f"training step; alpha={args.alpha} T={args.temperature}", flush=True)
     model.compile(optimizer=optimizer,
                   loss=make_distillation_loss(args.alpha, args.temperature),
                   metrics=[make_hard_accuracy()])
