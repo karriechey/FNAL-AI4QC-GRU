@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-12
-# Last updated: 2026-10-12 (exports Stim detecting regions of the central Z and X detector)
+# Last updated: 2026-10-12 (no file paths in the output; exports Stim detecting regions of the central Z and X detector)
 """Export the training circuit's lattice, detectors and sample shots to viz_data.json for animateQEC."""
 import argparse
 import csv
@@ -28,7 +28,7 @@ ap.add_argument("--out", default="viz_data.json")
 args = ap.parse_args()
 
 if args.circuit:
-    circuit, source = stim.Circuit.from_file(args.circuit), args.circuit
+    circuit, source = stim.Circuit.from_file(args.circuit), os.path.basename(args.circuit)
     d = r = None
 else:
     d = r = args.distance
@@ -59,6 +59,20 @@ for b, i in centre.items():
         f.write(stim_io.detslice_svg(circuit, c["x"], c["y"], 1))
     viz["meta"][f"detslice_{b}"] = i
 
+def assert_no_paths(obj, where="viz"):
+    """The JSON is published: refuse any string that looks like a file-system path."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            assert_no_paths(v, f"{where}.{k}")
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            assert_no_paths(v, f"{where}[{i}]")
+    elif isinstance(obj, str):
+        assert not (obj.startswith(("/", "~")) or "/home/" in obj or "/Users/" in obj
+                    or os.path.expanduser("~") in obj), f"path in {where}: {obj!r}"
+
+
+assert_no_paths(viz)
 with open(args.out, "w") as f:
     json.dump(viz, f, indent=1)
 

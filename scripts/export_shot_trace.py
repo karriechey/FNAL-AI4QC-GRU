@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-12
-# Last updated: 2026-10-12
+# Last updated: 2026-10-12 (no file paths in the output: checkpoint by file name, code copy by folder name; checked before writing)
 """Trace chosen evaluation-block shots through a stacked-GRU checkpoint for animateQEC's RealShot.
 
 For each shot: detection events per round, every GRU layer's hidden state at every step,
@@ -195,16 +195,31 @@ with open(args.weights, "rb") as f:
 best_json = args.weights.replace(".weights.h5", ".json")
 out = {
     "meta": {
-        "checkpoint": os.path.abspath(args.weights), "sha256": sha,
+        "checkpoint": os.path.basename(args.weights), "sha256": sha,
         "best": json.load(open(best_json)) if os.path.exists(best_json) else None,
-        "units": args.units, "d": d, "rounds": r, "p": p, "pool": pool,
+        "units": args.units, "d": d, "rounds": r, "p": p, "pool": "FORMAL",
         "block": "eval", "block_range": [a, b], "held_out_test_set": False,
-        "src": src, "tf_version": tf.__version__, "device": "CPU",
-        "host": platform.node(), "script": "scripts/export_shot_trace.py",
+        "code_copy": os.path.basename(os.path.dirname(src)), "tf_version": tf.__version__,
+        "device": "CPU", "host": platform.node(), "script": "scripts/export_shot_trace.py",
     },
     "shots": traces,
     "pca": pca,
 }
+
+def assert_no_paths(obj, where="out"):
+    """The trace is published: refuse any string that looks like a file-system path."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            assert_no_paths(v, f"{where}.{k}")
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            assert_no_paths(v, f"{where}[{i}]")
+    elif isinstance(obj, str):
+        assert not (obj.startswith(("/", "~")) or "/home/" in obj or "/Users/" in obj
+                    or os.path.expanduser("~") in obj), f"path in {where}: {obj!r}"
+
+
+assert_no_paths(out)
 with open(os.path.expanduser(args.out), "w") as f:
     json.dump(out, f)
 print(f"wrote {args.out} ({os.path.getsize(os.path.expanduser(args.out)) / 1e6:.2f} MB)")
