@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Created: 2026-10-05
-# Last modified: 2026-10-11 (copy of run_arm7.sh, which is running; SEED and FSB per arm; arms f3280s1: f3280 replicate with seed 1 on other fresh shots, f3280e240: f3280 for 240 epochs, ku280/ku100: one-layer students distilled on fresh shots from the f3280 teacher). Earlier 2026-10-11 (copy of run_arm6.sh, which is running; arm f2280: 2 x u280 on fresh shots, peak 1e-3, twin of 9s). Earlier 2026-10-10 (copy of run_arm5.sh, which is running; arm f3280: 3 x u280 on fresh shots, peak 5e-4, reference for the largest d9 model). Earlier 2026-10-09 (copy of run_arm4.sh, which is running, with fresh-shot arms: f3160, f3100 and the smoke test fsmoke train on new Stim shots every epoch, FRESH_SHOTS; no training array). Earlier 2026-10-09 (copy of run_arm3.sh, which is running; arm 9s3100: d9 3 x u100 at peak 1e-3, a teacher size that a distilled FPGA student can follow). Earlier 2026-10-08 (copy of run_arm2.sh with the peak LR as a variable; arm 9s3280lr5: d9 3 x u280 at peak 5e-4). Earlier 2026-10-07 (arms 9s16: d9 2 x u160; 9s316: d9 3 x u160; 9s3280: d9 3 x u280). Earlier 2026-10-06 (copy of run_arm.sh with arm 9se, so the copy in use by running jobs is not edited)
+# Last modified: 2026-10-13 (RESUME_FROM=<paused run folder>: continue an arm that pause_probe.sh
+# stopped, in a new folder; prepare_resume.py copies the best checkpoint, the last-epoch weights and
+# the history). Earlier 2026-10-11 (copy of run_arm7.sh, which is running; SEED and FSB per arm; arms f3280s1: f3280 replicate with seed 1 on other fresh shots, f3280e240: f3280 for 240 epochs, ku280/ku100: one-layer students distilled on fresh shots from the f3280 teacher). Earlier 2026-10-11 (copy of run_arm6.sh, which is running; arm f2280: 2 x u280 on fresh shots, peak 1e-3, twin of 9s). Earlier 2026-10-10 (copy of run_arm5.sh, which is running; arm f3280: 3 x u280 on fresh shots, peak 5e-4, reference for the largest d9 model). Earlier 2026-10-09 (copy of run_arm4.sh, which is running, with fresh-shot arms: f3160, f3100 and the smoke test fsmoke train on new Stim shots every epoch, FRESH_SHOTS; no training array). Earlier 2026-10-09 (copy of run_arm3.sh, which is running; arm 9s3100: d9 3 x u100 at peak 1e-3, a teacher size that a distilled FPGA student can follow). Earlier 2026-10-08 (copy of run_arm2.sh with the peak LR as a variable; arm 9s3280lr5: d9 3 x u280 at peak 5e-4). Earlier 2026-10-07 (arms 9s16: d9 2 x u160; 9s316: d9 3 x u160; 9s3280: d9 3 x u280). Earlier 2026-10-06 (copy of run_arm.sh with arm 9se, so the copy in use by running jobs is not edited)
 #
 # d=7 capacity ceiling probe (diagnostic only, not a deployment candidate; both arms exceed
 # the u280 parameter budget on purpose). R01's data (FORMAL prefix 15M + training-only seeds
@@ -44,7 +46,8 @@
 #   arm 9s: d=9, two stacked GRU layers of 280 units (774,761 parameters), the 9-1 recipe:
 #           100M (FORMAL 15M + seeds 48, 49), 160 epochs; tests whether depth helps d=9
 #
-#     bash run_arm.sh a|b        (on grace1, from this folder)
+#     bash run_arm8.sh <arm>                                (on grace1, from this folder)
+#     RESUME_FROM=<paused run folder> bash run_arm8.sh <arm>   (continue a paused arm)
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SRC="$(cd "$HERE/../../src" && pwd)"
@@ -83,6 +86,11 @@ case "$arm" in
 esac
 P7=$HOME/pools_d${D}_p004_19M
 S=$(date -u +%Y%m%dT%H%M%SZ); OUT="$HERE/${arm}_u$(echo $UNITS | tr ' ' 'x')_$S"; mkdir -p "$OUT"
+RESUME=()
+if [ -n "${RESUME_FROM:-}" ]; then
+  mapfile -t RESUME < <(python3 "$HERE/prepare_resume.py" "$RESUME_FROM" "$OUT" "$SEED") || exit 1
+  [ "${#RESUME[@]}" = 4 ] || { echo "prepare_resume.py failed for $RESUME_FROM"; exit 1; }
+fi
 if [ "$D" = 9 ]; then
   XP="$P7/data_d9_p0.004_r9_TRAINONLY_seed48.npz $P7/data_d9_p0.004_r9_TRAINONLY_seed49.npz"; XN="35000000 50000000"
 else
@@ -96,9 +104,9 @@ ENVX=(D=$D ROUNDS=$D SEEDS=$SEED UNITS="$UNITS" P=0.004 POOL=$P7/data_d${D}_p0.0
       "${TRAINDATA[@]}"
       BATCH=10000 EPOCHS=$EPOCHS LR=$LRV LR_SCHEDULE=cosine LR_END=3e-5 LR_WARMUP_EPOCHS=3 GLOBAL_CLIPNORM=0.64
       EARLY_STOP=0 RESET_AFTER=0 UNROLL=0 EVAL_NO_TF32=1 GPU_MEM_MIB=$CAP MIN_FREE_MIB=$CAP
-      OUT="$OUT" STAMP="$S" MALLOC_ARENA_MAX=2 "${KD[@]}")
+      OUT="$OUT" STAMP="$S" MALLOC_ARENA_MAX=2 "${KD[@]}" "${RESUME[@]}")
 { echo "at_start repo_head $(git -C "$HERE/../.." rev-parse HEAD 2>/dev/null)"; printf '%s\n' "${ENVX[@]}"; } > "$OUT/env.txt"
-echo "[probe $(date -u +%FT%TZ)] START arm $arm units=($UNITS) -> $OUT (host available $(awk '/MemAvailable/{printf "%d", $2/1048576}' /proc/meminfo) GB)" | tee -a "$HERE/probe.log"
+echo "[probe $(date -u +%FT%TZ)] START arm $arm units=($UNITS)${RESUME_FROM:+ resumed from $RESUME_FROM after epoch ${RESUME[1]#INITIAL_EPOCH=}} -> $OUT (host available $(awk '/MemAvailable/{printf "%d", $2/1048576}' /proc/meminfo) GB)" | tee -a "$HERE/probe.log"
 podman run --rm --name "probe_$arm" --security-opt=label=disable --device nvidia.com/gpu=all \
   -v "$HOME:$HOME" -e HOME="$HOME" -w "$SRC" qdec:tf215 env "${ENVX[@]}" bash gh200_run_student_scaling.sh \
   > "$OUT/podman.log" 2>&1
