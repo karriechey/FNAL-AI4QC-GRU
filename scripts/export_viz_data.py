@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-12
-# Last updated: 2026-10-12
+# Last updated: 2026-10-12 (exports Stim detecting regions of the central Z and X detector)
 """Export the training circuit's lattice, detectors and sample shots to viz_data.json for animateQEC."""
 import argparse
 import csv
@@ -39,8 +39,10 @@ commit = subprocess.run(["git", "-C", REPO, "rev-parse", "--short", "HEAD"],
                         capture_output=True, text=True).stdout.strip()
 meta = {"source": source, "distance": d, "rounds": r, "p": args.p, "basis": "Z",
         "git_commit": commit}
+structure = stim_io.circuit_structure(circuit)
+centre = {b: stim_io.central_detector(structure, b, 1) for b in ("Z", "X")}
 viz = stim_io.build_viz(circuit, meta, seed=args.seed, max_events=3 * (d or 9),
-                         n_search=args.n_search)
+                        n_search=args.n_search, region_detectors=list(centre.values()))
 # build_viz puts its own keys first; keep meta's order readable
 viz = {"meta": viz.pop("meta"), **viz}
 
@@ -50,16 +52,12 @@ if args.results:
                            for k, v in row.items()} for row in csv.DictReader(f)]
 
 out_dir = os.path.dirname(os.path.abspath(args.out))
-for b in ("Z", "X"):
-    # a central detector of this basis in round t=1
-    dets = [x for x in viz["detectors"] if x["t"] == 1 and x["basis"] == b]
-    cx = sum(x["x"] for x in dets) / len(dets)
-    cy = sum(x["y"] for x in dets) / len(dets)
-    c = min(dets, key=lambda x: (x["x"] - cx) ** 2 + (x["y"] - cy) ** 2)
-    os.makedirs(os.path.join(out_dir, "svg"), exist_ok=True)
+os.makedirs(os.path.join(out_dir, "svg"), exist_ok=True)
+for b, i in centre.items():
+    c = viz["detectors"][i]
     with open(os.path.join(out_dir, "svg", f"detector_{b}_t1.svg"), "w") as f:
         f.write(stim_io.detslice_svg(circuit, c["x"], c["y"], 1))
-    viz["meta"][f"detslice_{b}"] = c["index"]
+    viz["meta"][f"detslice_{b}"] = i
 
 with open(args.out, "w") as f:
     json.dump(viz, f, indent=1)
@@ -76,3 +74,6 @@ for s in viz["samples"]:
     print(f"  {s['pick']:<26} shot {s['shot']:>6}: {s['n_events']:>2} events, rounds",
           {t: len(v) for t, v in s["events_by_round"].items()},
           "flip", s["logical_flip"], "mwpm_wrong", s["mwpm_wrong"])
+for i, reg in viz["regions"].items():
+    print(f"  region of detector {i}: ticks {reg[0]['tick']}-{reg[-1]['tick']},",
+          "qubits per tick", [len(r["qubits"]) for r in reg])

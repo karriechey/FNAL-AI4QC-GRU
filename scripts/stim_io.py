@@ -1,4 +1,4 @@
-# Vendored from animateQEC animateqec/stim_io.py @ b436ed3
+# Vendored from animateQEC animateqec/stim_io.py @ 5c12e8a
 """Stim circuit -> plain dict that the scenes draw from."""
 from collections import defaultdict
 
@@ -117,12 +117,46 @@ def sample_shots(circuit, n, seed, n_readable=5, max_events=None, mwpm=True,
     return out
 
 
+def tick_ops(circuit):
+    """Gate names in each TICK-separated layer of the flattened circuit (no noise)."""
+    skip = {"DETECTOR", "OBSERVABLE_INCLUDE", "QUBIT_COORDS", "SHIFT_COORDS"}
+    ticks, cur = [], []
+    for inst in circuit.flattened():
+        if inst.name == "TICK":
+            ticks.append(cur)
+            cur = []
+        else:
+            g = stim.gate_data(inst.name)
+            noise = g.is_noisy_gate and not g.produces_measurements
+            if inst.name not in skip and not noise and inst.name not in cur:
+                cur.append(inst.name)
+    ticks.append(cur)
+    return ticks
+
+
+def detecting_region(circuit, det):
+    """Stim's detecting region of one detector: per tick, the qubits and Paulis it covers."""
+    regions = circuit.detecting_regions(targets=[stim.DemTarget.relative_detector_id(det)])
+    ops = tick_ops(circuit)
+    return [{"tick": t, "ops": ops[t] if t < len(ops) else [],
+             "qubits": {str(q): "_XYZ"[p] for q, p in enumerate(ps) if p}}
+            for t, ps in sorted(next(iter(regions.values())).items())]
+
+
+def central_detector(viz, basis, t):
+    """Index of the detector of this basis and round nearest the lattice centre."""
+    dets = [d for d in viz["detectors"] if d["t"] == t and d["basis"] == basis]
+    cx = sum(d["x"] for d in dets) / len(dets)
+    cy = sum(d["y"] for d in dets) / len(dets)
+    return min(dets, key=lambda d: (d["x"] - cx) ** 2 + (d["y"] - cy) ** 2)["index"]
+
+
 def detslice_svg(circuit, x, y, t):
     """Detslice diagram of one detector, as SVG text."""
     return str(circuit.diagram("detslice-svg", filter_coords=[(x, y, t)]))
 
 
-def build_viz(circuit, meta=None, n_samples=20_000, seed=0, **sample_kw):
+def build_viz(circuit, meta=None, n_samples=20_000, seed=0, region_detectors=(), **sample_kw):
     """Structure + samples + meta, ready to dump as viz_data.json."""
     viz = circuit_structure(circuit)
     per_round = [len(v) for v in viz["rounds"].values()]
@@ -133,6 +167,7 @@ def build_viz(circuit, meta=None, n_samples=20_000, seed=0, **sample_kw):
         "seed": seed,
         **(meta or {}),
     }
+    viz["regions"] = {str(d): detecting_region(circuit, d) for d in region_detectors}
     viz["samples"] = sample_shots(circuit, n_samples, seed, **sample_kw)
     viz["results"] = []
     return viz
