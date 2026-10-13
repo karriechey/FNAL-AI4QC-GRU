@@ -1,0 +1,392 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Stacked GRU Decoder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,650&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: single reading column, wide figures in their own scroll containers; layer 1 = teal, layer 2 = amber throughout */
+:root{
+  --bg:#f7f8fa; --surface:#ffffff; --fg:#1b2129; --muted:#5b6573; --rule:#d9dee5; --line:#7a8594;
+  --l1:#0f7d7a; --l1-bg:#e3f3f2; --l2:#b8650f; --l2-bg:#fbeedd; --l3:#6a4fb3; --l3-bg:#ece7f8;
+  --in-bg:#eef1f5; --good:#2f7d3a; --mwpm:#c0392b;
+  --f-display:"Source Serif 4",Georgia,serif; --f-body:"Source Sans 3",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161c; --surface:#1a2028; --fg:#e6eaf0; --muted:#9aa5b4; --rule:#2c3440; --line:#8793a3;
+  --l1:#4cc4c0; --l1-bg:#123433; --l2:#f0a54e; --l2-bg:#3a2a14; --l3:#a991f0; --l3-bg:#2a2340;
+  --in-bg:#222a35; --good:#6cc47a; --mwpm:#ef6b5d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161c; --surface:#1a2028; --fg:#e6eaf0; --muted:#9aa5b4; --rule:#2c3440; --line:#8793a3;
+  --l1:#4cc4c0; --l1-bg:#123433; --l2:#f0a54e; --l2-bg:#3a2a14; --l3:#a991f0; --l3-bg:#2a2340;
+  --in-bg:#222a35; --good:#6cc47a; --mwpm:#ef6b5d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16.5px;line-height:1.6;padding:40px 20px 64px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+h1,h2{font-family:var(--f-display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(28px,4.4vw,40px);font-weight:650}
+h2{font-size:24px;font-weight:650}
+h3{font-size:15px;margin:0;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+p{margin:0;max-width:68ch}
+.lede{font-size:18px;color:var(--muted);max-width:62ch}
+section{display:flex;flex-direction:column;gap:16px}
+.mono{font-family:var(--f-mono);font-size:.9em}
+.k1{color:var(--l1);font-weight:600}.k2{color:var(--l2);font-weight:600}
+.fig{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px;overflow-x:auto}
+.fig svg{display:block;width:100%;min-width:640px;height:auto}
+.cap{font-size:14px;color:var(--muted)}
+svg text{font-family:var(--f-body);fill:var(--fg)}
+svg .sm{font-size:12px;fill:var(--muted)}
+svg .lbl{font-size:13px;font-weight:600}
+svg .mono{font-family:var(--f-mono);font-size:12px}
+svg .in{fill:var(--in-bg);stroke:var(--line)}
+svg .c1{fill:var(--l1-bg);stroke:var(--l1);stroke-width:1.6}
+svg .c2{fill:var(--l2-bg);stroke:var(--l2);stroke-width:1.6}
+svg .hd{fill:var(--surface);stroke:var(--fg);stroke-width:1.2}
+svg .ar{stroke:var(--line);stroke-width:1.5;fill:none}
+svg .ar1{stroke:var(--l1);stroke-width:1.8;fill:none}
+svg .ar2{stroke:var(--l2);stroke-width:1.8;fill:none}
+svg .dash{stroke-dasharray:4 4}
+svg .mk{fill:var(--line)} svg .mk1{fill:var(--l1)} svg .mk2{fill:var(--l2)}
+svg .t1{fill:var(--l1);font-weight:600} svg .t2{fill:var(--l2);font-weight:600}
+svg .dot{fill:var(--rule)} svg .def{fill:var(--mwpm)} svg .ring{fill:none;stroke:var(--l1);stroke-width:2}
+svg .chain{stroke:var(--l2);stroke-width:3;fill:none;stroke-linecap:round}
+svg .bnd{stroke:var(--fg);stroke-width:2.5}
+table{border-collapse:collapse;width:100%;font-size:15px}
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--surface)}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:14px;white-space:nowrap}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card svg{width:100%;height:auto;display:block}
+.answer{border-left:4px solid var(--l2);background:var(--surface);padding:16px 18px;border-radius:0 10px 10px 0;display:flex;flex-direction:column;gap:10px}
+ol.why{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:12px;max-width:70ch}
+/* bar chart */
+.chart{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:18px}
+.grp{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:minmax(150px,210px) 1fr;gap:12px;align-items:center}
+.rl{font-size:14px;line-height:1.3;min-width:0}
+.rl small{display:block;color:var(--muted);font-size:12.5px}
+.track{position:relative;height:26px;background:var(--in-bg);border-radius:4px}
+.bar{position:absolute;left:0;top:0;bottom:0;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-family:var(--f-mono);font-size:12.5px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums}
+.b1{background:var(--l1)}.b2{background:var(--l2)}.b3{background:var(--l3)}
+.bpend{background:transparent;border:2px dashed var(--l2);color:var(--l2)}
+.mline{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--mwpm)}
+.axis{display:grid;grid-template-columns:minmax(150px,210px) 1fr;gap:12px;font-size:12.5px;color:var(--muted)}
+.axis .ticks{position:relative;height:16px}
+.axis .ticks span{position:absolute;transform:translateX(-50%);font-family:var(--f-mono)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+@media (max-width:560px){.row,.axis{grid-template-columns:1fr}.axis .lab{display:none}}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:12px">
+  <h3>FNAL AI4QC · GRU decoder</h3>
+  <h1>How a stacked GRU decodes the surface code</h1>
+  <p class="lede">A single-layer GRU updates one memory per QEC round. A stacked GRU adds a second recurrent layer that reads the first layer's memory instead of the raw syndrome. Same rounds, more computation per round.</p>
+</header>
+
+<section>
+  <h2>Single-layer GRU</h2>
+  <p>Each round, one GRU cell reads that round's detector events (80 bits at d=9) and updates a 280-dimensional hidden state. After the last round, a small head reads the final state and outputs the probability of a logical flip.</p>
+  <div class="fig">
+    <svg viewBox="0 0 760 236" role="img" aria-label="Single-layer GRU unrolled over 9 rounds">
+      <defs>
+        <marker id="a0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,0L10,5L0,10z"/></marker>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk1" d="M0,0L10,5L0,10z"/></marker>
+      </defs>
+      <text x="12" y="124" class="lbl t1">Layer 1</text>
+      <text x="12" y="191" class="sm">detectors</text>
+      <!-- columns: 130,250,370,490, ellipsis, 660 -->
+      <g>
+        <rect class="in" x="88" y="172" width="84" height="32" rx="5"/><text x="130" y="193" text-anchor="middle" class="mono">x₁</text>
+        <rect class="in" x="208" y="172" width="84" height="32" rx="5"/><text x="250" y="193" text-anchor="middle" class="mono">x₂</text>
+        <rect class="in" x="328" y="172" width="84" height="32" rx="5"/><text x="370" y="193" text-anchor="middle" class="mono">x₃</text>
+        <rect class="in" x="448" y="172" width="84" height="32" rx="5"/><text x="490" y="193" text-anchor="middle" class="mono">x₄</text>
+        <rect class="in" x="618" y="172" width="84" height="32" rx="5"/><text x="660" y="193" text-anchor="middle" class="mono">x₉</text>
+      </g>
+      <g>
+        <line class="ar" x1="130" y1="172" x2="130" y2="143" marker-end="url(#a0)"/>
+        <line class="ar" x1="250" y1="172" x2="250" y2="143" marker-end="url(#a0)"/>
+        <line class="ar" x1="370" y1="172" x2="370" y2="143" marker-end="url(#a0)"/>
+        <line class="ar" x1="490" y1="172" x2="490" y2="143" marker-end="url(#a0)"/>
+        <line class="ar" x1="660" y1="172" x2="660" y2="143" marker-end="url(#a0)"/>
+      </g>
+      <g>
+        <rect class="c1" x="88" y="97" width="84" height="44" rx="6"/><text x="130" y="124" text-anchor="middle" class="mono">h¹₁</text>
+        <rect class="c1" x="208" y="97" width="84" height="44" rx="6"/><text x="250" y="124" text-anchor="middle" class="mono">h¹₂</text>
+        <rect class="c1" x="328" y="97" width="84" height="44" rx="6"/><text x="370" y="124" text-anchor="middle" class="mono">h¹₃</text>
+        <rect class="c1" x="448" y="97" width="84" height="44" rx="6"/><text x="490" y="124" text-anchor="middle" class="mono">h¹₄</text>
+        <rect class="c1" x="618" y="97" width="84" height="44" rx="6"/><text x="660" y="124" text-anchor="middle" class="mono">h¹₉</text>
+        <line class="ar1" x1="172" y1="119" x2="206" y2="119" marker-end="url(#a1)"/>
+        <line class="ar1" x1="292" y1="119" x2="326" y2="119" marker-end="url(#a1)"/>
+        <line class="ar1" x1="412" y1="119" x2="446" y2="119" marker-end="url(#a1)"/>
+        <line class="ar1 dash" x1="532" y1="119" x2="616" y2="119" marker-end="url(#a1)"/>
+        <text x="574" y="112" text-anchor="middle" class="sm">rounds 5–8</text>
+      </g>
+      <rect class="hd" x="603" y="16" width="114" height="40" rx="6"/><text x="660" y="41" text-anchor="middle" class="lbl">head → P(flip)</text>
+      <line class="ar" x1="660" y1="97" x2="660" y2="58" marker-end="url(#a0)"/>
+      <g class="sm">
+        <text x="130" y="226" text-anchor="middle" class="sm">round 1</text><text x="250" y="226" text-anchor="middle" class="sm">round 2</text>
+        <text x="370" y="226" text-anchor="middle" class="sm">round 3</text><text x="490" y="226" text-anchor="middle" class="sm">round 4</text>
+        <text x="660" y="226" text-anchor="middle" class="sm">round 9</text>
+      </g>
+      <text x="130" y="72" text-anchor="middle" class="sm">one nonlinear update per round</text>
+    </svg>
+  </div>
+  <p class="cap mono">h¹ₜ = GRU₁(xₜ, h¹ₜ₋₁)    ·    output = head(h¹₉)</p>
+</section>
+
+<section>
+  <h2>Two-layer stacked GRU (f2280)</h2>
+  <p>Layer 1 is unchanged, except that it now passes its hidden state up at <em>every</em> round instead of only at the end. <span class="k2">Layer 2</span> is a second GRU with its own weights and its own 280-dim memory. It never sees the detectors directly: its input at round t is <span class="k1">h¹ₜ</span>, layer 1's running summary. The head reads only layer 2's final state. f3280 adds a third layer on top in the same way.</p>
+  <div class="fig">
+    <svg viewBox="0 0 760 306" role="img" aria-label="Two-layer stacked GRU unrolled over 9 rounds">
+      <defs>
+        <marker id="b0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,0L10,5L0,10z"/></marker>
+        <marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk1" d="M0,0L10,5L0,10z"/></marker>
+        <marker id="b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk2" d="M0,0L10,5L0,10z"/></marker>
+      </defs>
+      <text x="12" y="119" class="lbl t2">Layer 2</text>
+      <text x="12" y="194" class="lbl t1">Layer 1</text>
+      <text x="12" y="261" class="sm">detectors</text>
+      <g>
+        <rect class="in" x="88" y="242" width="84" height="32" rx="5"/><text x="130" y="263" text-anchor="middle" class="mono">x₁</text>
+        <rect class="in" x="208" y="242" width="84" height="32" rx="5"/><text x="250" y="263" text-anchor="middle" class="mono">x₂</text>
+        <rect class="in" x="328" y="242" width="84" height="32" rx="5"/><text x="370" y="263" text-anchor="middle" class="mono">x₃</text>
+        <rect class="in" x="448" y="242" width="84" height="32" rx="5"/><text x="490" y="263" text-anchor="middle" class="mono">x₄</text>
+        <rect class="in" x="618" y="242" width="84" height="32" rx="5"/><text x="660" y="263" text-anchor="middle" class="mono">x₉</text>
+        <line class="ar" x1="130" y1="242" x2="130" y2="213" marker-end="url(#b0)"/>
+        <line class="ar" x1="250" y1="242" x2="250" y2="213" marker-end="url(#b0)"/>
+        <line class="ar" x1="370" y1="242" x2="370" y2="213" marker-end="url(#b0)"/>
+        <line class="ar" x1="490" y1="242" x2="490" y2="213" marker-end="url(#b0)"/>
+        <line class="ar" x1="660" y1="242" x2="660" y2="213" marker-end="url(#b0)"/>
+      </g>
+      <g>
+        <rect class="c1" x="88" y="167" width="84" height="44" rx="6"/><text x="130" y="194" text-anchor="middle" class="mono">h¹₁</text>
+        <rect class="c1" x="208" y="167" width="84" height="44" rx="6"/><text x="250" y="194" text-anchor="middle" class="mono">h¹₂</text>
+        <rect class="c1" x="328" y="167" width="84" height="44" rx="6"/><text x="370" y="194" text-anchor="middle" class="mono">h¹₃</text>
+        <rect class="c1" x="448" y="167" width="84" height="44" rx="6"/><text x="490" y="194" text-anchor="middle" class="mono">h¹₄</text>
+        <rect class="c1" x="618" y="167" width="84" height="44" rx="6"/><text x="660" y="194" text-anchor="middle" class="mono">h¹₉</text>
+        <line class="ar1" x1="172" y1="189" x2="206" y2="189" marker-end="url(#b1)"/>
+        <line class="ar1" x1="292" y1="189" x2="326" y2="189" marker-end="url(#b1)"/>
+        <line class="ar1" x1="412" y1="189" x2="446" y2="189" marker-end="url(#b1)"/>
+        <line class="ar1 dash" x1="532" y1="189" x2="616" y2="189" marker-end="url(#b1)"/>
+        <line class="ar1" x1="130" y1="167" x2="130" y2="138" marker-end="url(#b1)"/>
+        <line class="ar1" x1="250" y1="167" x2="250" y2="138" marker-end="url(#b1)"/>
+        <line class="ar1" x1="370" y1="167" x2="370" y2="138" marker-end="url(#b1)"/>
+        <line class="ar1" x1="490" y1="167" x2="490" y2="138" marker-end="url(#b1)"/>
+        <line class="ar1" x1="660" y1="167" x2="660" y2="138" marker-end="url(#b1)"/>
+      </g>
+      <g>
+        <rect class="c2" x="88" y="92" width="84" height="44" rx="6"/><text x="130" y="119" text-anchor="middle" class="mono">h²₁</text>
+        <rect class="c2" x="208" y="92" width="84" height="44" rx="6"/><text x="250" y="119" text-anchor="middle" class="mono">h²₂</text>
+        <rect class="c2" x="328" y="92" width="84" height="44" rx="6"/><text x="370" y="119" text-anchor="middle" class="mono">h²₃</text>
+        <rect class="c2" x="448" y="92" width="84" height="44" rx="6"/><text x="490" y="119" text-anchor="middle" class="mono">h²₄</text>
+        <rect class="c2" x="618" y="92" width="84" height="44" rx="6"/><text x="660" y="119" text-anchor="middle" class="mono">h²₉</text>
+        <line class="ar2" x1="172" y1="114" x2="206" y2="114" marker-end="url(#b2)"/>
+        <line class="ar2" x1="292" y1="114" x2="326" y2="114" marker-end="url(#b2)"/>
+        <line class="ar2" x1="412" y1="114" x2="446" y2="114" marker-end="url(#b2)"/>
+        <line class="ar2 dash" x1="532" y1="114" x2="616" y2="114" marker-end="url(#b2)"/>
+        <text x="574" y="107" text-anchor="middle" class="sm">rounds 5–8</text>
+      </g>
+      <rect class="hd" x="603" y="14" width="114" height="40" rx="6"/><text x="660" y="39" text-anchor="middle" class="lbl">head → P(flip)</text>
+      <line class="ar" x1="660" y1="92" x2="660" y2="56" marker-end="url(#b0)"/>
+      <text x="130" y="296" text-anchor="middle" class="sm">round 1</text><text x="250" y="296" text-anchor="middle" class="sm">round 2</text>
+      <text x="370" y="296" text-anchor="middle" class="sm">round 3</text><text x="490" y="296" text-anchor="middle" class="sm">round 4</text>
+      <text x="660" y="296" text-anchor="middle" class="sm">round 9</text>
+      <text x="250" y="66" text-anchor="middle" class="sm">two nonlinear updates per round, each with its own memory</text>
+    </svg>
+  </div>
+  <p class="cap mono">h¹ₜ = GRU₁(xₜ, h¹ₜ₋₁)    ·    h²ₜ = GRU₂(h¹ₜ, h²ₜ₋₁)    ·    output = head(h²₉)</p>
+</section>
+
+<section>
+  <h2>What changes</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>Single (u280)</th><th>2-layer (f2280)</th><th>3-layer (f3280)</th></tr></thead>
+      <tbody>
+        <tr><td>Rounds processed (d=9)</td><td class="num">9</td><td class="num">9</td><td class="num">9</td></tr>
+        <tr><td>Recurrent updates per round</td><td class="num">1</td><td class="num">2</td><td class="num">3</td></tr>
+        <tr><td>Separate memories carried across rounds</td><td class="num">1 × 280</td><td class="num">2 × 280</td><td class="num">3 × 280</td></tr>
+        <tr><td>Input to the top layer</td><td>raw detector events</td><td>layer 1's state</td><td>layer 2's state</td></tr>
+        <tr><td>Parameters at d=9</td><td class="num">303,521</td><td class="num">774,761</td><td class="num">1,246,001</td></tr>
+        <tr><td>FPGA latency per round</td><td>1 GRU step</td><td>~2 GRU steps in series</td><td>~3 GRU steps in series</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="cap">Parameter counts for d=9 (80 detectors per round, reset_after=False). Layer 1 has 303,240 weights; each extra 280-wide layer adds 471,240 because its input is 280 wide instead of 80. Throughput can stay at one round per GRU step by pipelining layers: layer 2 works on round t while layer 1 starts round t+1.</p>
+</section>
+
+<section>
+  <h2>How is stacked different than one layer</h2>
+  <div class="answer">
+    <p><strong>What it adds is depth per round.</strong> Each round gets two (or three) nonlinear processing steps instead of one, and each layer keeps its own memory. The extra computation happens <em>within</em> a time step, not across more time steps.</p>
+  </div>
+</section>
+
+<section>
+  <h2> 560 units, split in two: 2×280 vs 1×560</h2>
+  <p>A controlled pair from our d=7 runs. Both models have  560 hidden units in total, one GRU with 560 units, or two stacked GRUs with 280 each. Everything else is identical: d = r = 7, p = 0.004, the same fixed 200M-shot pool, seed 0, learning-rate schedule, clipnorm, batch, 80 epochs and checkpoint criterion.</p>
+  <div class="fig">
+    <svg viewBox="0 0 760 278" role="img" aria-label="One round through 1×560 versus 2×280">
+      <defs>
+        <marker id="d0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,0L10,5L0,10z"/></marker>
+        <marker id="d1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk1" d="M0,0L10,5L0,10z"/></marker>
+        <marker id="d2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk2" d="M0,0L10,5L0,10z"/></marker>
+      </defs>
+      <text x="190" y="22" text-anchor="middle" class="lbl">1 × 560 (u560)</text>
+      <text x="570" y="22" text-anchor="middle" class="lbl">2 × 280 (2×u280)</text>
+      <line class="ar" x1="380" y1="10" x2="380" y2="270" style="stroke:var(--rule)"/>
+      <rect class="in" x="130" y="206" width="120" height="32" rx="5"/><text x="190" y="227" text-anchor="middle" class="mono">xₜ · 48 bits</text>
+      <line class="ar" x1="190" y1="206" x2="190" y2="172" marker-end="url(#d0)"/>
+      <rect class="c1" x="100" y="112" width="180" height="58" rx="6"/>
+      <text x="190" y="137" text-anchor="middle" class="lbl">GRU · 560 units</text>
+      <text x="190" y="156" text-anchor="middle" class="sm">1 GRU cell per round</text>
+      <path class="ar1" d="M280,128 C318,128 318,156 282,156" marker-end="url(#d1)"/><text x="322" y="146" class="sm">hₜ₋₁</text>
+      <line class="ar1" x1="190" y1="112" x2="190" y2="66" marker-end="url(#d1)"/>
+      <text x="190" y="56" text-anchor="middle" class="sm">hₜ → next round · head</text>
+      <text x="190" y="264" text-anchor="middle" class="sm">1,023,681 params</text>
+      <rect class="in" x="510" y="206" width="120" height="32" rx="5"/><text x="570" y="227" text-anchor="middle" class="mono">xₜ · 48 bits</text>
+      <line class="ar" x1="570" y1="206" x2="570" y2="180" marker-end="url(#d0)"/>
+      <rect class="c1" x="500" y="142" width="140" height="36" rx="6"/><text x="570" y="165" text-anchor="middle" class="lbl t1">GRU 1 · 280</text>
+      <path class="ar1" d="M640,152 C672,152 672,170 642,170" marker-end="url(#d1)"/><text x="676" y="165" class="sm">h¹ₜ₋₁</text>
+      <line class="ar1" x1="570" y1="142" x2="570" y2="114" marker-end="url(#d1)"/>
+      <text x="580" y="132" class="sm">features, not raw bits</text>
+      <rect class="c2" x="500" y="76" width="140" height="36" rx="6"/><text x="570" y="99" text-anchor="middle" class="lbl t2">GRU 2 · 280</text>
+      <path class="ar2" d="M640,86 C672,86 672,104 642,104" marker-end="url(#d2)"/><text x="676" y="99" class="sm">h²ₜ₋₁</text>
+      <line class="ar2" x1="570" y1="76" x2="570" y2="62" marker-end="url(#d2)"/>
+      <text x="570" y="52" text-anchor="middle" class="sm">h²ₜ → next round · head</text>
+      <text x="570" y="264" text-anchor="middle" class="sm">747,881 params (27% fewer)</text>
+    </svg>
+  </div>
+  <p class="cap">One QEC round through each model at d=7 (48 detectors per round). The stack adds depth inside the round.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>2×u280 (stacked)</th><th>u560 (wide)</th></tr></thead>
+      <tbody>
+        <tr><td>p_L on eval (held out)</td><td class="num"><strong>0.003076 · 0.717×MWPM</strong></td><td class="num">0.003403 · 0.793×MWPM</td></tr>
+        <tr><td>McNemar vs MWPM (b / c)</td><td class="num">4735 / 2548 · p = 6.2e-147</td><td class="num">4807 / 3209 · p = 1.2e-71</td></tr>
+        <tr><td>p_L on a training slice</td><td class="num">0.002526 · 0.580×</td><td class="num"><strong>0.002366 · 0.543×</strong></td></tr>
+        <tr><td>Final train / val loss</td><td class="num">0.00621 / 0.00910</td><td class="num">0.00289 / 0.01678</td></tr>
+        <tr><td>Best checkpoint</td><td class="num">epoch 59 of 80</td><td class="num">epoch 38 of 80 (overfit after)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="cap">Ratios are p_L ÷ MWPM p_L on the same shots (MWPM = 0.004291 on eval, 0.004356 on the training slice). Training slice = shots [0, 2M) of the training pool. </p>
+  <div class="answer">
+    <p><strong>On held-out shots, the stack wins with fewer parameters:</strong> 0.717× vs 0.793× MWPM, with 27% fewer parameters, so the win can't come from capacity.</p>
+    <p><strong>On its own training data, the wide model is better:</strong> 0.543× vs 0.580×. The wide model can represent the decoding function; it memorises the fixed pool and generalises worse. In this pair, the advantage of depth is <em>generalisation</em>, not raw expressiveness.</p>
+  </div>
+  <p><strong>Why depth could generalise better.</strong> 
+  <ol class="why">
+    <li><strong>(What the data shows) A better inductive bias.</strong> A wide single layer has enough freedom to fit the training pool shot by shot. A stack has to route everything through layer 1's summary, which pushes it toward reusable features instead of memorised patterns.</li>
+    <li><strong>(Hypothesis) Twice the nonlinear stages per round.</strong> A GRU cell already has several nonlinearities (sigmoid gates feeding a tanh). Stacking puts a second full cell on the path from xₜ to the output, so the model can build features of features. Two purely linear layers would collapse into one, W₂(W₁x) = (W₂W₁)x; the gates and tanh stop that.</li>
+    <li><strong>(Hypothesis) The target suits composition.</strong> The logical flip is a high-degree parity of detection events. Building it from local pieces, then combining them, matches the structure of the problem; a solution assembled that way is more likely to carry over to new shots than one fitted in a single wide step.</li>
+    <li><strong>(Hypothesis) Two memories with their own jobs.</strong> Each layer keeps its own recurrent state: layer 1 can follow how the detector pattern changes round to round, and layer 2 can accumulate that into evidence about the logical. This fits Gabe's suggestion that the stack makes better use of space-time structure.</li>
+  </ol>
+  <div class="two">
+    <div class="card">
+      <h3>One analyst</h3>
+      <p style="font-size:15px">u560: one analyst with a very large memory reads the raw syndrome each round. Big enough to remember every case seen in training, which is exactly the risk.</p>
+    </div>
+    <div class="card">
+      <h3>Two analysts in series</h3>
+      <p style="font-size:15px">2×u280: the first reports the patterns it sees; the second reasons over that report. Smaller memories each, but a two-stage pipeline that has to summarise as it goes.</p>
+    </div>
+  </div>
+  <p><strong>To test the mechanism: </strong>
+  <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;max-width:70ch">
+    <li><strong>Timescale per layer:</strong> how much each layer's state changes from round to round. A slower upper layer means it integrates over longer time.</li>
+    <li><strong>Where the gains are:</strong> whether the stack's wins concentrate in shots with many time-like or space-time matches.</li>
+    <li><strong>Linear probe per layer:</strong> how well each layer's final state predicts the flip. Rising accuracy with depth means each layer makes the answer easier to read off.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Why depth helps a decoder: the intuition</h2>
+  <p>These are working hypotheses that fit our results. We haven't probed the hidden states to confirm what each layer actually encodes.</p>
+  <div class="two">
+    <div class="card">
+      <h3 class="k1" style="color:var(--l1)">Layer 1: local events</h3>
+      <svg viewBox="0 0 260 186" role="img" aria-label="Detector grid with isolated defects circled">
+        <g id="grid1"></g>
+      </svg>
+      <p style="font-size:15px">Reads raw detector flips each round. Well placed to pick up local patterns: which detectors fired, pairs that point to one data-qubit error, and the same detector flipping in consecutive rounds, which signals a measurement error.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--l2)">Layer 2: chains and the boundary</h3>
+      <svg viewBox="0 0 260 186" role="img" aria-label="Defects joined into chains, one reaching the boundary">
+        <g id="grid2"></g>
+      </svg>
+      <p style="font-size:15px">Reads layer 1's summaries instead of raw bits. Well placed to track how defects link into error chains across space and time, and whether the accumulated correction crosses the logical boundary, which is the question the head answers.</p>
+    </div>
+  </div>
+  <ol class="why">
+    <li><strong>The answer is a high-degree parity.</strong> Whether a logical flip happened depends on the combined parity of many error events spread over the patch and over rounds. A network builds such functions most efficiently by composition: parities of local parities. Depth gives it that composition; a single layer has to produce it with one nonlinear update per round.</li>
+    <li><strong>It mirrors how matching works.</strong> MWPM first pairs up nearby defects, which is a local step, then checks whether the pairing crosses the boundary, which is a global step. Layer 1 and layer 2 can split the work the same way.</li>
+    <li><strong>Each layer keeps its own memory.</strong> Layer 2's memory tracks the state of the chains, already cleaned up by layer 1, rather than raw events. That gives the decoder a second, more abstract timescale.</li>
+    <li><strong>Why d=9 needs it more than d=7?</strong> d=9 has 80 detectors per round instead of 48, and longer error chains.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>What our runs show</h2>
+  <div class="chart" aria-label="Logical error rate relative to MWPM, lower is better">
+    <div class="legend">
+      <span><span class="sw" style="background:var(--l1)"></span>1 layer</span>
+      <span><span class="sw" style="background:var(--l2)"></span>2 layers</span>
+      <span><span class="sw" style="background:var(--l3)"></span>3 layers</span>
+      <span><span class="sw" style="background:var(--mwpm);width:3px"></span>MWPM = 1.0×</span>
+    </div>
+    <div class="grp">
+      <h3>d=7 · same data (200M fixed), same recipe</h3>
+      <div class="row"><div class="rl">u280 · 1 layer<small>277k params</small></div><div class="track"><div class="bar b1" style="width:35.4%">0.921×</div><div class="mline" style="left:38.46%"></div></div></div>
+      <div class="row"><div class="rl">u560 · 1 layer, 2× wider<small>1.02M params</small></div><div class="track"><div class="bar b1" style="width:30.5%">0.793×</div><div class="mline" style="left:38.46%"></div></div></div>
+      <div class="row"><div class="rl">2×u280 · 2 layers<small>748k params</small></div><div class="track"><div class="bar b2" style="width:27.6%">0.717×</div><div class="mline" style="left:38.46%"></div></div></div>
+    </div>
+    <div class="grp">
+      <h3>d=9</h3>
+      <div class="row"><div class="rl">u280 · 1 layer<small>fixed 100M · 304k params</small></div><div class="track"><div class="bar b1" style="width:97.7%">2.54×</div><div class="mline" style="left:38.46%"></div></div></div>
+      <div class="row"><div class="rl">2×u280 · 2 layers<small>fixed 100M · 775k params</small></div><div class="track"><div class="bar b2" style="width:62.3%">1.62×</div><div class="mline" style="left:38.46%"></div></div></div>
+      <div class="row"><div class="rl">f2280 · 2 layers<small>fresh data · 775k params</small></div><div class="track"><div class="bar b2" style="width:37.4%">0.973×</div><div class="mline" style="left:38.46%"></div></div></div>
+      <div class="row"><div class="rl">f3280 · 3 layers<small>fresh data · 1.25M params</small></div><div class="track"><div class="bar b3" style="width:25.5%">0.664×</div><div class="mline" style="left:38.46%"></div></div></div>
+    </div>
+    <div class="axis"><span class="lab"></span><div class="ticks"><span style="left:0">0</span><span style="left:19.2%">0.5</span><span style="left:38.46%">1.0</span><span style="left:57.7%">1.5</span><span style="left:76.9%">2.0</span><span style="left:96.2%">2.5</span></div></div>
+    <p class="cap">The d=7 rows are the clean comparison: depth beats width with 27% fewer parameters. The d=9 rows also differ in training data (fixed pool vs fresh shots), so they show the combined effect of depth and fresh data, not depth alone.</p>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  // detector grid: 10 x 8 = 80 detectors (d=9 has 80 per round); cartoon, not a real layout
+  const NS="http://www.w3.org/2000/svg";
+  const cols=10, rows=8, x0=22, y0=18, dx=22, dy=19;
+  const P=(c,r)=>[x0+c*dx, y0+r*dy];
+  const defects=[[2,1],[3,1],[6,2],[6,4],[1,5],[4,6],[8,6],[9,6]];
+  function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;}
+  function base(g){
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const [x,y]=P(c,r);el("circle",{cx:x,cy:y,r:3,class:"dot"},g);}
+    defects.forEach(([c,r])=>{const [x,y]=P(c,r);el("circle",{cx:x,cy:y,r:4.5,class:"def"},g);});
+  }
+  const g1=document.getElementById("grid1"); base(g1);
+  defects.forEach(([c,r])=>{const [x,y]=P(c,r);el("circle",{cx:x,cy:y,r:9,class:"ring"},g1);});
+  const g2=document.getElementById("grid2");
+  // boundary on the right edge
+  el("line",{x1:x0+cols*dx-6,y1:y0-8,x2:x0+cols*dx-6,y2:y0+(rows-1)*dy+8,class:"bnd"},g2);
+  const pairs=[[[2,1],[3,1]],[[6,2],[6,4]],[[1,5],[4,6]],[[8,6],[9,6]]];
+  pairs.forEach(([a,b])=>{const [x1,y1]=P(...a),[x2,y2]=P(...b);el("line",{x1,y1,x2,y2,class:"chain"},g2);});
+  const [bx,by]=P(9,6); el("line",{x1:bx,y1:by,x2:x0+cols*dx-6,y2:by,class:"chain"},g2);
+  base(g2);
+  const t=el("text",{x:x0+cols*dx-10,y:y0+rows*dy+10,"text-anchor":"end",class:"sm"},g2); t.textContent="logical boundary";
+  const t1=el("text",{x:x0-8,y:y0+rows*dy+10,class:"sm"},g1); t1.textContent="80 detectors per round";
+})();
+</script>
+
+</body></html>
