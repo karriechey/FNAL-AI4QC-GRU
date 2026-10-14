@@ -1,5 +1,6 @@
 # Created: 2026-09-25
-# Last updated: 2026-10-06 (the single complete record of every pool: all FORMAL and TRAINONLY
+# Last updated: 2026-10-14 (FORMAL pools d5 p = 0.003 seed 60 and d9 p = 0.003 seed 61, from
+# experiments/pools_p003_2026-10-14/generate.sh). Earlier 2026-10-06 (the single complete record of every pool: all FORMAL and TRAINONLY
 # pools for d = 5, 7, 9 and p = 0.003, 0.004, 0.005 with seeds, sizes, formats and flips
 # SHA-256; the held-out blocks; spent blocks; seeds used outside these pools)
 #
@@ -17,7 +18,8 @@ p: 0.004
 
 # FORMAL layout, shared by every FORMAL pool (all p, all d): 19M shots.
 formal:
-  gen_seed: 42            # the p = 0.004 FORMAL pools; p = 0.003 / 0.005 use 52 / 55 (pools below)
+  gen_seed: 42            # the p = 0.004 FORMAL pools; p = 0.003 uses 60 / 52 / 61 (d5 / d7 / d9) and
+                          # p = 0.005 uses 55 (pools below)
   n_total: 19000000
   ranges:
     train:  [0, 15000000]
@@ -50,6 +52,9 @@ pools:
   - {d: 5, p: 0.004, gen_seed: 51, n_total: 50000000, kind: training_only, format: compact,
      flips_sha256: 7187ffef79040cc0a6e8405f522dd6b96b4bb69132dce64b794fdf4657c760ed,
      path: "~/pools_d5_p004_19M/data_d5_p0.004_r5_TRAINONLY_seed51.npz"}
+  - {d: 5, p: 0.003, gen_seed: 60, n_total: 19000000, kind: formal, format: full,
+     flips_sha256: 6fe1b9e27ba9cc7a4ffc23db85f2c64054687b9c748ca59d67f651b219e4edcd,
+     path: "~/pools_d5_p003_19M/data_d5_p0.003_r5_FORMAL_seed60.npz"}
   - {d: 7, p: 0.003, gen_seed: 52, n_total: 19000000, kind: formal, format: full,
      flips_sha256: d3cd19068e2a506640dbfffad920a2c028d40dce2f4b87d0cedee0b12cc83e14,
      path: "~/pools_d7_p003_19M/data_d7_p0.003_r7_FORMAL_seed52.npz"}
@@ -101,6 +106,9 @@ pools:
   - {d: 9, p: 0.004, gen_seed: 59, n_total: 50000000, kind: training_only, format: compact,
      flips_sha256: 9ffe1c68187fc1c9afd7f937af2657cfec37d6aa89a717177f7e26a7b43d655c,
      path: "~/pools_d9_p004_19M/data_d9_p0.004_r9_TRAINONLY_seed59.npz"}
+  - {d: 9, p: 0.003, gen_seed: 61, n_total: 19000000, kind: formal, format: full,
+     flips_sha256: e7e06487d59b8d63ef66d0714032c893d7d646f04e1282b31d5ed37abc7da187,
+     path: "~/pools_d9_p003_19M/data_d9_p0.003_r9_FORMAL_seed61.npz"}
 
 # Held-out blocks: separate files, every shot sealed (partitions.sealed_block covers the whole
 # file; scoring needs eval_student_on_tail.py --score-sealed and is logged). Not scored.
