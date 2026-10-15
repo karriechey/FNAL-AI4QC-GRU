@@ -9,7 +9,8 @@ p = 0.003 runs was scored on an evaluation or held-out block.
 ## Scope
 
 Every headline model at every (d, p): the p = 0.004 models (f5w_p004, f7w_p004, and the d9
-3 x u280 runs f3280, f3280e240, f3280s1) and the p = 0.003 runs (f5w_p003, f7w_p003, f9w_p003).
+3 x u280 runs f3280, f3280e240, f3280s1) and the p = 0.003 runs (f5w_p003, f7w_p003, f9w_p003) and the p = 0.005 runs (f5w_p005, f7w_p005, f9w_p005;
+added 2026-10-15, before any of them was scored).
 
 ## Selection block
 
@@ -81,6 +82,7 @@ Saved checkpoints:
   | f5w_p003 | 53 to 80, plus the validation-best checkpoint if it is from epochs 40 to 52 |
   | f7w_p003 | 40 to 80 |
   | f9w_p003 | 40 to 240 |
+  | f5w_p005, f7w_p005 | 40 to 80 (snapshots from the start of training, 2026-10-15) |
 
 Selected checkpoints and their evaluation-block scores (`selection_scores.csv`,
 `eval_selected.csv`; McNemar b = GRU right and MWPM wrong, c = the reverse):
@@ -117,6 +119,9 @@ only.
 | 5 | 0.003 | f5w_p003 | FORMAL seed 60 sealed [17M, 19M) |
 | 7 | 0.003 | f7w_p003 | FORMAL seed 52 sealed [17M, 19M) |
 | 9 | 0.003 | f9w_p003 | FORMAL seed 61 sealed [17M, 19M) |
+| 5 | 0.005 | f5w_p005 | FORMAL seed 62 sealed [17M, 19M) |
+| 7 | 0.005 | f7w_p005 | FORMAL seed 55 sealed [17M, 19M) |
+| 9 | 0.005 | f9w_p005 | FORMAL sealed [17M, 19M) of the d9 p = 0.005 pool (not generated yet) |
 
 The d9 p = 0.004 recipe (240 rather than 160 epochs) was chosen on 2026-10-13 by comparing
 f3280e240 with f3280 on the evaluation block, before this rule existed. f3280 and f3280s1 are

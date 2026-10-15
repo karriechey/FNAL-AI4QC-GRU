@@ -19,7 +19,7 @@ p: 0.004
 # FORMAL layout, shared by every FORMAL pool (all p, all d): 19M shots.
 formal:
   gen_seed: 42            # the p = 0.004 FORMAL pools; p = 0.003 uses 60 / 52 / 61 (d5 / d7 / d9) and
-                          # p = 0.005 uses 55 (pools below)
+                          # p = 0.005 uses 62 / 55 (d5 / d7) (pools below)
   n_total: 19000000
   ranges:
     train:  [0, 15000000]
@@ -55,6 +55,9 @@ pools:
   - {d: 5, p: 0.003, gen_seed: 60, n_total: 19000000, kind: formal, format: full,
      flips_sha256: 6fe1b9e27ba9cc7a4ffc23db85f2c64054687b9c748ca59d67f651b219e4edcd,
      path: "~/pools_d5_p003_19M/data_d5_p0.003_r5_FORMAL_seed60.npz"}
+  - {d: 5, p: 0.005, gen_seed: 62, n_total: 19000000, kind: formal, format: full,
+     flips_sha256: e8a1484b0cd82e60b8835880f4bd7015c2c6e93f27d2d400cbad94657b2af9d0,
+     path: "~/pools_d5_p005_19M/data_d5_p0.005_r5_FORMAL_seed62.npz"}
   - {d: 7, p: 0.003, gen_seed: 52, n_total: 19000000, kind: formal, format: full,
      flips_sha256: d3cd19068e2a506640dbfffad920a2c028d40dce2f4b87d0cedee0b12cc83e14,
      path: "~/pools_d7_p003_19M/data_d7_p0.003_r7_FORMAL_seed52.npz"}
