@@ -1,0 +1,7 @@
+bash eval_selected.sh f5w_p003 5 0.003 /home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f5w_p003_u280_20261014T133806Z/seed0/epochs/epoch078.weights.h5 280
+bash eval_selected.sh f7w_p003 7 0.003 /home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f7w_p003_u280x280_20261014T133821Z/seed0/epochs/epoch075.weights.h5 280 280
+bash eval_selected.sh f5w_p004 5 0.004 /home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f5w_p004_u280_20261014T035415Z/seed0/ckpt/gru_d5_p004_u280_fresh100000000_cos3e-5_gclip0.64_hard_seed0_ntr0_b10000.lastepoch.weights.h5 280
+bash eval_selected.sh f3280e240 9 0.004 /home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f3280e240_u280x280x280_20261011T064457Z/seed0/ckpt/gru_d9_p004_u280x280x280_fresh100000000_cos3e-5_wu3_gclip0.64_hard_seed0_ntr0_b10000.lastepoch.weights.h5 280 280 280
+bash eval_selected.sh f3280 9 0.004 /home/kchey/FNAL-AI4QC-GRU-fresh/experiments/ceiling_probe_d7_2026-10-05/f3280_u280x280x280_20261010T032442Z/seed0/ckpt/gru_d9_p004_u280x280x280_fresh100000000_cos3e-5_wu3_gclip0.64_hard_seed0_ntr0_b10000.lastepoch.weights.h5 280 280 280
+bash eval_selected.sh f3280s1 9 0.004 /home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f3280s1_u280x280x280_20261013T140127Z/seed1/ckpt/gru_d9_p004_u280x280x280_fresh100000000_fsb2000000000000_cos3e-5_wu3_gclip0.64_hard_seed1_ntr0_b10000.lastepoch.weights.h5 280 280 280
+echo ALLDONE
