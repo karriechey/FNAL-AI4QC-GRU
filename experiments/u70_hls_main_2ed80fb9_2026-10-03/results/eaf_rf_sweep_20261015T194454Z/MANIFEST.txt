@@ -1,0 +1,10 @@
+experiment: u70 GRU ReuseFactor sweep, upper-bound baseline, <32,16> PTQ
+started_utc: 20261015T194454Z
+hls4ml: fastmachinelearning/hls4ml@2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e (RF 70 run: same + patch_recurrent_kernel_choice.py)
+config: Resource, io_parallel, static GRU, xcvu13p-flga2577-2-e, 5 ns, ap_fixed<32,16>
+data: data/u70_eval_first10000.npz, shots [15200000, 15210000) of the FORMAL eval block
+8d76d1f87b45ab9df5184bb9343f7f9397ced41840646718349547c71d9a3a13  run_rf.py
+bdafbc785911dcdc49cf56719f39ff56a8d9e67b38202c177653dd5eedd69f0c  make_table.py
+f9949c1b66f1e30610fd3a411492daec6f5c2d86ea52c8098d7a6fa148f6f19b  patch_recurrent_kernel_choice.py
+6271fe29ebd52c36194a60fe60407cca7580c02761b40023545d7c94c7b21762  data/gru_u70_reset_after_False.keras
+21ced7b108e5de9a5939c085c1d4c4c683206c20729362697c7a1c29a571b0b0  data/u70_eval_first10000.npz

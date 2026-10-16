@@ -1,0 +1,104 @@
+{
+ "mode": "trn_wrap",
+ "width": 18,
+ "n": 200000,
+ "restored_to": "ap_fixed<32,16>",
+ "groups": {
+  "gru weights+biases": [
+   "gru_weight",
+   "gru_recurrent_weight",
+   "gru_bias",
+   "gru_recurrent_bias"
+  ],
+  "gru accum": [
+   "gru_accum"
+  ],
+  "gru result (h)": [
+   "gru_result"
+  ],
+  "gru activation table": [
+   "gru_table"
+  ],
+  "logit (all types)": [
+   "logit_weight",
+   "logit_bias",
+   "logit_accum",
+   "logit_result"
+  ],
+  "input": [
+   "input"
+  ]
+ },
+ "results": {
+  "none restored": {
+   "decision_flips_vs_keras": 97,
+   "b": 56,
+   "c": 41,
+   "p_exact": 0.15481578503442858,
+   "gru_h_trace_mean_err": 0.01257574276248796,
+   "logit_trace_mean_err": 0.16029934775978327
+  },
+  "gru weights+biases": {
+   "decision_flips_vs_keras": 102,
+   "b": 57,
+   "c": 45,
+   "p_exact": 0.27601389249250186,
+   "gru_h_trace_mean_err": 0.012731872557415008,
+   "logit_trace_mean_err": 0.16267972640544176
+  },
+  "gru accum": {
+   "decision_flips_vs_keras": 36,
+   "b": 20,
+   "c": 16,
+   "p_exact": 0.617719317029696,
+   "gru_h_trace_mean_err": 0.00287242075152625,
+   "logit_trace_mean_err": 0.0379969536498189
+  },
+  "gru result (h)": {
+   "decision_flips_vs_keras": 97,
+   "b": 56,
+   "c": 41,
+   "p_exact": 0.15481578503442858,
+   "gru_h_trace_mean_err": 0.01257574276248796,
+   "logit_trace_mean_err": 0.16029934775978327
+  },
+  "gru activation table": {
+   "decision_flips_vs_keras": 97,
+   "b": 56,
+   "c": 41,
+   "p_exact": 0.15481578503442858,
+   "gru_h_trace_mean_err": 0.01257574276248796,
+   "logit_trace_mean_err": 0.16029934775978327
+  },
+  "logit (all types)": {
+   "decision_flips_vs_keras": 95,
+   "b": 55,
+   "c": 40,
+   "p_exact": 0.15051806389022948,
+   "gru_h_trace_mean_err": 0.01257574276248796,
+   "logit_trace_mean_err": 0.16293786256462336
+  },
+  "input": {
+   "decision_flips_vs_keras": 97,
+   "b": 56,
+   "c": 41,
+   "p_exact": 0.15481578503442858,
+   "gru_h_trace_mean_err": 0.01257574276248796,
+   "logit_trace_mean_err": 0.16029934775978327
+  }
+ },
+ "environment": {
+  "hls4ml_version": "1.4.0.dev59+g2ed80fb9",
+  "hls4ml_file": "/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/__init__.py",
+  "hls4ml_install_url": "https://github.com/fastmachinelearning/hls4ml.git",
+  "hls4ml_commit": "2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e",
+  "local_patch": "none",
+  "host": "grace1.fnal.gov",
+  "machine": "aarch64",
+  "python": "3.11.16",
+  "tensorflow": "2.15.1",
+  "tf_keras": "2.15.1",
+  "numpy": "1.26.4",
+  "gxx": "g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)"
+ }
+}

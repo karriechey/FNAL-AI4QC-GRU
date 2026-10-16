@@ -1,0 +1,19 @@
+{
+ "hls4ml_version": "1.4.0.dev59+g2ed80fb9",
+ "hls4ml_file": "/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/__init__.py",
+ "hls4ml_install_url": "https://github.com/fastmachinelearning/hls4ml.git",
+ "hls4ml_commit": "2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e",
+ "local_patch": "none",
+ "host": "grace1.fnal.gov",
+ "machine": "aarch64",
+ "python": "3.11.16",
+ "tensorflow": "2.15.1",
+ "tf_keras": "2.15.1",
+ "numpy": "1.26.4",
+ "gxx": "g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)"
+}
+WARNING: Invalid ReuseFactor=70 in layer "gru".Using ReuseFactor=72 instead. Valid ReuseFactor(s): 1,2,3,4,6,8,12,24,48,72,120,144,168,240,336,360,504,720,840,1008,1680,2520,5040.
+python: firmware/nnet_utils/nnet_dense_resource.h:100: void nnet::dense_resource_rf_gt_nin_rem0(data_T*, res_T*, typename CONFIGpython: firmware/nnet_utils/nnet_dense_resource.h:100: void nnet::dense_resource_rf_gt_nin_rem0(data_T*, res_T*, typename CONFIGpython: firmware/nnet_utils/nnet_dense_resource.h:100: void nnet::dense_resource_rf_gt_nin_rem0(data_T*, res_T*, typename CONFIG_T::weight_t*, typename CONFIG_T::bias_t*) [with data_T = ap_fixed<32, 16>; res_T = ap_fixed<32, 16>; CONFIG_T = config2_2; type_T::weight_t*, typename CONFIG_T::bias_t*) [with data_T = ap_fixed<32, 16>; res_T = ap_fixed<32, 16>; CONFIG_T = config2_2; type_T::weight_t*, typename CONFIG_T::bias_t*) [with data_T = ap_fixed<32, 16>; res_T = ap_fixed<32, 16>; CONFIG_T = config2_2; typename CONFIG_T::weight_t = ap_fixed<32, 16>; typename CONFIG_T::bias_t = ap_fixed<32, 16>]: Assertion `(rufactor > nin && rufactoname CONFIG_T::weight_t = ap_fixed<32, 16>; typename CONFIG_T::bias_t = ap_fixed<32, 16>]: Assertion `(rufactor > nin && rufactoname CONFIG_T::weight_t = ap_fixed<32, 16>; typename CONFIG_T::bias_t = ap_fixed<32, 16>]: Assertion `(rufactor > nin && rufactor % nin == 0) && "This function is correct only for RF > N_IN && RF % N_IN == 0"' failed.
+r % nin == 0) && "This function is correct only for RF > N_IN && RF % N_IN == 0"' failed.
+r % nin == 0) && "This function is correct only for RF > N_IN && RF % N_IN == 0"' failed.
+python: firmware/nnet_utils/nnet_dense_resource.h:100: void nnet::dense_resource_rf_gt_nin_rem0(data_T*, res_T*, typename CONFIG_T::weight_t*, typename CONFIG_T::bias_t*) [with data_T = ap_fixed<32, 16>; res_T = ap_fixed<32, 16>; CONFIG_T = config2_2; typename CONFIG_T::weight_t = ap_fixed<32, 16>; typename CONFIG_T::bias_t = ap_fixed<32, 16>]: Assertion `(rufactor > nin && rufactor % nin == 0) && "This function is correct only for RF > N_IN && RF % N_IN == 0"' failed.

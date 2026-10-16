@@ -1,0 +1,69 @@
+{
+ "label": "PTQ width sweep (C simulation only), ap_fixed<16,I>",
+ "mode": "trn_wrap",
+ "width": 16,
+ "environment": {
+  "hls4ml_version": "1.4.0.dev59+g2ed80fb9",
+  "hls4ml_file": "/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/__init__.py",
+  "hls4ml_install_url": "https://github.com/fastmachinelearning/hls4ml.git",
+  "hls4ml_commit": "2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e",
+  "local_patch": "none",
+  "host": "grace1.fnal.gov",
+  "machine": "aarch64",
+  "python": "3.11.16",
+  "tensorflow": "2.15.1",
+  "tf_keras": "2.15.1",
+  "numpy": "1.26.4",
+  "gxx": "g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)"
+ },
+ "types": {
+  "input": "ap_fixed<16,2>",
+  "gru_weight": "ap_fixed<16,6>",
+  "gru_recurrent_weight": "ap_fixed<16,7>",
+  "gru_bias": "ap_fixed<16,5>",
+  "gru_recurrent_bias": "ap_fixed<16,5>",
+  "gru_accum": "ap_fixed<16,8>",
+  "gru_result": "ap_fixed<16,2>",
+  "gru_table": "ap_fixed<16,1>",
+  "logit_weight": "ap_fixed<16,4>",
+  "logit_bias": "ap_fixed<16,1>",
+  "logit_accum": "ap_fixed<16,6>",
+  "logit_result": "ap_fixed<16,6>"
+ },
+ "capped_types": [],
+ "shots": [
+  15200000,
+  17000000
+ ],
+ "stats_vs_fp32_keras": {
+  "n": 1800000,
+  "errors_ref": 12619,
+  "errors_new": 13537,
+  "p_L_ref": 0.0070105555555555555,
+  "p_L_new": 0.0075205555555555555,
+  "b_ref_only_right": 2258,
+  "c_new_only_right": 1340,
+  "n_discordant": 3598,
+  "p_exact": 2.5239656352936037e-53,
+  "decision_match_rate": 0.9980011111111111,
+  "delta_p_L_new_minus_keras": 0.00051,
+  "delta_p_L_95ci": [
+   0.00044468481733609137,
+   0.0005753151826639087
+  ]
+ },
+ "trace_vs_keras_10k": {
+  "gru": {
+   "max_abs_err": 1.1290404498577118,
+   "mean_abs_err": 0.03967624848454197,
+   "frac_shots_err_gt_0p5": 0.0134
+  },
+  "logit": {
+   "max_abs_err": 3.658933639526367,
+   "mean_abs_err": 0.5022695510163904,
+   "frac_shots_err_gt_0p5": 0.3871
+  }
+ },
+ "csim_s": 258.5,
+ "indistinguishable_p_ge_0p05": false
+}

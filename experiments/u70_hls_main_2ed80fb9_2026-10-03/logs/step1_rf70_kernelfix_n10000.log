@@ -1,0 +1,65 @@
+{
+ "hls4ml_version": "1.4.0.dev59+g2ed80fb9",
+ "hls4ml_file": "/home/kchey/hls4ml_main_2ed80fb9_kernelfix/hls4ml/__init__.py",
+ "hls4ml_install_url": "https://github.com/fastmachinelearning/hls4ml.git",
+ "hls4ml_commit": "2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e",
+ "local_patch": "kernelfix",
+ "host": "grace1.fnal.gov",
+ "machine": "aarch64",
+ "python": "3.11.16",
+ "tensorflow": "2.15.1",
+ "tf_keras": "2.15.1",
+ "numpy": "1.26.4",
+ "gxx": "g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)"
+}
+WARNING: Invalid ReuseFactor=70 in layer "gru".Using ReuseFactor=72 instead. Valid ReuseFactor(s): 1,2,3,4,6,8,12,24,48,72,120,144,168,240,336,360,504,720,840,1008,1680,2520,5040.
+{
+ "label": "upper-bound baseline, <32,16> PTQ",
+ "step": 1,
+ "shots": [
+  15200000,
+  15210000
+ ],
+ "partition": "FORMAL eval block, EAF x86 pool (non-sealed)",
+ "keras_rebuild_vs_eaf_max_abs_logit_diff": 1.239776611328125e-05,
+ "compile_s": 5.5,
+ "predict_s": 13.2,
+ "n10000": {
+  "n": 10000,
+  "errors_ref": 66,
+  "errors_new": 66,
+  "p_L_ref": 0.0066,
+  "p_L_new": 0.0066,
+  "b_ref_only_right": 0,
+  "c_new_only_right": 0,
+  "n_discordant": 0,
+  "p_exact": 1.0,
+  "decision_match_rate": 1.0,
+  "logit_exact_match_rate": 0.0,
+  "max_abs_logit_diff": 0.4011211395263672,
+  "mean_abs_logit_diff": 0.04028008889462799,
+  "flipped_shots_max_abs_keras_logit": null
+ },
+ "gate_pass": true,
+ "reuse_factors": {
+  "config2_1": {
+   "n_in": "24",
+   "n_out": "210",
+   "reuse_factor": "72",
+   "kernel": "nnet::DenseResource_rf_gt_nin_rem0"
+  },
+  "config2_2": {
+   "n_in": "70",
+   "n_out": "210",
+   "reuse_factor": "70",
+   "kernel": "nnet::DenseResource_rf_leq_nin"
+  },
+  "config3": {
+   "n_in": "70",
+   "n_out": "1",
+   "reuse_factor": "70",
+   "kernel": "nnet::DenseResource_rf_leq_nin"
+  }
+ }
+}
+STEP1 GATE PASS

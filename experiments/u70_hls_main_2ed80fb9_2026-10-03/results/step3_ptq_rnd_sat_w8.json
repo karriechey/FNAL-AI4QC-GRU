@@ -1,0 +1,71 @@
+{
+ "label": "PTQ width sweep (C simulation only), ap_fixed<8,I>",
+ "mode": "rnd_sat",
+ "width": 8,
+ "environment": {
+  "hls4ml_version": "1.4.0.dev59+g2ed80fb9",
+  "hls4ml_file": "/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/__init__.py",
+  "hls4ml_install_url": "https://github.com/fastmachinelearning/hls4ml.git",
+  "hls4ml_commit": "2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e",
+  "local_patch": "none",
+  "host": "grace1.fnal.gov",
+  "machine": "aarch64",
+  "python": "3.11.16",
+  "tensorflow": "2.15.1",
+  "tf_keras": "2.15.1",
+  "numpy": "1.26.4",
+  "gxx": "g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)"
+ },
+ "types": {
+  "input": "ap_fixed<8,2,RND,SAT>",
+  "gru_weight": "ap_fixed<8,6,RND,SAT>",
+  "gru_recurrent_weight": "ap_fixed<8,7,RND,SAT>",
+  "gru_bias": "ap_fixed<8,5,RND,SAT>",
+  "gru_recurrent_bias": "ap_fixed<8,5,RND,SAT>",
+  "gru_accum": "ap_fixed<8,7,RND,SAT>",
+  "gru_result": "ap_fixed<8,2,RND,SAT>",
+  "gru_table": "ap_fixed<8,1,RND,SAT>",
+  "logit_weight": "ap_fixed<8,4,RND,SAT>",
+  "logit_bias": "ap_fixed<8,1,RND,SAT>",
+  "logit_accum": "ap_fixed<8,6,RND,SAT>",
+  "logit_result": "ap_fixed<8,6,RND,SAT>"
+ },
+ "capped_types": [
+  "gru_accum"
+ ],
+ "shots": [
+  15200000,
+  17000000
+ ],
+ "stats_vs_fp32_keras": {
+  "n": 1800000,
+  "errors_ref": 12619,
+  "errors_new": 469185,
+  "p_L_ref": 0.0070105555555555555,
+  "p_L_new": 0.2606583333333333,
+  "b_ref_only_right": 463055,
+  "c_new_only_right": 6489,
+  "n_discordant": 469544,
+  "p_exact": 0.0,
+  "decision_match_rate": 0.7391422222222223,
+  "delta_p_L_new_minus_keras": 0.25364777777777775,
+  "delta_p_L_95ci": [
+   0.2529016353877658,
+   0.25439392016778983
+  ]
+ },
+ "trace_vs_keras_10k": {
+  "gru": {
+   "max_abs_err": 1.999999761581421,
+   "mean_abs_err": 0.46858086718174746,
+   "frac_shots_err_gt_0p5": 1.0
+  },
+  "logit": {
+   "max_abs_err": 36.98390007019043,
+   "mean_abs_err": 6.7954029822334645,
+   "frac_shots_err_gt_0p5": 0.9546
+  }
+ },
+ "csim_s": 769.2,
+ "indistinguishable_p_ge_0p05": false
+}

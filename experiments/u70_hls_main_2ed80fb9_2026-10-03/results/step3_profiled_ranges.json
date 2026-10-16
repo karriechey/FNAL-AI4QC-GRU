@@ -1,0 +1,84 @@
+{
+ "environment": {
+  "hls4ml_version": "1.4.0.dev59+g2ed80fb9",
+  "hls4ml_file": "/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/__init__.py",
+  "hls4ml_install_url": "https://github.com/fastmachinelearning/hls4ml.git",
+  "hls4ml_commit": "2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e",
+  "local_patch": "none",
+  "host": "grace1.fnal.gov",
+  "machine": "aarch64",
+  "python": "3.11.16",
+  "tensorflow": "2.15.1",
+  "tf_keras": "2.15.1",
+  "numpy": "1.26.4",
+  "gxx": "g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)"
+ },
+ "shots": [
+  15200000,
+  17000000
+ ],
+ "rule": "I = floor(log2(max|v|)) + 2, min 1",
+ "max_abs": {
+  "input": 1.0,
+  "gru_weight": 25.923721313476562,
+  "gru_recurrent_weight": 47.014339447021484,
+  "gru_bias": 8.654623985290527,
+  "gru_recurrent_bias": 8.654623985290527,
+  "gru_accum": 81.92089577176527,
+  "gru_result": 1.0,
+  "gru_table": 0.9999997749296758,
+  "logit_weight": 6.655264377593994,
+  "logit_bias": 0.106638602912426,
+  "logit_accum": 20.800775021905878,
+  "logit_result": 20.800775021905878
+ },
+ "integer_bits": {
+  "input": 2,
+  "gru_weight": 6,
+  "gru_recurrent_weight": 7,
+  "gru_bias": 5,
+  "gru_recurrent_bias": 5,
+  "gru_accum": 8,
+  "gru_result": 2,
+  "gru_table": 1,
+  "logit_weight": 4,
+  "logit_bias": 1,
+  "logit_accum": 6,
+  "logit_result": 6
+ },
+ "gru_internal_max_abs": {
+  "input_product_plus_bias": 53.53630851209164,
+  "recurrent_product_zr": 33.49423880531142,
+  "recurrent_product_unused_h_part": 102.62366825527982,
+  "preactivation_zr": 61.105210772331375,
+  "reset_times_h": 0.9999997101735194,
+  "recurrent_product_candidate": 73.26627178647475,
+  "preactivation_candidate": 81.92089577176527,
+  "gate_outputs": 0.9999999999999993,
+  "candidate": 1.0,
+  "state_h": 1.0,
+  "logit": 20.800775021905878
+ },
+ "hls4ml_profiling": {
+  "weights_keras": "failed: IndexError: list index out of range",
+  "activations_keras_first200000": [
+   {
+    "med": 0.7685376405715942,
+    "q1": 0.4452182203531265,
+    "q3": 0.9523496180772781,
+    "whislo": 1.2479722499847412e-07,
+    "whishi": 0.9999998807907104,
+    "weight": "gru"
+   },
+   {
+    "med": 10.49899673461914,
+    "q1": 8.144603967666626,
+    "q3": 12.398763179779053,
+    "whislo": 0.0004833117127418518,
+    "whishi": 18.855932235717773,
+    "weight": "logit"
+   }
+  ]
+ },
+ "profile_s": 75.1
+}

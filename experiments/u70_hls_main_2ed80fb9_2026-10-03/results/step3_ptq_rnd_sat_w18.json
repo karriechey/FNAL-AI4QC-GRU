@@ -1,0 +1,69 @@
+{
+ "label": "PTQ width sweep (C simulation only), ap_fixed<18,I>",
+ "mode": "rnd_sat",
+ "width": 18,
+ "environment": {
+  "hls4ml_version": "1.4.0.dev59+g2ed80fb9",
+  "hls4ml_file": "/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/__init__.py",
+  "hls4ml_install_url": "https://github.com/fastmachinelearning/hls4ml.git",
+  "hls4ml_commit": "2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e",
+  "local_patch": "none",
+  "host": "grace1.fnal.gov",
+  "machine": "aarch64",
+  "python": "3.11.16",
+  "tensorflow": "2.15.1",
+  "tf_keras": "2.15.1",
+  "numpy": "1.26.4",
+  "gxx": "g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)"
+ },
+ "types": {
+  "input": "ap_fixed<18,2,RND,SAT>",
+  "gru_weight": "ap_fixed<18,6,RND,SAT>",
+  "gru_recurrent_weight": "ap_fixed<18,7,RND,SAT>",
+  "gru_bias": "ap_fixed<18,5,RND,SAT>",
+  "gru_recurrent_bias": "ap_fixed<18,5,RND,SAT>",
+  "gru_accum": "ap_fixed<18,8,RND,SAT>",
+  "gru_result": "ap_fixed<18,2,RND,SAT>",
+  "gru_table": "ap_fixed<18,1,RND,SAT>",
+  "logit_weight": "ap_fixed<18,4,RND,SAT>",
+  "logit_bias": "ap_fixed<18,1,RND,SAT>",
+  "logit_accum": "ap_fixed<18,6,RND,SAT>",
+  "logit_result": "ap_fixed<18,6,RND,SAT>"
+ },
+ "capped_types": [],
+ "shots": [
+  15200000,
+  17000000
+ ],
+ "stats_vs_fp32_keras": {
+  "n": 1800000,
+  "errors_ref": 12619,
+  "errors_new": 12618,
+  "p_L_ref": 0.0070105555555555555,
+  "p_L_new": 0.00701,
+  "b_ref_only_right": 119,
+  "c_new_only_right": 120,
+  "n_discordant": 239,
+  "p_exact": 1.0,
+  "decision_match_rate": 0.9998672222222222,
+  "delta_p_L_new_minus_keras": -5.555555555557257e-07,
+  "delta_p_L_95ci": [
+   -1.7389369263406113e-05,
+   1.6278258152295e-05
+  ]
+ },
+ "trace_vs_keras_10k": {
+  "gru": {
+   "max_abs_err": 0.08769044280052185,
+   "mean_abs_err": 0.002801780474314962,
+   "frac_shots_err_gt_0p5": 0.0
+  },
+  "logit": {
+   "max_abs_err": 0.321441650390625,
+   "mean_abs_err": 0.03792225850969553,
+   "frac_shots_err_gt_0p5": 0.0
+  }
+ },
+ "csim_s": 508.7,
+ "indistinguishable_p_ge_0p05": true
+}

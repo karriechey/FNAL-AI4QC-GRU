@@ -1,0 +1,69 @@
+{
+ "label": "PTQ width sweep (C simulation only), ap_fixed<12,I>",
+ "mode": "rnd_sat",
+ "width": 12,
+ "environment": {
+  "hls4ml_version": "1.4.0.dev59+g2ed80fb9",
+  "hls4ml_file": "/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/__init__.py",
+  "hls4ml_install_url": "https://github.com/fastmachinelearning/hls4ml.git",
+  "hls4ml_commit": "2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e",
+  "local_patch": "none",
+  "host": "grace1.fnal.gov",
+  "machine": "aarch64",
+  "python": "3.11.16",
+  "tensorflow": "2.15.1",
+  "tf_keras": "2.15.1",
+  "numpy": "1.26.4",
+  "gxx": "g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)"
+ },
+ "types": {
+  "input": "ap_fixed<12,2,RND,SAT>",
+  "gru_weight": "ap_fixed<12,6,RND,SAT>",
+  "gru_recurrent_weight": "ap_fixed<12,7,RND,SAT>",
+  "gru_bias": "ap_fixed<12,5,RND,SAT>",
+  "gru_recurrent_bias": "ap_fixed<12,5,RND,SAT>",
+  "gru_accum": "ap_fixed<12,8,RND,SAT>",
+  "gru_result": "ap_fixed<12,2,RND,SAT>",
+  "gru_table": "ap_fixed<12,1,RND,SAT>",
+  "logit_weight": "ap_fixed<12,4,RND,SAT>",
+  "logit_bias": "ap_fixed<12,1,RND,SAT>",
+  "logit_accum": "ap_fixed<12,6,RND,SAT>",
+  "logit_result": "ap_fixed<12,6,RND,SAT>"
+ },
+ "capped_types": [],
+ "shots": [
+  15200000,
+  17000000
+ ],
+ "stats_vs_fp32_keras": {
+  "n": 1800000,
+  "errors_ref": 12619,
+  "errors_new": 14095,
+  "p_L_ref": 0.0070105555555555555,
+  "p_L_new": 0.007830555555555556,
+  "b_ref_only_right": 3457,
+  "c_new_only_right": 1981,
+  "n_discordant": 5438,
+  "p_exact": 4.227111791686558e-90,
+  "decision_match_rate": 0.9969788888888889,
+  "delta_p_L_new_minus_keras": 0.0008200000000000004,
+  "delta_p_L_95ci": [
+   0.0007397022885186894,
+   0.0009002977114813106
+  ]
+ },
+ "trace_vs_keras_10k": {
+  "gru": {
+   "max_abs_err": 1.3726422190666199,
+   "mean_abs_err": 0.04917875390648892,
+   "frac_shots_err_gt_0p5": 0.0644
+  },
+  "logit": {
+   "max_abs_err": 5.943535089492798,
+   "mean_abs_err": 0.6543035685911774,
+   "frac_shots_err_gt_0p5": 0.5315
+  }
+ },
+ "csim_s": 613.7,
+ "indistinguishable_p_ge_0p05": false
+}

@@ -1,0 +1,509 @@
+{
+ "environment": {
+  "hls4ml_version": "1.4.0.dev59+g2ed80fb9",
+  "hls4ml_file": "/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/__init__.py",
+  "hls4ml_install_url": "https://github.com/fastmachinelearning/hls4ml.git",
+  "hls4ml_commit": "2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e",
+  "local_patch": "none",
+  "host": "grace1.fnal.gov",
+  "machine": "aarch64",
+  "python": "3.11.16",
+  "tensorflow": "2.15.1",
+  "tf_keras": "2.15.1",
+  "numpy": "1.26.4",
+  "gxx": "g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)",
+  "qkeras": "0.9.0"
+ },
+ "units": 8,
+ "shots": [
+  15200000,
+  15210000
+ ],
+ "variants": {
+  "hard": {
+   "activation": "quantized_tanh(8)",
+   "recurrent_activation": "quantized_sigmoid(8)",
+   "keras_params": 801,
+   "keras_bias_shape": [
+    24
+   ],
+   "error": "AssertionError: Hard activation not supported",
+   "traceback": "Traceback (most recent call last):\n  File \"/home/kchey/u70_hls_main_2ed80fb9_2026-10-03/step4_qgru_check.py\", line 81, in <module>\n    cfg = hls4ml.utils.config_from_keras_model(model, granularity='name', backend='Vivado')\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/utils/config.py\", line 173, in config_from_keras_model\n    layer_list, *_ = hls4ml.converters.parse_keras_model(model_arch, reader)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/converters/keras_v2_to_hls.py\", line 319, in parse_keras_model\n    layer, output_shape = layer_handlers[keras_class](keras_layer, input_names, input_shapes, reader)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/kchey/hls4ml_main_env/lib/python3.11/site-packages/hls4ml/converters/keras/qkeras.py\", line 92, in parse_qrnn_layer\n    assert activation['class_name'] != 'HardActivation', 'Hard activation not supported'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Hard activation not supported\n",
+   "parsed": false
+  },
+  "real": {
+   "activation": "quantized_tanh(8,1)",
+   "recurrent_activation": "quantized_sigmoid(8,1)",
+   "keras_params": 801,
+   "keras_bias_shape": [
+    24
+   ],
+   "config": {
+    "Model": {
+     "Precision": {
+      "default": "fixed<16,6>"
+     },
+     "ReuseFactor": 1,
+     "Strategy": "Resource",
+     "BramFactor": 1000000000,
+     "TraceOutput": false,
+     "BitExact": null
+    },
+    "LayerName": {
+     "syndrome_sequence": {
+      "Trace": false,
+      "Precision": {
+       "result": "auto"
+      }
+     },
+     "qgru": {
+      "Trace": false,
+      "Precision": {
+       "result": "fixed<8,1,RND_CONV,SAT,0>",
+       "weight": "fixed<8,1,TRN,WRAP,0>",
+       "bias": "fixed<8,1,TRN,WRAP,0>",
+       "recurrent_weight": "fixed<8,1,TRN,WRAP,0>",
+       "recurrent_bias": "auto",
+       "accum": "auto",
+       "table": "fixed<18,8,TRN,WRAP,0>"
+      },
+      "ReuseFactor": 1,
+      "RecurrentReuseFactor": 1,
+      "Static": true,
+      "TableSize": 1024,
+      "static": true
+     },
+     "logit": {
+      "Trace": false,
+      "Precision": {
+       "result": "auto",
+       "weight": "fixed<8,1,TRN,WRAP,0>",
+       "bias": "fixed<8,1,TRN,WRAP,0>",
+       "accum": "auto"
+      },
+      "ReuseFactor": 1
+     },
+     "logit_linear": {
+      "Trace": false,
+      "Precision": {
+       "result": "auto",
+       "table": "fixed<18,8,TRN,WRAP,0>"
+      },
+      "ReuseFactor": 1,
+      "TableSize": 1024
+     }
+    }
+   },
+   "parsed": true,
+   "generated_reset_after": [
+    "false"
+   ],
+   "hls_weight_shapes": {
+    "weight": [
+     24,
+     24
+    ],
+    "recurrent_weight": [
+     24,
+     8
+    ],
+    "bias": [
+     24
+    ],
+    "recurrent_bias": [
+     24
+    ]
+   },
+   "hls_layer_precisions": {
+    "syndrome_sequence": {
+     "input_t": "fixed<16,6,TRN,WRAP,0>"
+    },
+    "qgru": {
+     "qgru_accum_t": "fixed<16,6,TRN,WRAP,0>",
+     "layer2_t": "fixed<8,1,RND_CONV,SAT,0>",
+     "qgru_weight_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_recurrent_weight_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_bias_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_recurrent_bias_t": "fixed<16,6,TRN,WRAP,0>",
+     "qgru_table_t": "fixed<18,8,TRN,WRAP,0>",
+     "layer2_index": "uint<1>"
+    },
+    "logit": {
+     "logit_accum_t": "fixed<20,6,TRN,WRAP,0>",
+     "result_t": "fixed<20,6,TRN,WRAP,0>",
+     "weight3_t": "fixed<8,1,TRN,WRAP,0>",
+     "bias3_t": "fixed<8,1,TRN,WRAP,0>",
+     "layer3_index": "uint<1>"
+    }
+   },
+   "csim_ran": true,
+   "max_abs_diff": 0.030763328075408936,
+   "mean_abs_diff": 0.005672586223180406,
+   "logit_exact_match_rate": 0.0303,
+   "decision_match_rate": 0.9728,
+   "keras_logit_range": [
+    -0.28046202659606934,
+    0.7901166677474976
+   ]
+  },
+  "float_act": {
+   "activation": "tanh",
+   "recurrent_activation": "sigmoid",
+   "keras_params": 801,
+   "keras_bias_shape": [
+    24
+   ],
+   "config": {
+    "Model": {
+     "Precision": {
+      "default": "fixed<16,6>"
+     },
+     "ReuseFactor": 1,
+     "Strategy": "Resource",
+     "BramFactor": 1000000000,
+     "TraceOutput": false,
+     "BitExact": null
+    },
+    "LayerName": {
+     "syndrome_sequence": {
+      "Trace": false,
+      "Precision": {
+       "result": "auto"
+      }
+     },
+     "qgru": {
+      "Trace": false,
+      "Precision": {
+       "result": "auto",
+       "weight": "fixed<8,1,TRN,WRAP,0>",
+       "bias": "fixed<8,1,TRN,WRAP,0>",
+       "recurrent_weight": "fixed<8,1,TRN,WRAP,0>",
+       "recurrent_bias": "auto",
+       "accum": "auto",
+       "table": "fixed<18,8,TRN,WRAP,0>"
+      },
+      "ReuseFactor": 1,
+      "RecurrentReuseFactor": 1,
+      "Static": true,
+      "TableSize": 1024,
+      "static": true
+     },
+     "logit": {
+      "Trace": false,
+      "Precision": {
+       "result": "auto",
+       "weight": "fixed<8,1,TRN,WRAP,0>",
+       "bias": "fixed<8,1,TRN,WRAP,0>",
+       "accum": "auto"
+      },
+      "ReuseFactor": 1
+     },
+     "logit_linear": {
+      "Trace": false,
+      "Precision": {
+       "result": "auto",
+       "table": "fixed<18,8,TRN,WRAP,0>"
+      },
+      "ReuseFactor": 1,
+      "TableSize": 1024
+     }
+    }
+   },
+   "parsed": true,
+   "generated_reset_after": [
+    "false"
+   ],
+   "hls_weight_shapes": {
+    "weight": [
+     24,
+     24
+    ],
+    "recurrent_weight": [
+     24,
+     8
+    ],
+    "bias": [
+     24
+    ],
+    "recurrent_bias": [
+     24
+    ]
+   },
+   "hls_layer_precisions": {
+    "syndrome_sequence": {
+     "input_t": "fixed<16,6,TRN,WRAP,0>"
+    },
+    "qgru": {
+     "qgru_accum_t": "fixed<16,6,TRN,WRAP,0>",
+     "layer2_t": "fixed<16,6,TRN,WRAP,0>",
+     "qgru_weight_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_recurrent_weight_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_bias_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_recurrent_bias_t": "fixed<16,6,TRN,WRAP,0>",
+     "qgru_table_t": "fixed<18,8,TRN,WRAP,0>",
+     "layer2_index": "uint<1>"
+    },
+    "logit": {
+     "logit_accum_t": "fixed<28,11,TRN,WRAP,0>",
+     "result_t": "fixed<28,11,TRN,WRAP,0>",
+     "weight3_t": "fixed<8,1,TRN,WRAP,0>",
+     "bias3_t": "fixed<8,1,TRN,WRAP,0>",
+     "layer3_index": "uint<1>"
+    }
+   },
+   "csim_ran": true,
+   "max_abs_diff": 0.026332706212997437,
+   "mean_abs_diff": 0.0047500061351340266,
+   "logit_exact_match_rate": 0.0303,
+   "decision_match_rate": 0.9824,
+   "keras_logit_range": [
+    -0.28152355551719666,
+    0.7933024168014526
+   ]
+  },
+  "float_act_wide": {
+   "activation": "tanh",
+   "recurrent_activation": "sigmoid",
+   "keras_params": 801,
+   "keras_bias_shape": [
+    24
+   ],
+   "config": {
+    "Model": {
+     "Precision": {
+      "default": "fixed<16,6>"
+     },
+     "ReuseFactor": 1,
+     "Strategy": "Resource",
+     "BramFactor": 1000000000,
+     "TraceOutput": false,
+     "BitExact": null
+    },
+    "LayerName": {
+     "syndrome_sequence": {
+      "Trace": false,
+      "Precision": {
+       "result": "ap_fixed<32,16>"
+      }
+     },
+     "qgru": {
+      "Trace": false,
+      "Precision": {
+       "result": "ap_fixed<32,16>",
+       "weight": "fixed<8,1,TRN,WRAP,0>",
+       "bias": "fixed<8,1,TRN,WRAP,0>",
+       "recurrent_weight": "fixed<8,1,TRN,WRAP,0>",
+       "recurrent_bias": "ap_fixed<32,16>",
+       "accum": "ap_fixed<32,16>",
+       "table": "ap_fixed<32,16>"
+      },
+      "ReuseFactor": 1,
+      "RecurrentReuseFactor": 1,
+      "Static": true,
+      "TableSize": 4096,
+      "static": true
+     },
+     "logit": {
+      "Trace": false,
+      "Precision": {
+       "result": "ap_fixed<32,16>",
+       "weight": "fixed<8,1,TRN,WRAP,0>",
+       "bias": "fixed<8,1,TRN,WRAP,0>",
+       "accum": "ap_fixed<32,16>"
+      },
+      "ReuseFactor": 1
+     },
+     "logit_linear": {
+      "Trace": false,
+      "Precision": {
+       "result": "auto",
+       "table": "fixed<18,8,TRN,WRAP,0>"
+      },
+      "ReuseFactor": 1,
+      "TableSize": 1024
+     }
+    }
+   },
+   "parsed": true,
+   "generated_reset_after": [
+    "false"
+   ],
+   "hls_weight_shapes": {
+    "weight": [
+     24,
+     24
+    ],
+    "recurrent_weight": [
+     24,
+     8
+    ],
+    "bias": [
+     24
+    ],
+    "recurrent_bias": [
+     24
+    ]
+   },
+   "hls_layer_precisions": {
+    "syndrome_sequence": {
+     "input_t": "fixed<32,16,TRN,WRAP,0>"
+    },
+    "qgru": {
+     "qgru_accum_t": "fixed<32,16,TRN,WRAP,0>",
+     "layer2_t": "fixed<32,16,TRN,WRAP,0>",
+     "qgru_weight_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_recurrent_weight_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_bias_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_recurrent_bias_t": "fixed<32,16,TRN,WRAP,0>",
+     "qgru_table_t": "fixed<18,8,TRN,WRAP,0>",
+     "layer2_index": "uint<1>"
+    },
+    "logit": {
+     "logit_accum_t": "fixed<32,16,TRN,WRAP,0>",
+     "layer3_t": "fixed<32,16,TRN,WRAP,0>",
+     "weight3_t": "fixed<8,1,TRN,WRAP,0>",
+     "bias3_t": "fixed<8,1,TRN,WRAP,0>",
+     "layer3_index": "uint<1>"
+    },
+    "logit_linear": {
+     "result_t": "fixed<16,6,TRN,WRAP,0>",
+     "logit_linear_table_t": "fixed<18,8,TRN,WRAP,0>"
+    }
+   },
+   "csim_ran": true,
+   "max_abs_diff": 0.022092849016189575,
+   "mean_abs_diff": 0.0032296967858215795,
+   "logit_exact_match_rate": 0.0303,
+   "decision_match_rate": 0.9884,
+   "keras_logit_range": [
+    -0.28152355551719666,
+    0.7933024168014526
+   ]
+  },
+  "float_act_wide_prequant": {
+   "activation": "tanh",
+   "recurrent_activation": "sigmoid",
+   "keras_params": 801,
+   "keras_bias_shape": [
+    24
+   ],
+   "config": {
+    "Model": {
+     "Precision": {
+      "default": "fixed<16,6>"
+     },
+     "ReuseFactor": 1,
+     "Strategy": "Resource",
+     "BramFactor": 1000000000,
+     "TraceOutput": false,
+     "BitExact": null
+    },
+    "LayerName": {
+     "syndrome_sequence": {
+      "Trace": false,
+      "Precision": {
+       "result": "ap_fixed<32,16>"
+      }
+     },
+     "qgru": {
+      "Trace": false,
+      "Precision": {
+       "result": "ap_fixed<32,16>",
+       "weight": "fixed<8,1,TRN,WRAP,0>",
+       "bias": "fixed<8,1,TRN,WRAP,0>",
+       "recurrent_weight": "fixed<8,1,TRN,WRAP,0>",
+       "recurrent_bias": "ap_fixed<32,16>",
+       "accum": "ap_fixed<32,16>",
+       "table": "ap_fixed<32,16>"
+      },
+      "ReuseFactor": 1,
+      "RecurrentReuseFactor": 1,
+      "Static": true,
+      "TableSize": 4096,
+      "static": true
+     },
+     "logit": {
+      "Trace": false,
+      "Precision": {
+       "result": "ap_fixed<32,16>",
+       "weight": "fixed<8,1,TRN,WRAP,0>",
+       "bias": "fixed<8,1,TRN,WRAP,0>",
+       "accum": "ap_fixed<32,16>"
+      },
+      "ReuseFactor": 1
+     },
+     "logit_linear": {
+      "Trace": false,
+      "Precision": {
+       "result": "auto",
+       "table": "fixed<18,8,TRN,WRAP,0>"
+      },
+      "ReuseFactor": 1,
+      "TableSize": 1024
+     }
+    }
+   },
+   "parsed": true,
+   "generated_reset_after": [
+    "false"
+   ],
+   "hls_weight_shapes": {
+    "weight": [
+     24,
+     24
+    ],
+    "recurrent_weight": [
+     24,
+     8
+    ],
+    "bias": [
+     24
+    ],
+    "recurrent_bias": [
+     24
+    ]
+   },
+   "hls_layer_precisions": {
+    "syndrome_sequence": {
+     "input_t": "fixed<32,16,TRN,WRAP,0>"
+    },
+    "qgru": {
+     "qgru_accum_t": "fixed<32,16,TRN,WRAP,0>",
+     "layer2_t": "fixed<32,16,TRN,WRAP,0>",
+     "qgru_weight_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_recurrent_weight_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_bias_t": "fixed<8,1,TRN,WRAP,0>",
+     "qgru_recurrent_bias_t": "fixed<32,16,TRN,WRAP,0>",
+     "qgru_table_t": "fixed<18,8,TRN,WRAP,0>",
+     "layer2_index": "uint<1>"
+    },
+    "logit": {
+     "logit_accum_t": "fixed<32,16,TRN,WRAP,0>",
+     "layer3_t": "fixed<32,16,TRN,WRAP,0>",
+     "weight3_t": "fixed<8,1,TRN,WRAP,0>",
+     "bias3_t": "fixed<8,1,TRN,WRAP,0>",
+     "layer3_index": "uint<1>"
+    },
+    "logit_linear": {
+     "result_t": "fixed<16,6,TRN,WRAP,0>",
+     "logit_linear_table_t": "fixed<18,8,TRN,WRAP,0>"
+    }
+   },
+   "csim_ran": true,
+   "max_abs_diff": 0.004927132278680801,
+   "mean_abs_diff": 0.0010823003159137442,
+   "logit_exact_match_rate": 0.0303,
+   "decision_match_rate": 0.9941,
+   "keras_logit_range": [
+    -0.28152355551719666,
+    0.7933024168014526
+   ]
+  }
+ },
+ "control_plain_keras_gru": {
+  "keras_qgru_vs_keras_gru_same_quantized_weights_max_abs_diff": 0.0,
+  "keras_gru_hls_max_abs_diff": 0.005148623138666153,
+  "keras_gru_hls_mean_abs_diff": 0.0009966645222855733,
+  "keras_gru_hls_decision_match_rate": 0.9939
+ }
+}
