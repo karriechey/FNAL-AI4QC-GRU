@@ -1,5 +1,5 @@
 # Created: 2026-10-14
-# Last modified: 2026-10-14
+# Last modified: 2026-10-16
 # Keeps a copy of every epoch's .lastepoch.weights.h5 (from epoch FIRST on) for runs that are
 # already training, since train_student.py overwrites that file each epoch. The epoch is read
 # from the optimizer's update count in the file, not from the log.
@@ -17,6 +17,7 @@ import time
 import h5py
 
 FIRST = 40
+MIN_FREE_GB = 1                       # /home is shared; skip copies below this
 
 
 def steps_per_epoch(run):
@@ -58,6 +59,10 @@ while True:
             out = os.path.join(os.path.dirname(os.path.dirname(src)), 'epochs')
             dst = os.path.join(out, f'epoch{epoch:03d}.weights.h5')
             if epoch >= FIRST and not os.path.exists(dst):
+                if shutil.disk_usage(run).free < MIN_FREE_GB * 2**30:
+                    print(time.strftime('%FT%TZ', time.gmtime()), 'low disk, skipped', dst, flush=True)
+                    seen[src] = mtime
+                    continue
                 os.makedirs(out, exist_ok=True)
                 shutil.copy2(src, dst + '.tmp')
                 if updates(dst + '.tmp') != n or os.path.getmtime(src) != mtime:
