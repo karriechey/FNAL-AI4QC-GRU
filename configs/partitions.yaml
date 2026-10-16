@@ -1,5 +1,6 @@
 # Created: 2026-09-25
-# Last updated: 2026-10-14 (FORMAL pools d5 p = 0.003 seed 60 and d9 p = 0.003 seed 61, from
+# Last updated: 2026-10-16 (FORMAL pools d5 p = 0.005 seed 62 and d9 p = 0.005 seed 63, from
+# experiments/pools_p005_2026-10-15/generate.sh). Before that 2026-10-14 (FORMAL pools d5 p = 0.003 seed 60 and d9 p = 0.003 seed 61, from
 # experiments/pools_p003_2026-10-14/generate.sh). Earlier 2026-10-06 (the single complete record of every pool: all FORMAL and TRAINONLY
 # pools for d = 5, 7, 9 and p = 0.003, 0.004, 0.005 with seeds, sizes, formats and flips
 # SHA-256; the held-out blocks; spent blocks; seeds used outside these pools)
@@ -58,6 +59,9 @@ pools:
   - {d: 5, p: 0.005, gen_seed: 62, n_total: 19000000, kind: formal, format: full,
      flips_sha256: e8a1484b0cd82e60b8835880f4bd7015c2c6e93f27d2d400cbad94657b2af9d0,
      path: "~/pools_d5_p005_19M/data_d5_p0.005_r5_FORMAL_seed62.npz"}
+  - {d: 9, p: 0.005, gen_seed: 63, n_total: 19000000, kind: formal, format: full,
+     flips_sha256: 03548caeb6662e4ff3d43b4125472c035749bbaceb2b50e1318b109258595ab8,
+     path: "~/pools_d9_p005_19M/data_d9_p0.005_r9_FORMAL_seed63.npz"}
   - {d: 7, p: 0.003, gen_seed: 52, n_total: 19000000, kind: formal, format: full,
      flips_sha256: d3cd19068e2a506640dbfffad920a2c028d40dce2f4b87d0cedee0b12cc83e14,
      path: "~/pools_d7_p003_19M/data_d7_p0.003_r7_FORMAL_seed52.npz"}

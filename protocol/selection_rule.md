@@ -1,7 +1,7 @@
 # Checkpoint selection and held-out scoring
 
 Created: 2026-10-14
-Last modified: 2026-10-15
+Last modified: 2026-10-16
 
 Committed before f9w_p003 finished training (it was at epoch 17 of 240) and before any of the
 p = 0.003 runs was scored on an evaluation or held-out block.
@@ -83,6 +83,7 @@ Saved checkpoints:
   | f7w_p003 | 40 to 80 |
   | f9w_p003 | 40 to 240 |
   | f5w_p005, f7w_p005 | 40 to 80 (snapshots from the start of training, 2026-10-15) |
+  | f9w_p005 | 40 to 240 (started 2026-10-16) |
 
 Selected checkpoints and their evaluation-block scores (`selection_scores.csv`,
 `eval_selected.csv`; McNemar b = GRU right and MWPM wrong, c = the reverse):
@@ -96,14 +97,18 @@ Selected checkpoints and their evaluation-block scores (`selection_scores.csv`,
 | f3280s1 | 147, 160 | 160 | 0.6216x | 0.6332x | 2788 | 1291 | 4079 | 3.7e-124 |
 | f5w_p003 | 53-80 | 78 | 0.6168x | 0.6251x | 3300 | 1100 | 4400 | 4.5e-252 |
 | f7w_p003 | 40-80 | 75 | 0.6109x | 0.6180x | 1615 | 678 | 2293 | 1.5e-87 |
+| f9w_p003 | 40-240 | 240 (tied with 236) | 0.8655x | 0.8837x | 660 | 548 | 1208 | 1.4e-3 |
+| f5w_p005 | 40-80 | 78 | 0.6835x | 0.6783x | 13026 | 4891 | 17917 | <1e-300 |
+| f7w_p005 | 40-80 | 80 | 0.6099x | 0.6073x | 11113 | 4027 | 15140 | <1e-300 |
 
 f7w_p004's eval score is the launcher's, which scored the same epoch-80 checkpoint.
 
 The launchers (run_arm8.sh, run_arm10.sh, run_arm11.sh) also score each run's
 validation-best checkpoint on the evaluation block when training ends. Those scores were not
 used for selection: f5w_p004 epoch 78 0.649x, f3280 epoch 148 0.665x, f3280e240 epoch 230
-0.619x, f3280s1 epoch 147 0.641x, f5w_p003 epoch 80 0.623x, f7w_p003 epoch 70 0.635x.
-f9w_p003 will get the same extra score when it ends, since run_arm11.sh is still running it.
+0.619x, f3280s1 epoch 147 0.641x, f5w_p003 epoch 80 0.623x, f7w_p003 epoch 70 0.635x,
+f9w_p003 epoch 222 0.923x, f5w_p005 epoch 71 0.683x, f7w_p005 epoch 76 0.608x. f9w_p005 will get
+the same extra score when it ends, since run_arm11.sh runs it.
 
 ## Held-out
 
@@ -121,7 +126,7 @@ only.
 | 9 | 0.003 | f9w_p003 | FORMAL seed 61 sealed [17M, 19M) |
 | 5 | 0.005 | f5w_p005 | FORMAL seed 62 sealed [17M, 19M) |
 | 7 | 0.005 | f7w_p005 | FORMAL seed 55 sealed [17M, 19M) |
-| 9 | 0.005 | f9w_p005 | FORMAL sealed [17M, 19M) of the d9 p = 0.005 pool (not generated yet) |
+| 9 | 0.005 | f9w_p005 | FORMAL seed 63 sealed [17M, 19M) |
 
 The d9 p = 0.004 recipe (240 rather than 160 epochs) was chosen on 2026-10-13 by comparing
 f3280e240 with f3280 on the evaluation block, before this rule existed. f3280 and f3280s1 are
