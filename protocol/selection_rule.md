@@ -1,7 +1,7 @@
 # Checkpoint selection and held-out scoring
 
 Created: 2026-10-14
-Last modified: 2026-10-16
+Last modified: 2026-10-18
 
 Committed before f9w_p003 finished training (it was at epoch 17 of 240) and before any of the
 p = 0.003 runs was scored on an evaluation or held-out block.
@@ -83,7 +83,7 @@ Saved checkpoints:
   | f7w_p003 | 40 to 80 |
   | f9w_p003 | 40 to 240 |
   | f5w_p005, f7w_p005 | 40 to 80 (snapshots from the start of training, 2026-10-15) |
-  | f9w_p005 | 40 to 240 (started 2026-10-16) |
+  | f9w_p005 | 40 to 127 and 161 to 240 (128 to 160 not copied: /home was full) |
 
 Selected checkpoints and their evaluation-block scores (`selection_scores.csv`,
 `eval_selected.csv`; McNemar b = GRU right and MWPM wrong, c = the reverse):
@@ -100,6 +100,7 @@ Selected checkpoints and their evaluation-block scores (`selection_scores.csv`,
 | f9w_p003 | 40-240 | 240 (tied with 236) | 0.8655x | 0.8837x | 660 | 548 | 1208 | 1.4e-3 |
 | f5w_p005 | 40-80 | 78 | 0.6835x | 0.6783x | 13026 | 4891 | 17917 | <1e-300 |
 | f7w_p005 | 40-80 | 80 | 0.6099x | 0.6073x | 11113 | 4027 | 15140 | <1e-300 |
+| f9w_p005 | 40-127, 161-240 | 240 | 0.5758x | 0.5847x | 8294 | 3217 | 11511 | <1e-300 |
 
 f7w_p004's eval score is the launcher's, which scored the same epoch-80 checkpoint.
 
@@ -107,8 +108,8 @@ The launchers (run_arm8.sh, run_arm10.sh, run_arm11.sh) also score each run's
 validation-best checkpoint on the evaluation block when training ends. Those scores were not
 used for selection: f5w_p004 epoch 78 0.649x, f3280 epoch 148 0.665x, f3280e240 epoch 230
 0.619x, f3280s1 epoch 147 0.641x, f5w_p003 epoch 80 0.623x, f7w_p003 epoch 70 0.635x,
-f9w_p003 epoch 222 0.923x, f5w_p005 epoch 71 0.683x, f7w_p005 epoch 76 0.608x. f9w_p005 will get
-the same extra score when it ends, since run_arm11.sh runs it.
+f9w_p003 epoch 222 0.923x, f5w_p005 epoch 71 0.683x, f7w_p005 epoch 76 0.608x, f9w_p005
+val-best checkpoint 0.583x.
 
 ## Held-out
 
