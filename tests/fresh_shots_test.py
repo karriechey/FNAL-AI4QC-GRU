@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created: 2026-10-09
-# Last modified: 2026-10-11 (checks 7 and 8: fresh-shot distillation)
+# Last modified: 2026-10-18 (check 9). Earlier 2026-10-11 (checks 7 and 8: fresh-shot distillation)
 """Checks of the fresh-shot training input (src/fresh_shots.py,
 train_student.py --fresh-shots-per-epoch). CPU only.
 
@@ -27,6 +27,8 @@ train_student.py --fresh-shots-per-epoch). CPU only.
                    explicitly; the student's weights do not include the teacher's.
   8 distill run    train_student.py --fresh-shots-per-epoch --teacher-model (the model of
                    check 5) --alpha 0 runs end to end and logs the per-batch teacher.
+  9 teacher weights rebuilt teacher matches .best.keras; --teacher-weights run with per-epoch
+                   saves; wrong --teacher-params and unregistered seed bases refused.
 
     python3 tests/fresh_shots_test.py --py <python with TF 2.15> --pool-dir <dir> --out <dir>
 """
@@ -235,6 +237,42 @@ def main():
            and row8.get('alpha') == '0.0' and row8.get('fresh_shots') == '40000',
            f"exit {r.returncode}; alpha {row8.get('alpha')}; fresh_shots {row8.get('fresh_shots')}; "
            f"p_L {row8.get('p_L')}; agreement with teacher on scored block {row8.get('agree_all')}")
+
+    # 9 ------------------------------------------------------------------------------
+    tw = glob.glob(os.path.join(a.out, 'train0', 'ckpt', '*.best.weights.h5'))
+    rebuilt = TS.build_teacher_from_weights(tf, tw[0], [16], d, d, p)
+    loaded = tf.keras.models.load_model(tk[0], compile=False)
+    xt = F._scatter(det[:5_000].astype(np.uint8), imap).astype(np.float32)
+    dz = float(np.max(np.abs(rebuilt.predict(xt, verbose=0) - loaded.predict(xt, verbose=0))))
+    n_t = int(rebuilt.count_params())
+    o = os.path.join(a.out, 'distill_w')
+    kd_w = ['--n-train', '0', '--alpha', '0.0', '--teacher-weights', tw[0], '--teacher-units', '16']
+    r = subprocess.run([a.py, 'train_student.py'] + common + kd_w
+                       + ['--teacher-params', str(n_t), '--save-epochs-from', '1',
+                          '--epochs-dir', o + '/epochs', '--ckpt-dir', o + '/ckpt',
+                          '--out-dir', o + '/runs'],
+                       cwd=src, env=env, capture_output=True, text=True)
+    out9 = r.stdout + r.stderr
+    open(os.path.join(a.out, 'distill_w.log'), 'w').write(out9)
+    epochs9 = sorted(os.path.basename(f) for f in glob.glob(o + '/epochs/*.weights.h5'))
+    r_bad = subprocess.run([a.py, 'train_student.py'] + common + kd_w
+                           + ['--teacher-params', str(n_t + 1), '--ckpt-dir', a.out + '/x',
+                              '--out-dir', a.out + '/x'],
+                           cwd=src, env=env, capture_output=True, text=True)
+    bad_refused = r_bad.returncode != 0 and 'expected' in r_bad.stdout + r_bad.stderr
+    seed_refusals = []
+    for args9 in ((2, 10, 3 * 10 ** 12 + 1), (81, 10, 3 * 10 ** 12)):
+        try:
+            F.check_seeds(*args9)
+            seed_refusals.append(False)
+        except ValueError:
+            seed_refusals.append(True)
+    report('teacher_weights', dz == 0.0 and r.returncode == 0 and 'teacher rebuilt from' in out9
+           and epochs9 == ['epoch001.weights.h5', 'epoch002.weights.h5'] and bad_refused
+           and all(seed_refusals),
+           f'rebuilt vs .keras max |logit diff| {dz:.1e} ({n_t:,} params); run exit {r.returncode}; '
+           f'epoch files {epochs9}; wrong param count refused: {bad_refused}; '
+           f'unregistered base / too many epochs refused: {seed_refusals}')
 
     print(f"\n{sum(results)}/{len(results)} checks passed", flush=True)
     sys.exit(0 if all(results) else 1)

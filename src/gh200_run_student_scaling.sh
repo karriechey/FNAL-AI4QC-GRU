@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-10-11 (FRESH_SEED_BASE: first Stim seed of the fresh shots, for replicates on different shots; tag _fsb<base> when set). Earlier 2026-10-09 (FRESH_SHOTS=<n>: n new Stim shots per epoch replace the training array; needs NTRAIN=0 and no EXTRA_POOL; tag _fresh<n>). Earlier 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-18 (TEACHER_WEIGHTS/UNITS/PARAMS, SAVE_EPOCHS_FROM). Earlier 2026-10-11 (FRESH_SEED_BASE: first Stim seed of the fresh shots, for replicates on different shots; tag _fsb<base> when set). Earlier 2026-10-09 (FRESH_SHOTS=<n>: n new Stim shots per epoch replace the training array; needs NTRAIN=0 and no EXTRA_POOL; tag _fresh<n>). Earlier 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -53,6 +53,12 @@ MAX_PARAMS="${MAX_PARAMS:-}"
 ALPHA="${ALPHA:-1.0}"
 TEMPERATURE="${TEMPERATURE:-1.0}"
 TEACHER_MODEL="${TEACHER_MODEL:-}"
+# Instead of TEACHER_MODEL: TEACHER_WEIGHTS=<.weights.h5> TEACHER_UNITS="280 280" [TEACHER_PARAMS=<n>]
+TEACHER_WEIGHTS="${TEACHER_WEIGHTS:-}"
+TEACHER_UNITS="${TEACHER_UNITS:-}"
+TEACHER_PARAMS="${TEACHER_PARAMS:-}"
+# SAVE_EPOCHS_FROM=<n>: every epoch from n in seed<S>/epochs/ (snapshot_epochs.py layout)
+SAVE_EPOCHS_FROM="${SAVE_EPOCHS_FROM:-}"
 # FRESH_SHOTS=<n> trains on n NEW shots per epoch sampled from Stim during training
 # (train_student.py --fresh-shots-per-epoch, src/fresh_shots.py), so no training shot is seen
 # twice. Needs NTRAIN=0, no EXTRA_POOL and hard labels. FRESH_WORKERS sampling processes
@@ -325,7 +331,7 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "pool         : $POOL"
   echo "pool prov    : $PROV"
   echo "$GEOMETRY"
-  echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=$ALPHA T=$TEMPERATURE teacher=${TEACHER_MODEL:-none}"
+  echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=$ALPHA T=$TEMPERATURE teacher=${TEACHER_MODEL:-${TEACHER_WEIGHTS:-none}}${TEACHER_UNITS:+ (units $TEACHER_UNITS)}"
   echo "             : batch=$BATCH lr=$LR epochs=$EPOCHS early_stop=$EARLY_STOP"
   echo "optimizer    : lr_schedule=$LR_SCHEDULE lr_end=$LR_END warmup_epochs=$LR_WARMUP_EPOCHS ema_decay=${EMA_DECAY:-none} global_clipnorm=${GLOBAL_CLIPNORM:-none}"
   echo "gru layer    : reset_after=$RESET_AFTER unroll=$UNROLL"
@@ -376,6 +382,11 @@ fi
 [ -n "$WARM_START" ] && TRAIN_ONLY+=(--warm-start "$WARM_START")
 [ -n "$MAX_PARAMS" ] && TRAIN_ONLY+=(--max-params "$MAX_PARAMS")
 [ -n "$TEACHER_MODEL" ] && TRAIN_ONLY+=(--teacher-model "$TEACHER_MODEL")
+if [ -n "$TEACHER_WEIGHTS" ]; then
+  read -r -a TEACHER_UNITS_LIST <<< "$TEACHER_UNITS"
+  TRAIN_ONLY+=(--teacher-weights "$TEACHER_WEIGHTS" --teacher-units "${TEACHER_UNITS_LIST[@]}")
+  [ -n "$TEACHER_PARAMS" ] && TRAIN_ONLY+=(--teacher-params "$TEACHER_PARAMS")
+fi
 [ -n "$FRESH_SHOTS" ] && TRAIN_ONLY+=(--fresh-shots-per-epoch "$FRESH_SHOTS" --fresh-workers "$FRESH_WORKERS")
 [ -n "$FRESH_SEED_BASE" ] && TRAIN_ONLY+=(--fresh-seed-base "$FRESH_SEED_BASE")
 
@@ -445,7 +456,8 @@ run_seed () {
       --batch-size "$BATCH" --lr "$LR" "${OPT[@]}" \
       --epochs "$EPOCHS" \
       --seed "$SEED" --require-determinism \
-      --ckpt-dir "$SCKPT" --out-dir "$SRUNS" --tag "$TAG" --run-tag "$TAG"
+      --ckpt-dir "$SCKPT" --out-dir "$SRUNS" --tag "$TAG" --run-tag "$TAG" \
+      ${SAVE_EPOCHS_FROM:+--save-epochs-from "$SAVE_EPOCHS_FROM" --epochs-dir "$SEEDDIR/epochs"}
 
     # Ratio of record: MWPM decoded on these shots, paired shot by shot.
     # train_student.py suppresses its own MWPM column under --eval-start.

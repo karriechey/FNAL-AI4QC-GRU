@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-11 (--fresh-shots-per-epoch with --teacher-model: distillation on fresh shots, the teacher's logit for each training batch computed on the GPU inside the training step). Earlier 2026-10-09 (--fresh-shots-per-epoch: training shots sampled new from Stim for every epoch, src/fresh_shots.py, so no training shot is seen twice; validation and scored blocks still from the pool). Earlier 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. 2026-10-06: pool arrays read row-range by row-range (pool_rows), so rows outside the requested blocks, and the sealed rows in particular, are never loaded. --teacher-model: soft targets computed in this process from a saved GRU teacher, on the exact training array (primary prefix and every extension pool), the validation block and the scored block. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-18 (--teacher-weights, --save-epochs-from). Earlier 2026-10-11 (--fresh-shots-per-epoch with --teacher-model: distillation on fresh shots, the teacher's logit for each training batch computed on the GPU inside the training step). Earlier 2026-10-09 (--fresh-shots-per-epoch: training shots sampled new from Stim for every epoch, src/fresh_shots.py, so no training shot is seen twice; validation and scored blocks still from the pool). Earlier 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. 2026-10-06: pool arrays read row-range by row-range (pool_rows), so rows outside the requested blocks, and the sealed rows in particular, are never loaded. --teacher-model: soft targets computed in this process from a saved GRU teacher, on the exact training array (primary prefix and every extension pool), the validation block and the scored block. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -232,11 +232,29 @@ def attach_teacher_to_train_step(tf, model, teacher):
 
     def train_step(self, data):
         x, y = data
-        z = tf.cast(tf.reshape(teacher(x, training=False), (-1, 1)), y.dtype)
-        return base_train_step(self, (x, tf.concat([y[:, :1], z], axis=1)))
+        return base_train_step(self, (x, teacher_logit_column(tf, teacher, x, y)))
 
     import types
     model.train_step = types.MethodType(train_step, model)
+
+
+# also called by the pilot's teacher check, so it scores the teacher exactly as training does
+def teacher_logit_column(tf, teacher, x, y):
+    z = tf.cast(tf.reshape(teacher(x, training=False), (-1, 1)), y.dtype)
+    return tf.concat([y[:, :1], z], axis=1)
+
+
+def build_teacher_from_weights(tf, path, units, d, rounds, p, expected_params=None):
+    from StudentModels import build_gru_student
+    u = units[0] if len(units) == 1 else tuple(units)
+    teacher = build_gru_student(d=d, rounds=rounds, inputs='evts', units=u, hidden=(), p=p,
+                                name='teacher')
+    teacher.load_weights(path)
+    n = int(teacher.count_params())
+    if expected_params is not None and n != expected_params:
+        raise SystemExit(f"{LOG} teacher {os.path.basename(path)}: {n:,} parameters, "
+                         f"expected {expected_params:,}. STOP.")
+    return teacher
 
 
 def make_hard_accuracy():
@@ -538,6 +556,12 @@ def run():
                          'aligned with the training shots by construction. Replaces '
                          '--teacher-cache / --val-teacher-cache / --teacher-tail-cache and '
                          'allows alpha < 1 with extension pools.')
+    ap.add_argument('--teacher-weights', default=None,
+                    help='GRU teacher .weights.h5, rebuilt from --teacher-units')
+    ap.add_argument('--teacher-units', type=int, nargs='+', default=None,
+                    help='e.g. 280 280')
+    ap.add_argument('--teacher-params', type=int, default=None,
+                    help='required parameter count of the rebuilt teacher')
     ap.add_argument('--teacher-tail-cache', default=None,
                     help='npz from dump_teacher_probs.py over the EVALUATION TAIL. '
                          'Optional; enables the student-vs-teacher agreement columns, '
@@ -703,6 +727,9 @@ def run():
                     help='default: ~/rcnn_threshold/out_{student}, so MLP and GRU results '
                          'never land in the same directory')
     ap.add_argument('--tag', default=None, help='override the auto-generated output tag')
+    ap.add_argument('--save-epochs-from', type=int, default=None,
+                    help='save every epoch from this one (1-based) to --epochs-dir')
+    ap.add_argument('--epochs-dir', default=None)
     ap.add_argument('--cpu', action='store_true')
     ap.add_argument('--gpu-mem-mib', type=int, default=None,
                     help='cap this process to N MiB of GPU memory, so several trainings '
@@ -715,6 +742,13 @@ def run():
     if args.out_dir is None:
         args.out_dir = os.path.expanduser(f'~/rcnn_threshold/out_{args.student}')
 
+    if args.teacher_weights:
+        if args.teacher_model or not args.teacher_units:
+            raise SystemExit(f"{LOG} --teacher-weights needs --teacher-units and no "
+                             "--teacher-model. STOP.")
+        args.teacher_model = args.teacher_weights
+    if args.save_epochs_from is not None and not args.epochs_dir:
+        raise SystemExit(f"{LOG} --save-epochs-from needs --epochs-dir. STOP.")
     if args.teacher_model and args.teacher_cache:
         raise SystemExit(f"{LOG} give --teacher-model or --teacher-cache, not both. STOP.")
     if args.alpha < 1.0 and not (args.teacher_cache or args.teacher_model):
@@ -915,7 +949,13 @@ def run():
         # target is the teacher's logit for that very shot.
         if not os.path.exists(args.teacher_model):
             raise SystemExit(f"{LOG} MISSING teacher model {args.teacher_model}")
-        teacher = tf.keras.models.load_model(args.teacher_model, compile=False)
+        if args.teacher_weights:
+            teacher = build_teacher_from_weights(tf, args.teacher_weights, args.teacher_units,
+                                                 d, r, p, args.teacher_params)
+            print(f"{LOG} teacher rebuilt from {os.path.basename(args.teacher_weights)}: "
+                  f"units {args.teacher_units}, {teacher.count_params():,} parameters", flush=True)
+        else:
+            teacher = tf.keras.models.load_model(args.teacher_model, compile=False)
         if tuple(teacher.input_shape[1:]) != tuple(x_tr.shape[1:]):
             raise SystemExit(f"{LOG} teacher input {teacher.input_shape[1:]} != training "
                              f"features {x_tr.shape[1:]}. STOP.")
@@ -1237,6 +1277,18 @@ def run():
                 self.model.save_weights(_ck + '.lastepoch.weights.h5')
 
         callbacks.insert(0, _SaveLastEpoch())
+        if args.save_epochs_from is not None:
+            os.makedirs(args.epochs_dir, exist_ok=True)
+
+            class _SaveEveryEpoch(tf.keras.callbacks.Callback):
+                def on_epoch_end(self, epoch, logs=None):
+                    if epoch + 1 >= args.save_epochs_from:
+                        self.model.save_weights(os.path.join(
+                            args.epochs_dir, f'epoch{epoch + 1:03d}.weights.h5'))
+
+            callbacks.insert(0, _SaveEveryEpoch())
+            print(f"{LOG} every epoch from {args.save_epochs_from} -> "
+                  f"{args.epochs_dir}/epoch<NNN>.weights.h5", flush=True)
         if val_data is not None:
             # Checkpoint rule: keep the epoch with the lowest LER on the explicit
             # validation block (tiebreak: lower val_loss), saved as a full .keras model
