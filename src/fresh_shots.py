@@ -1,5 +1,5 @@
 # Created: 2026-10-09
-# Last modified: 2026-10-09
+# Last modified: 2026-10-18 (check_seeds: base must be registered in partitions.yaml)
 """Fresh training shots: a new Stim sample for every training batch, so no shot is seen twice.
 
 Why: at d9 the stacked GRUs fit their 100M training shots far better than new shots
@@ -88,6 +88,13 @@ def check_seeds(epochs, chunks_per_epoch, seed_base=SEED_BASE):
     clash = sorted(s for s in P.used_seeds() if lo <= s < hi)
     if clash:
         raise ValueError(f'fresh-shot seeds [{lo}, {hi}) include pool seeds {clash}')
+    entry = [(r0, r1, n) for r0, r1, n in P.fresh_seed_ranges() if r0 == seed_base]
+    if not entry:
+        raise ValueError(f'fresh seed base {seed_base} is not in configs/partitions.yaml '
+                         f'fresh_seed_ranges; register it there first')
+    if epochs > entry[0][2]:
+        raise ValueError(f'{epochs} epochs from base {seed_base} exceed its registered '
+                         f'max_epochs {entry[0][2]}')
     return lo, hi
 
 

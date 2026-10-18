@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last modified: 2026-10-06 (used_seeds, held-out files sealed whole, spent_blocks, checks over the complete pool table). Earlier 2026-10-02 (sealed_block, check_disjoint, check_pool_geometry: run-time guards used by train_student.py and eval_student_on_tail.py; p in file names read in both the p0.004 and p004 styles; sealed-access log). Earlier 2026-09-25
+# Last modified: 2026-10-18 (fresh_seed_ranges). Earlier 2026-10-06 (used_seeds, held-out files sealed whole, spent_blocks, checks over the complete pool table). Earlier 2026-10-02 (sealed_block, check_disjoint, check_pool_geometry: run-time guards used by train_student.py and eval_student_on_tail.py; p in file names read in both the p0.004 and p004 styles; sealed-access log). Earlier 2026-09-25
 """Read configs/partitions.yaml and configs/paths.yaml.
 
 This is the only code that knows the partition ranges. Python scripts call the functions
@@ -75,7 +75,18 @@ def check(cfg):
     ho = [int(e['gen_seed']) for e in (cfg.get('held_out') or [])]
     if len(set(ho)) != len(ho) or set(ho) & others:
         raise ValueError(f"held-out seeds {ho} are reused (other seeds in use: {sorted(others)})")
+    spans = sorted(fresh_seed_ranges(cfg))
+    for (a0, a1, _), (b0, b1, _) in zip(spans, spans[1:]):
+        if b0 < a1:
+            raise ValueError(f"fresh seed ranges [{a0}, {a1}) and [{b0}, {b1}) overlap")
     return True
+
+
+def fresh_seed_ranges(cfg=None):
+    from fresh_shots import SEED_EPOCH_STRIDE
+    cfg = cfg if cfg is not None else load()
+    return [(int(e['base']), int(e['base']) + int(e['max_epochs']) * SEED_EPOCH_STRIDE,
+             int(e['max_epochs'])) for e in (cfg.get('fresh_seed_ranges') or [])]
 
 
 def used_seeds(cfg=None):
