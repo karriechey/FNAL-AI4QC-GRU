@@ -1,0 +1,8 @@
+[overfit] scored L1_d7_100M exit 0
+[overfit] trained d9_2M_300ep exit 0
+[overfit] scored d9_2M_300ep_last exit 0
+[overfit] scored d9_2M_300ep_best exit 0
+[overfit] trained d7_2M_300ep exit 0
+[overfit] scored d7_2M_300ep_last exit 0
+[overfit] scored d7_2M_300ep_best exit 0
+[overfit] done

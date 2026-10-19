@@ -1,0 +1,9 @@
+{
+ "source": "9-1",
+ "ratio": 2.5413,
+ "peak_lr": "0.001",
+ "warmup": "3",
+ "clip": "0.64",
+ "epochs": "160",
+ "best_epoch": 128
+}

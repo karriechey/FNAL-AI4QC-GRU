@@ -1,0 +1,99 @@
+[pools 2026-09-30T20:42:15Z] START d=7 p=0.004 n=50000000 seed=46 --compact -> /home/kchey/pools_d7_p004_19M
+[ext] d=7 p=0.004 rounds=7: 336 detectors, 385 measurements, gen_seed=46
+[ext] sampled 50,000,000 shots in 3.2 min  det_evts_packed(50000000, 42) (n_det=336)
+[ext] wrote /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed46.npz  (2.0 GB)
+[ext] flips sha256 2b63dc81924f639a  base_rate 0.30521
+[ext] every shot [0, 50,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T20:45:31Z] END   d=7 p=0.004 seed=46 exit 0
+[pools 2026-09-30T20:45:31Z] START d=7 p=0.004 n=50000000 seed=47 --compact -> /home/kchey/pools_d7_p004_19M
+[ext] d=7 p=0.004 rounds=7: 336 detectors, 385 measurements, gen_seed=47
+[ext] sampled 50,000,000 shots in 3.4 min  det_evts_packed(50000000, 42) (n_det=336)
+[ext] wrote /home/kchey/pools_d7_p004_19M/data_d7_p0.004_r7_TRAINONLY_seed47.npz  (2.0 GB)
+[ext] flips sha256 647ac70de81a77ad  base_rate 0.30534
+[ext] every shot [0, 50,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T20:48:58Z] END   d=7 p=0.004 seed=47 exit 0
+[pools 2026-09-30T20:48:58Z] START d=9 p=0.004 n=35000000 seed=48 --compact -> /home/kchey/pools_d9_p004_19M
+[ext] d=9 p=0.004 rounds=9: 720 detectors, 801 measurements, gen_seed=48
+[ext] sampled 35,000,000 shots in 5.4 min  det_evts_packed(35000000, 90) (n_det=720)
+[ext] wrote /home/kchey/pools_d9_p004_19M/data_d9_p0.004_r9_TRAINONLY_seed48.npz  (3.0 GB)
+[ext] flips sha256 baa35f84b42a1a31  base_rate 0.39297
+[ext] every shot [0, 35,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T20:54:26Z] END   d=9 p=0.004 seed=48 exit 0
+[pools 2026-09-30T20:54:26Z] START d=9 p=0.004 n=50000000 seed=49 --compact -> /home/kchey/pools_d9_p004_19M
+[ext] d=9 p=0.004 rounds=9: 720 detectors, 801 measurements, gen_seed=49
+[ext] sampled 50,000,000 shots in 7.9 min  det_evts_packed(50000000, 90) (n_det=720)
+[ext] wrote /home/kchey/pools_d9_p004_19M/data_d9_p0.004_r9_TRAINONLY_seed49.npz  (4.2 GB)
+[ext] flips sha256 961d0c287d1f2113  base_rate 0.39283
+[ext] every shot [0, 50,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T21:02:27Z] END   d=9 p=0.004 seed=49 exit 0
+[pools 2026-09-30T21:02:27Z] START d=5 p=0.004 n=30000000 seed=50 --compact -> /home/kchey/pools_d5_p004_19M
+[ext] d=5 p=0.004 rounds=5: 120 detectors, 145 measurements, gen_seed=50
+[ext] sampled 30,000,000 shots in 0.8 min  det_evts_packed(30000000, 15) (n_det=120)
+[ext] wrote /home/kchey/pools_d5_p004_19M/data_d5_p0.004_r5_TRAINONLY_seed50.npz  (0.4 GB)
+[ext] flips sha256 691fa5011b4f6ea7  base_rate 0.19427
+[ext] every shot [0, 30,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T21:03:17Z] END   d=5 p=0.004 seed=50 exit 0
+[pools 2026-09-30T21:03:17Z] START d=5 p=0.004 n=50000000 seed=51 --compact -> /home/kchey/pools_d5_p004_19M
+[ext] d=5 p=0.004 rounds=5: 120 detectors, 145 measurements, gen_seed=51
+[ext] sampled 50,000,000 shots in 1.6 min  det_evts_packed(50000000, 15) (n_det=120)
+[ext] wrote /home/kchey/pools_d5_p004_19M/data_d5_p0.004_r5_TRAINONLY_seed51.npz  (0.7 GB)
+[ext] flips sha256 7187ffef79040cc0  base_rate 0.19429
+[ext] every shot [0, 50,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T21:04:53Z] END   d=5 p=0.004 seed=51 exit 0
+[pools 2026-09-30T21:04:53Z] START d=7 p=0.003 n=19000000 seed=52 --formal -> /home/kchey/pools_d7_p003_19M
+[ext] d=7 p=0.003 rounds=7: 336 detectors, 385 measurements, gen_seed=52
+[ext] sampled 19,000,000 shots in 1.5 min  meas(19000000, 385) det(19000000, 336)
+[ext] wrote /home/kchey/pools_d7_p003_19M/data_d7_p0.003_r7_FORMAL_seed52.npz  (12.8 GB)
+[ext] flips sha256 d3cd19068e2a5066  base_rate 0.2535
+[ext] FORMAL layout {'train': [0, 15000000], 'val': [15000000, 15200000], 'eval': [15200000, 17000000], 'sealed': [17000000, 19000000]}; sealed block not to be read
+[pools 2026-09-30T21:06:36Z] END   d=7 p=0.003 seed=52 exit 0
+[pools 2026-09-30T21:06:36Z] START d=7 p=0.003 n=35000000 seed=53 --compact -> /home/kchey/pools_d7_p003_19M
+[ext] d=7 p=0.003 rounds=7: 336 detectors, 385 measurements, gen_seed=53
+[ext] sampled 35,000,000 shots in 2.8 min  det_evts_packed(35000000, 42) (n_det=336)
+[ext] wrote /home/kchey/pools_d7_p003_19M/data_d7_p0.003_r7_TRAINONLY_seed53.npz  (1.4 GB)
+[ext] flips sha256 808d32e7ad066aeb  base_rate 0.25339
+[ext] every shot [0, 35,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T21:09:29Z] END   d=7 p=0.003 seed=53 exit 0
+[pools 2026-09-30T21:09:29Z] START d=7 p=0.003 n=50000000 seed=54 --compact -> /home/kchey/pools_d7_p003_19M
+[ext] d=7 p=0.003 rounds=7: 336 detectors, 385 measurements, gen_seed=54
+[ext] sampled 50,000,000 shots in 4.9 min  det_evts_packed(50000000, 42) (n_det=336)
+[ext] wrote /home/kchey/pools_d7_p003_19M/data_d7_p0.003_r7_TRAINONLY_seed54.npz  (2.0 GB)
+[ext] flips sha256 c545d6446b8981d5  base_rate 0.25354
+[ext] every shot [0, 50,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T21:14:26Z] END   d=7 p=0.003 seed=54 exit 0
+[pools 2026-09-30T21:14:26Z] START d=7 p=0.005 n=19000000 seed=55 --formal -> /home/kchey/pools_d7_p005_19M
+[ext] d=7 p=0.005 rounds=7: 336 detectors, 385 measurements, gen_seed=55
+[ext] sampled 19,000,000 shots in 2.0 min  meas(19000000, 385) det(19000000, 336)
+[ext] wrote /home/kchey/pools_d7_p005_19M/data_d7_p0.005_r7_FORMAL_seed55.npz  (12.8 GB)
+[ext] flips sha256 72b2ec115d035d98  base_rate 0.34636
+[ext] FORMAL layout {'train': [0, 15000000], 'val': [15000000, 15200000], 'eval': [15200000, 17000000], 'sealed': [17000000, 19000000]}; sealed block not to be read
+[pools 2026-09-30T21:16:39Z] END   d=7 p=0.005 seed=55 exit 0
+[pools 2026-09-30T21:16:39Z] START d=7 p=0.005 n=35000000 seed=56 --compact -> /home/kchey/pools_d7_p005_19M
+[ext] d=7 p=0.005 rounds=7: 336 detectors, 385 measurements, gen_seed=56
+[ext] sampled 35,000,000 shots in 3.5 min  det_evts_packed(35000000, 42) (n_det=336)
+[ext] wrote /home/kchey/pools_d7_p005_19M/data_d7_p0.005_r7_TRAINONLY_seed56.npz  (1.4 GB)
+[ext] flips sha256 e7b389b75e8c5212  base_rate 0.34629
+[ext] every shot [0, 35,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T21:20:08Z] END   d=7 p=0.005 seed=56 exit 0
+[pools 2026-09-30T21:20:08Z] START d=7 p=0.005 n=50000000 seed=57 --compact -> /home/kchey/pools_d7_p005_19M
+[ext] d=7 p=0.005 rounds=7: 336 detectors, 385 measurements, gen_seed=57
+[ext] sampled 50,000,000 shots in 4.9 min  det_evts_packed(50000000, 42) (n_det=336)
+[ext] wrote /home/kchey/pools_d7_p005_19M/data_d7_p0.005_r7_TRAINONLY_seed57.npz  (2.0 GB)
+[ext] flips sha256 3786620f5745cebb  base_rate 0.34631
+[ext] every shot [0, 50,000,000) is training data; nothing is reserved here
+[pools 2026-09-30T21:25:03Z] END   d=7 p=0.005 seed=57 exit 0
+[pools 2026-09-30T21:25:03Z] ALL DONE
+[pools 2026-10-01T02:45:08Z] START d=9 p=0.004 n=50000000 seed=58 --compact
+[ext] d=9 p=0.004 rounds=9: 720 detectors, 801 measurements, gen_seed=58
+[ext] sampled 50,000,000 shots in 7.6 min  det_evts_packed(50000000, 90) (n_det=720)
+[ext] wrote /home/kchey/pools_d9_p004_19M/data_d9_p0.004_r9_TRAINONLY_seed58.npz  (4.2 GB)
+[ext] flips sha256 a40ba73852676f7f  base_rate 0.39287
+[ext] every shot [0, 50,000,000) is training data; nothing is reserved here
+[pools 2026-10-01T02:52:47Z] END   d=9 seed=58 exit 0
+[pools 2026-10-01T02:52:47Z] START d=9 p=0.004 n=50000000 seed=59 --compact
+[ext] d=9 p=0.004 rounds=9: 720 detectors, 801 measurements, gen_seed=59
+[ext] sampled 50,000,000 shots in 7.9 min  det_evts_packed(50000000, 90) (n_det=720)
+[ext] wrote /home/kchey/pools_d9_p004_19M/data_d9_p0.004_r9_TRAINONLY_seed59.npz  (4.2 GB)
+[ext] flips sha256 9ffe1c68187fc1c9  base_rate 0.3928
+[ext] every shot [0, 50,000,000) is training data; nothing is reserved here
+[pools 2026-10-01T03:00:48Z] END   d=9 seed=59 exit 0

@@ -1,0 +1,52 @@
+=============== d=7 r=7 seed 0  (gru_d7_p005_u280_ext35000000+50000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000) ===============
+train        : [0, 15000000)
+validation   : [15000000, 15200000)
+evaluation   : [15200000, 17000000)
+sealed test  : [17000000, 19000000)   not read
+pool         : /home/kchey/pools_d7_p005_19M/data_d7_p0.005_r7_FORMAL_seed55.npz
+pool prov    : gen_seed=55 flips_sha=72b2ec115d035d98b68d2aefc85e5baa8385f6835a45be81365c9ea3e37e4f4a n_total=19000000
+2026-10-01T19:55:06Z start
+[env] TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1 present before import
+[gru] tf32=on (TensorFlow default)
+[gpu] per-process limit 1600 MiB on 1 device(s)
+[gru] TF 2.15.0  GPUs: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+[gru] extra pool gen_seed=56 flips_sha=e7b389b75e8c5212
+[gru] extra pool gen_seed=57 flips_sha=3786620f5745cebb
+[gru] training array (100000000, 8, 48) uint8 (35.8 GB) allocated once; primary prefix [0, 15,000,000) filled
+[gru] hard-label control arm: teacher column unused (alpha=1).
+[gru] training set extended by 35,000,000 shots from data_d7_p0.005_r7_TRAINONLY_seed56.npz; total 50,000,000
+[gru] training set extended by 50,000,000 shots from data_d7_p0.005_r7_TRAINONLY_seed57.npz; total 100,000,000
+[gru] provenance: pool=pools_d7_p005_19M/data_d7_p0.005_r7_FORMAL_seed55.npz flips_sha= teacher_sha= code_sha=60882afd066642c0
+[gru] scoring shots [15,200,000, 17,000,000)
+[gru] partitions: train [0, 15,000,000) of the primary pool + 85,000,000 augmentation shots  validation [15,000,000, 15,200,000)  (validation_split disabled)
+[gru] 10000 steps/epoch x 80 epochs = 800,000 optimizer updates
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+[gru] reset_after=False unroll=False
+[gru] optimizer Adam lr=0.003 schedule=cosine lr_end=3e-05 over 800,000 updates global_clipnorm=0.64 log_grad_norm=True
+[gru] gru inputs=evts params=276,641
+[gru] checkpoints -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R12_d7_u280_100M_p005_20261001T195434Z/seed0/ckpt/gru_d7_p005_u280_ext35000000+50000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.best.keras + .best.weights.h5 (lowest val LER, tiebreak val_loss; epoch in /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R12_d7_u280_100M_p005_20261001T195434Z/seed0/ckpt/gru_d7_p005_u280_ext35000000+50000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.best.json) and /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R12_d7_u280_100M_p005_20261001T195434Z/seed0/ckpt/gru_d7_p005_u280_ext35000000+50000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.lastepoch.weights.h5
+[gru] callback order: ['ValLERCheckpoint', '_SaveLastEpoch', 'LambdaCallback', 'LambdaCallback']
+[gru] input: host-memory uint8 tf.data, shuffle seed 0, batch 10000, prefetch to GPU
+Epoch 1/80
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790885006.845785    1090 device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+[gru] epoch 1: val_loss=0.07525 val_ler=0.028700 (5,740/200,000 errors)  <- new best
+[gru] epoch 1: global grad norm median 0.07788; clipped 2/10,001 updates (0.0002), cumulative 0.0002
+10000/10000 - 344s - loss: 0.1346 - hard_accuracy: 0.9429 - val_loss: 0.0753 - val_hard_accuracy: 0.9713 - val_ler: 0.0287 - val_errors: 5740.0000 - lr: 0.0030 - grad_norm_median: 0.0779 - clip_frac: 1.9998e-04 - clip_frac_cum: 1.9998e-04 - 344s/epoch - 34ms/step
+Epoch 2/80
+[gru] epoch 2: val_loss=0.05428 val_ler=0.020550 (4,110/200,000 errors)  <- new best
+[gru] epoch 2: global grad norm median 0.05724; clipped 0/10,000 updates (0.0000), cumulative 0.0001
+10000/10000 - 320s - loss: 0.0627 - hard_accuracy: 0.9761 - val_loss: 0.0543 - val_hard_accuracy: 0.9795 - val_ler: 0.0205 - val_errors: 4110.0000 - lr: 0.0030 - grad_norm_median: 0.0572 - clip_frac: 0.0000e+00 - clip_frac_cum: 9.9995e-05 - 320s/epoch - 32ms/step
+Epoch 3/80
+[gru] epoch 3: val_loss=0.04805 val_ler=0.017865 (3,573/200,000 errors)  <- new best
+[gru] epoch 3: global grad norm median 0.05149; clipped 0/10,000 updates (0.0000), cumulative 0.0001
+10000/10000 - 334s - loss: 0.0507 - hard_accuracy: 0.9810 - val_loss: 0.0480 - val_hard_accuracy: 0.9821 - val_ler: 0.0179 - val_errors: 3573.0000 - lr: 0.0030 - grad_norm_median: 0.0515 - clip_frac: 0.0000e+00 - clip_frac_cum: 6.6664e-05 - 334s/epoch - 33ms/step
+Epoch 4/80
+[gru] epoch 4: val_loss=0.04407 val_ler=0.016330 (3,266/200,000 errors)  <- new best
+[gru] epoch 4: global grad norm median 0.04849; clipped 0/10,000 updates (0.0000), cumulative 0.0000
+10000/10000 - 312s - loss: 0.0458 - hard_accuracy: 0.9830 - val_loss: 0.0441 - val_hard_accuracy: 0.9837 - val_ler: 0.0163 - val_errors: 3266.0000 - lr: 0.0030 - grad_norm_median: 0.0485 - clip_frac: 0.0000e+00 - clip_frac_cum: 4.9999e-05 - 312s/epoch - 31ms/step
+Epoch 5/80
+[gru] epoch 5: val_loss=0.04177 val_ler=0.015310 (3,062/200,000 errors)  <- new best
+[gru] epoch 5: global grad norm median 0.04568; clipped 0/10,000 updates (0.0000), cumulative 0.0000
+10000/10000 - 313s - loss: 0.0429 - hard_accuracy: 0.9841 - val_loss: 0.0418 - val_hard_accuracy: 0.9847 - val_ler: 0.0153 - val_errors: 3062.0000 - lr: 0.0030 - grad_norm_median: 0.0457 - clip_frac: 0.0000e+00 - clip_frac_cum: 3.9999e-05 - 313s/epoch - 31ms/step
+Epoch 6/80

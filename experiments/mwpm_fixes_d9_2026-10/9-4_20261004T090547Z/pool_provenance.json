@@ -1,0 +1,53 @@
+{
+  "path": "/home/kchey/pools_d9_p004_19M/data_d9_p0.004_r9_FORMAL.npz",
+  "d": 9,
+  "p": 0.004,
+  "rounds": 9,
+  "n_total": 19000000,
+  "partition_train": [
+    0,
+    15000000
+  ],
+  "partition_val": [
+    15000000,
+    15200000
+  ],
+  "partition_test_SEALED": [
+    17000000,
+    19000000
+  ],
+  "protocol": "Option A: dedicated validation block, disjoint from training and from the sealed test. Stricter than the r=3 exploratory protocol, which used Keras validation_split inside the prefix.",
+  "n_val": 200000,
+  "train_capacity": 15000000,
+  "gen_seed": 42,
+  "flips_sha256": "4ff74414c88cf5a75e3a195a8da83d9137e81785ef36c053ec231db4438a8ca3",
+  "measurements_shape": "(19000000, 801)",
+  "det_evts_shape": "(19000000, 720)",
+  "mwpm_p_L": 0.0022745,
+  "size_gb": 26.93,
+  "partition_eval": [
+    15200000,
+    17000000
+  ],
+  "n_eval": 1800000,
+  "mwpm_resid_errors_15M_17M": 4549,
+  "mwpm_block": [
+    15000000,
+    17000000
+  ],
+  "n_sealed": 2000000,
+  "as_written_before_2026-10-06": {
+    "partition_val": [
+      15000000,
+      17000000
+    ],
+    "n_val": 2000000,
+    "n_test": 2000000,
+    "mwpm_resid_errors_test": 4549
+  },
+  "corrections_2026-10-06": [
+    "partition_val [15M, 17M] (written before the split) -> validation [15.0M, 15.2M) and evaluation [15.2M, 17M), as configs/partitions.yaml",
+    "mwpm_resid_errors_test -> mwpm_resid_errors_15M_17M: gen_pool_r5.py decoded MWPM on [15M, 17M) (validation + evaluation), not the sealed block; mwpm_p_L is over the same 2M shots",
+    "n_test -> n_sealed (the size of partition_test_SEALED)"
+  ]
+}

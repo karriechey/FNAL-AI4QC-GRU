@@ -1,0 +1,7 @@
+new code 2951413972c030ce03d2fb4aec2ff4e65949eda9
+old code abfebbaabbfa209711e3927fa7fc9c822b25ff78
+OLD20   peak host memory (RAM+swap)   38.3 GB  epochs 3
+NEW20   peak host memory (RAM+swap)   20.2 GB  epochs 3
+NEW100  peak host memory (RAM+swap)   72.5 GB  epochs 3
+NEW20 vs OLD20 max |diff|: {'loss': 0.0, 'val_loss': 0.0, 'val_errors': 0.0}
+LOADER CHECK: PASS

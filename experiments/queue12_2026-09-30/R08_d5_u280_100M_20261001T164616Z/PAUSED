@@ -1,0 +1,1 @@
+paused at 2026-10-01T19:54:31Z after 36 completed epochs: swap growing (149 -> 164 GB, 99 GB free) from jobs started before MALLOC_ARENA_MAX=2; R08 grew ~2 GB per epoch. lastepoch weights + optimizer state at epoch 36 kept for a resume with the arena cap.

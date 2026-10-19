@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_student.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
+# Last modified: 2026-10-18 (--teacher-weights, --save-epochs-from). Earlier 2026-10-11 (--fresh-shots-per-epoch with --teacher-model: distillation on fresh shots, the teacher's logit for each training batch computed on the GPU inside the training step). Earlier 2026-10-09 (--fresh-shots-per-epoch: training shots sampled new from Stim for every epoch, src/fresh_shots.py, so no training shot is seen twice; validation and scored blocks still from the pool). Earlier 2026-10-03 (--lr-warmup-epochs: linear warmup before the cosine; --ema-decay: moving average of the weights, which are the ones checkpointed and scored; --warm-start: initialise from another run's .best.keras, tensors of matching name and shape; --max-params: refuse a model over a parameter budget). 2026-10-05: --units takes several values for stacked GRU layers; one value as before. 2026-10-06: pool arrays read row-range by row-range (pool_rows), so rows outside the requested blocks, and the sealed rows in particular, are never loaded. --teacher-model: soft targets computed in this process from a saved GRU teacher, on the exact training array (primary prefix and every extension pool), the validation block and the scored block. Earlier 2026-10-02 (guards: alpha<1 with --extra-train-pool refused; --eval-start or --test-pool required; train/validation/scored blocks checked disjoint per pool and against the sealed block of configs/partitions.yaml; pool d/p/rounds checked; --hidden default by student; auto tag built before the checkpoint prefix and names units, hidden, lr, schedule, epochs, reset_after; scored_weights column). Earlier 2026-10-01 (training set built in one preallocated uint8 array, every pool converted in chunks; no full-size intermediate copies). Earlier 2026-09-30 (training-only pools in the compact format: bit-packed detection events, no measurements). Earlier 2026-09-29 (--resume-weights, --initial-epoch, --resume-best-json, --resume-history: continue a finished run to more epochs). Earlier 2026-09-27 (imports from helpers; best checkpoint chosen by val LER, saved as full .keras; --reset-after; host-memory tf.data input; --unroll; --no-tf32; several --extra-train-pool; --lr-schedule cosine, --lr-end, --global-clipnorm, --log-grad-norm, --stop-after-steps)
 """Train one distillation student (MLP or GRU) against the cached FP32 teacher outputs.
 
 A single point is (student, inputs, seed, n_train, alpha, temperature, weight_bits,
@@ -39,7 +39,7 @@ import os
 import time
 import numpy as np
 
-from helpers import (set_seeds, learning_rate_scheduler, lookup_mwpm, cosine_lr_schedule,
+from helpers import (set_seeds, learning_rate_scheduler, lookup_mwpm, warmup_cosine_lr_schedule,
                      make_adam_logging_grad_norm)
 from host_data import to_host_uint8, make_dataset  # reuse the recipe
 
@@ -215,6 +215,48 @@ def teacher_agreement(student_pred, teacher_prob, truth, band):
     return out
 
 
+def attach_teacher_to_train_step(tf, model, teacher):
+    """Fill the teacher column of each training batch with the teacher's logit, on the GPU,
+    inside the student's own training step (fresh-shot distillation, 2026-10-11).
+
+    Fresh batches are sampled during training, so no stored teacher logits exist for them.
+    The batch target arrives as [hard_label, 0]; this replaces the 0 with teacher(x) and then
+    runs Keras' normal training step on the student. The teacher is held in a closure, not
+    as an attribute of the student, so it is not tracked by the student: saved weights,
+    checkpoints and the parameter count are the student's alone. Validation batches already
+    carry the teacher's logits (computed once on the validation block), so test_step is
+    unchanged.
+    """
+    teacher.trainable = False
+    base_train_step = type(model).train_step
+
+    def train_step(self, data):
+        x, y = data
+        return base_train_step(self, (x, teacher_logit_column(tf, teacher, x, y)))
+
+    import types
+    model.train_step = types.MethodType(train_step, model)
+
+
+# also called by the pilot's teacher check, so it scores the teacher exactly as training does
+def teacher_logit_column(tf, teacher, x, y):
+    z = tf.cast(tf.reshape(teacher(x, training=False), (-1, 1)), y.dtype)
+    return tf.concat([y[:, :1], z], axis=1)
+
+
+def build_teacher_from_weights(tf, path, units, d, rounds, p, expected_params=None):
+    from StudentModels import build_gru_student
+    u = units[0] if len(units) == 1 else tuple(units)
+    teacher = build_gru_student(d=d, rounds=rounds, inputs='evts', units=u, hidden=(), p=p,
+                                name='teacher')
+    teacher.load_weights(path)
+    n = int(teacher.count_params())
+    if expected_params is not None and n != expected_params:
+        raise SystemExit(f"{LOG} teacher {os.path.basename(path)}: {n:,} parameters, "
+                         f"expected {expected_params:,}. STOP.")
+    return teacher
+
+
 def make_hard_accuracy():
     """Accuracy against the hard label only, ignoring the packed teacher column.
 
@@ -358,26 +400,33 @@ def load_extension_features(zex, take, d, r, p, inputs, student, idx_t, binary_t
     """
     from circuit_partition import split_measurements
     from StudentModels import assemble_features
-    f_ex = zex['flips'][0:take].astype(binary_t).reshape(-1)
-    compact = 'det_evts_packed' in zex.files
+    import pool_rows as PR
+    if isinstance(zex, str):
+        # A pool path (2026-10-06): read only rows [a, b) of each array, chunk by chunk, so
+        # no row at or after `take` is ever read.
+        files = PR.keys(zex)
+        get = lambda key, a, b: PR.rows(zex, key, a, b)
+        n_det_of = lambda: int(PR.scalar(zex, 'n_det'))
+    else:
+        files = zex.files               # an open npz (tests/compact_pool_check.sh), as before
+        get = lambda key, a, b: zex[key][a:b]
+        n_det_of = lambda: int(zex['n_det'])
+    f_ex = get('flips', 0, take).astype(binary_t).reshape(-1)
+    compact = 'det_evts_packed' in files
     if compact:
         if not (student == 'gru' and inputs == 'evts'):
             raise SystemExit(f"{LOG} compact pool (detection events only) serves the GRU "
                              f"with inputs='evts' only; got student={student} inputs={inputs}")
-        n_det = int(zex['n_det'])
-        src = zex['det_evts_packed'][0:take]
-    else:
-        src_m = zex['measurements'][0:take]
-        src = zex['det_evts'][0:take]
+        n_det = n_det_of()
     x_ex = out
     for a in range(0, take, chunk):
         b = min(a + chunk, take)
         if compact:
-            e_c = np.unpackbits(src[a:b], axis=1, count=n_det).astype(binary_t)
+            e_c = np.unpackbits(get('det_evts_packed', a, b), axis=1, count=n_det).astype(binary_t)
             b_c = None
         else:
-            e_c = src[a:b].astype(binary_t)
-            b_c, _, _ = split_measurements(src_m[a:b].astype(binary_t), d, idx_t)
+            e_c = get('det_evts', a, b).astype(binary_t)
+            b_c, _, _ = split_measurements(get('measurements', a, b).astype(binary_t), d, idx_t)
         x_c = to_host_uint8(assemble_features(b_c, e_c, inputs, student=student,
                                               d=d, rounds=r, p=p))
         if x_ex is None:
@@ -385,6 +434,84 @@ def load_extension_features(zex, take, d, r, p, inputs, student, idx_t, binary_t
         x_ex[a:b] = x_c
         del e_c, b_c, x_c
     return x_ex, f_ex
+
+
+def resolve_hidden(student, hidden):
+    """Dense widths for the student. None (flag not given) means the architecture's default:
+    () for the GRU, (128, 128) for the MLP. A bare --hidden gives [] = no Dense layers; given
+    values are used as they are."""
+    if hidden is None:
+        return () if student == 'gru' else (128, 128)
+    return tuple(hidden)
+
+
+def check_pools_and_partitions(args, train_fn):
+    """Checks on the pools and blocks of this run, before anything is loaded or built.
+
+    1. Every pool (primary, --test-pool, each --extra-train-pool) has the d, p, rounds of
+       the arguments, read from its .fingerprint.json or else its file name; a pool with
+       neither is warned about.
+    2. The blocks this run reads, as (pool, start, stop): the training prefix of the
+       primary pool, each extension's [0, take), the validation block, the scored block
+       (both read from --test-pool when it is given, else from the primary pool), and the
+       sealed block of every FORMAL pool among them (configs/partitions.yaml, cross-checked
+       against the fingerprint). No two blocks of the same file may overlap.
+    """
+    import partitions as P
+    import pool_rows as PR
+    pools = ([('primary', train_fn)] + ([('test', args.test_pool)] if args.test_pool else [])
+             + [('extension', x) for x in (args.extra_train_pool or [])])
+    for role, pool in pools:
+        if not os.path.exists(pool):
+            raise SystemExit(f"{LOG} MISSING {role} pool {pool}")
+        try:
+            src = P.check_pool_geometry(pool, args.d, args.p, args.rounds)
+        except ValueError as e:
+            raise SystemExit(f"{LOG} {role} pool: {e}")
+        if src is None:
+            print(f"{LOG} WARNING: {role} pool {os.path.basename(pool)} has no fingerprint "
+                  f"and no data_d*_p*_r* name; d/p/rounds not checked", flush=True)
+
+    sizes = {}
+
+    def n_of(pool):
+        if pool not in sizes:
+            sizes[pool] = PR.n_rows(pool, 'flips')     # header only
+        return sizes[pool]
+
+    score_pool = args.test_pool or train_fn
+    e0 = (n_of(score_pool) - args.n_test) if args.eval_start is None else args.eval_start
+    blocks = [('training prefix', train_fn, 0, args.n_train),
+              ('scored block', score_pool, e0, e0 + args.n_test)]
+    if args.val_start is not None and args.val_n is not None:
+        # Validation is read from the same file as the scored block (see the loader below).
+        blocks.append(('validation', score_pool, args.val_start, args.val_start + args.val_n))
+    counts = list(args.extra_train_n or [])
+    for i, ext in enumerate(args.extra_train_pool or []):
+        n_ex = n_of(ext)
+        take = min((counts[i] if i < len(counts) else None) or n_ex, n_ex)
+        blocks.append(('training extension', ext, 0, take))
+    for pool in dict.fromkeys(b[1] for b in blocks):
+        try:
+            sealed, why = P.sealed_block(pool, n_of(pool))
+        except ValueError as e:
+            raise SystemExit(f"{LOG} {e}")
+        if sealed is not None:
+            blocks.append(('sealed block', pool, sealed[0], sealed[1]))
+            print(f"{LOG} sealed block of {os.path.basename(pool)}: "
+                  f"[{sealed[0]:,}, {sealed[1]:,}) ({why}); not read", flush=True)
+        elif not why.startswith('training-only'):
+            print(f"{LOG} WARNING: {why}", flush=True)
+    try:
+        P.check_disjoint(blocks)
+    except ValueError as e:
+        raise SystemExit(f"{LOG} {e}")
+    where = (f"--test-pool {os.path.basename(args.test_pool)}" if args.test_pool
+             else f"the primary pool {os.path.basename(train_fn)}")
+    print(f"{LOG} blocks disjoint: training prefix [0, {args.n_train:,}) of the primary pool; "
+          + (f"validation [{args.val_start:,}, {args.val_start + args.val_n:,}) and "
+             if args.val_start is not None and args.val_n is not None else "")
+          + f"scored [{e0:,}, {e0 + args.n_test:,}) read from {where}", flush=True)
 
 
 def run():
@@ -400,10 +527,12 @@ def run():
                     help="'evts' = detector events only (what MWPM sees, smallest FPGA "
                          "input). 'evts+bits' also feeds the raw stabilizer measurements, "
                          "which the teacher sees.")
-    ap.add_argument('--hidden', type=int, nargs='*', default=[128, 128],
-                    help='MLP: the Dense stack. GRU: optional Dense layers after the GRU '
-                         '(pass with no values for none).')
-    ap.add_argument('--units', type=int, default=64, help='GRU hidden state size')
+    ap.add_argument('--hidden', type=int, nargs='*', default=None,
+                    help='MLP: the Dense stack. GRU: optional Dense layers after the GRU. '
+                         'Not given: GRU none, MLP 128 128. Given with no values: none.')
+    ap.add_argument('--units', type=int, nargs='+', default=[64],
+                    help='GRU hidden state size; several values = stacked GRU layers '
+                         '(e.g. 280 280). One value builds the single-layer model as before.')
     ap.add_argument('--reset-after', action='store_true',
                     help='GRU with reset_after=True (cuDNN form); default False as before')
     ap.add_argument('--unroll', action='store_true',
@@ -419,6 +548,20 @@ def run():
     ap.add_argument('--teacher-cache', default=None,
                     help='npz from dump_teacher_probs.py over the TRAINING prefix. '
                          'Required unless --alpha 1.0.')
+    ap.add_argument('--teacher-model', default=None,
+                    help='a .keras GRU teacher (logit head, e.g. a .best.keras). Its logits are '
+                         'computed here, in this process, on the training array as built '
+                         '(primary prefix and every --extra-train-pool shot), on the '
+                         'validation block and on the scored block, so the soft targets are '
+                         'aligned with the training shots by construction. Replaces '
+                         '--teacher-cache / --val-teacher-cache / --teacher-tail-cache and '
+                         'allows alpha < 1 with extension pools.')
+    ap.add_argument('--teacher-weights', default=None,
+                    help='GRU teacher .weights.h5, rebuilt from --teacher-units')
+    ap.add_argument('--teacher-units', type=int, nargs='+', default=None,
+                    help='e.g. 280 280')
+    ap.add_argument('--teacher-params', type=int, default=None,
+                    help='required parameter count of the rebuilt teacher')
     ap.add_argument('--teacher-tail-cache', default=None,
                     help='npz from dump_teacher_probs.py over the EVALUATION TAIL. '
                          'Optional; enables the student-vs-teacher agreement columns, '
@@ -492,8 +635,19 @@ def run():
                          'update; cosine decays it per optimizer update from --lr to '
                          '--lr-end over all epochs x steps, no warmup '
                          '(helpers.cosine_lr_schedule).')
+    ap.add_argument('--lr-warmup-epochs', type=float, default=0.0,
+                    help='with --lr-schedule cosine: raise the rate linearly from ~0 to --lr '
+                         'over this many epochs of updates, then run the cosine from --lr to '
+                         '--lr-end over the remaining updates. Default 0 = no warmup, as before.')
     ap.add_argument('--lr-end', type=float, default=3e-5,
                     help='final learning rate of --lr-schedule cosine.')
+    ap.add_argument('--ema-decay', type=float, default=None,
+                    help='keep an exponential moving average of the weights (Adam use_ema, '
+                         'ema_momentum = this value, e.g. 0.999). The val-LER checkpoint is '
+                         'chosen on, and saves, the EMA weights; at the end of fit() Keras '
+                         'copies the EMA weights into the model, so the end-of-fit score is '
+                         'also the EMA weights. Needs --lr, --val-start and alpha 1. '
+                         'Default None = no EMA, as before.')
     ap.add_argument('--global-clipnorm', type=float, default=None,
                     help='Adam global_clipnorm: when the global norm of all gradients of an '
                          'update exceeds this value, all of them are scaled down together '
@@ -524,6 +678,29 @@ def run():
     ap.add_argument('--resume-history', default=None,
                     help='the earlier run\'s .history.json; written history = earlier epochs + '
                          'resumed epochs')
+    ap.add_argument('--warm-start', default=None,
+                    help='a .best.keras from an earlier run (any distance). Every weight '
+                         'tensor whose name and shape match this model\'s is copied in; the '
+                         'others keep their fresh initialisation. Between distances the GRU '
+                         'input kernel differs in shape (positions per timestep) and stays '
+                         'fresh; the recurrent kernel, the GRU bias and the logit head load. '
+                         'The optimizer starts fresh. Not with --resume-weights.')
+    ap.add_argument('--fresh-shots-per-epoch', type=int, default=None,
+                    help='sample this many NEW training shots from Stim for every epoch '
+                         '(src/fresh_shots.py) instead of reading a training array, so no '
+                         'shot is trained on twice. Needs --n-train 0, alpha 1, no teacher '
+                         'and no --extra-train-pool. Validation and scored blocks are read '
+                         'from the pool as usual.')
+    ap.add_argument('--fresh-workers', type=int, default=8,
+                    help='sampling processes for --fresh-shots-per-epoch (8 give about '
+                         '860k d9 shots/s on grace1, several times the training rate)')
+    ap.add_argument('--fresh-seed-base', type=int, default=None,
+                    help='first Stim seed of the fresh shots (default fresh_shots.SEED_BASE '
+                         '= 10**12); chunk c of epoch e uses base + e * 10**6 + c')
+    ap.add_argument('--max-params', type=int, default=None,
+                    help='stop before training if the model has more parameters than this '
+                         '(the width budget, e.g. the u280 count at this distance). Default '
+                         'None = no limit.')
     ap.add_argument('--tail-diagnostics', action='store_true',
                     help='evaluate the tail every epoch and log p_L, predicted-positive '
                          'rate vs base rate, a class-collapse flag, and the student logit '
@@ -543,13 +720,16 @@ def run():
     ap.add_argument('--test-pool', default=None,
                     help='separate npz for a FRESH disjoint tail; strongly preferred')
     ap.add_argument('--eval-start', type=int, default=None,
-                    help='first shot to score. Default None = the last --n-test shots. On '
-                         'a pool whose final block is the sealed test partition, set this '
-                         'to the validation start so the test set is never read.')
+                    help='first shot to score. This or --test-pool is required. With only '
+                         '--test-pool, the last --n-test shots of that pool are scored. '
+                         'Blocks overlapping the sealed block are refused.')
     ap.add_argument('--out-dir', default=None,
                     help='default: ~/rcnn_threshold/out_{student}, so MLP and GRU results '
                          'never land in the same directory')
     ap.add_argument('--tag', default=None, help='override the auto-generated output tag')
+    ap.add_argument('--save-epochs-from', type=int, default=None,
+                    help='save every epoch from this one (1-based) to --epochs-dir')
+    ap.add_argument('--epochs-dir', default=None)
     ap.add_argument('--cpu', action='store_true')
     ap.add_argument('--gpu-mem-mib', type=int, default=None,
                     help='cap this process to N MiB of GPU memory, so several trainings '
@@ -562,9 +742,56 @@ def run():
     if args.out_dir is None:
         args.out_dir = os.path.expanduser(f'~/rcnn_threshold/out_{args.student}')
 
-    if args.alpha < 1.0 and not args.teacher_cache:
-        raise SystemExit(f"{LOG} --teacher-cache is required unless --alpha 1.0 "
-                         "(pure hard-label control arm).")
+    if args.teacher_weights:
+        if args.teacher_model or not args.teacher_units:
+            raise SystemExit(f"{LOG} --teacher-weights needs --teacher-units and no "
+                             "--teacher-model. STOP.")
+        args.teacher_model = args.teacher_weights
+    if args.save_epochs_from is not None and not args.epochs_dir:
+        raise SystemExit(f"{LOG} --save-epochs-from needs --epochs-dir. STOP.")
+    if args.teacher_model and args.teacher_cache:
+        raise SystemExit(f"{LOG} give --teacher-model or --teacher-cache, not both. STOP.")
+    if args.alpha < 1.0 and not (args.teacher_cache or args.teacher_model):
+        raise SystemExit(f"{LOG} --teacher-cache or --teacher-model is required unless "
+                         "--alpha 1.0 (pure hard-label control arm).")
+
+    # --- guards that need no TensorFlow (2026-10-02) ----------------------------------
+    # Extension shots get a teacher logit of 0 (p = 0.5), so with alpha < 1 the soft term
+    # would train them toward a coin flip. No teacher cache exists for them.
+    # (2026-10-06) With --teacher-model every shot, extension shots included, gets the
+    # teacher's own logit, so the combination is allowed then.
+    if args.extra_train_pool and args.alpha < 1.0 and not args.teacher_model:
+        raise SystemExit(f"{LOG} --extra-train-pool with alpha={args.alpha} < 1: the extension "
+                         f"shots have no teacher logits (they would be filled with 0, p=0.5). "
+                         f"Use --alpha 1.0 with extensions. STOP.")
+    # (2026-10-09) Fresh shots replace the training array: no training prefix or extension,
+    # and an explicit validation block for the checkpoint rule. (2026-10-11) Distillation is
+    # allowed with --teacher-model: the teacher scores each fresh batch inside the training
+    # step. A --teacher-cache covers stored shots only, so it cannot be used.
+    if args.fresh_shots_per_epoch:
+        bad = [why for cond, why in (
+            (args.n_train != 0, '--n-train 0'),
+            (bool(args.teacher_cache), '--teacher-model (a teacher cache covers stored shots only)'),
+            (bool(args.extra_train_pool), 'no --extra-train-pool'),
+            (args.val_start is None, '--val-start/--val-n'),
+            (args.student != 'gru' or args.inputs != 'evts', 'the GRU with inputs evts'))
+            if cond]
+        if bad:
+            raise SystemExit(f"{LOG} --fresh-shots-per-epoch needs {', '.join(bad)}. STOP.")
+    # Without either flag the scored block would default to the last --n-test shots of the
+    # primary pool, which on a FORMAL pool is the sealed block.
+    if args.eval_start is None and args.test_pool is None:
+        raise SystemExit(f"{LOG} give --eval-start (scored block in the primary pool) or "
+                         f"--test-pool (a separate pool). STOP.")
+    hidden = resolve_hidden(args.student, args.hidden)
+    # One value: the int, so the model and every name built from it are as before.
+    units = args.units[0] if len(args.units) == 1 else tuple(args.units)
+    units_str = 'x'.join(str(u) for u in args.units)
+    train_fn = args.pool or os.path.join(args.data_dir,
+                                         f'data_d{args.d}_p{args.p:.3f}_r{args.rounds}.npz')
+    if not os.path.exists(train_fn):
+        raise SystemExit(f"{LOG} MISSING pool {train_fn}")
+    check_pools_and_partitions(args, train_fn)
 
     if args.require_determinism:
         # The parameter-reduction study requires the LAUNCHER to have exported both
@@ -605,11 +832,8 @@ def run():
     ntr, nte = args.n_train, args.n_test
     binary_t, _time_t, idx_t, _packed_t = get_types(d, r, k)
 
-    train_fn = args.pool or os.path.join(args.data_dir, f'data_d{d}_p{p:.3f}_r{r}.npz')
-    if not os.path.exists(train_fn):
-        raise SystemExit(f"{LOG} MISSING pool {train_fn}")
-    ztr = np.load(train_fn)
-    N = ztr['measurements'].shape[0]
+    import pool_rows as PR
+    N = PR.n_rows(train_fn, 'measurements')         # header only; no row is read here
 
     # --- training features ---------------------------------------------------------
     if args.test_pool:
@@ -641,8 +865,7 @@ def run():
     for i_ex, ext_pool in enumerate(ext_pools):
         if not os.path.exists(ext_pool):
             raise SystemExit(f"{LOG} MISSING extra pool {ext_pool}")
-        zex = np.load(ext_pool)
-        n_ex = zex['flips'].shape[0]
+        n_ex = PR.n_rows(ext_pool, 'flips')
         take = min((ext_counts[i_ex] if ext_counts else None) or n_ex, n_ex)
         fp = ext_pool.replace('.npz', '.fingerprint.json')
         if os.path.exists(fp):
@@ -660,22 +883,25 @@ def run():
             print(f"{LOG} extra pool gen_seed={meta_ex.get('gen_seed')} "
                   f"flips_sha={str(meta_ex.get('flips_sha256'))[:16]}", flush=True)
         ext_plan.append((ext_pool, take))
-        del zex
     n_all = ntr + sum(t for _, t in ext_plan)
 
     # Primary training prefix, written into the start of the one training array.
     # Host-memory uint8 (see host_data.py): the features are 0/1, so this is exact.
-    x_first, _ = load_extension_features(ztr, 1, d, r, p, args.inputs, args.student,
+    x_first, _ = load_extension_features(train_fn, 1, d, r, p, args.inputs, args.student,
                                          idx_t, binary_t)          # shape of one shot
     x_tr = np.empty((n_all,) + x_first.shape[1:], dtype=np.uint8)
     del x_first
-    _, f_tr = load_extension_features(ztr, ntr, d, r, p, args.inputs, args.student,
+    _, f_tr = load_extension_features(train_fn, ntr, d, r, p, args.inputs, args.student,
                                       idx_t, binary_t, out=x_tr[0:ntr])
     print(f"{LOG} training array {x_tr.shape} uint8 ({x_tr.nbytes / 1024 ** 3:.1f} GB) "
           f"allocated once; primary prefix [0, {ntr:,}) filled", flush=True)
 
     # --- targets: pack [hard_label, teacher_logit] ----------------------------------
-    if args.alpha >= 1.0 and not args.teacher_cache:
+    if args.teacher_model:
+        # Filled after the training array is complete (below), from the teacher model.
+        z_teach = np.zeros(ntr, dtype=np.float32)
+        teacher_npz = None
+    elif args.alpha >= 1.0 and not args.teacher_cache:
         # Hard-label control arm with no teacher available: the teacher column is unused
         # by the loss (weight 1-alpha == 0), so fill it with zeros rather than requiring
         # a cache the arm does not need.
@@ -685,7 +911,7 @@ def run():
               flush=True)
     else:
         z_teach, p_teach, f_cache = load_teacher_cache(args.teacher_cache, train_fn, 0, ntr,
-                                                       pool_npz=ztr)
+                                                       pool_npz=train_fn)
         teacher_npz = np.load(args.teacher_cache, allow_pickle=False)
         # The cache carries its own copy of `flips`; if it disagrees with the pool's, the
         # two files are not describing the same shots and every soft target is misaligned.
@@ -707,27 +933,81 @@ def run():
 
     # Extensions, each written into its slice of the training array (checked above).
     for ext_pool, take in ext_plan:
-        zex = np.load(ext_pool)
-        _, f_ex = load_extension_features(zex, take, d, r, p, args.inputs, args.student,
+        _, f_ex = load_extension_features(ext_pool, take, d, r, p, args.inputs, args.student,
                                           idx_t, binary_t, out=x_tr[ntr:ntr + take])
         f_tr = np.concatenate([f_tr, f_ex], axis=0)
         z_teach = np.concatenate([z_teach, np.zeros(take, dtype=np.float32)], axis=0)
         ntr = ntr + take
-        del zex
         print(f"{LOG} training set extended by {take:,} shots from "
               f"{os.path.basename(ext_pool)}; total {ntr:,}", flush=True)
     assert ntr == n_all, (ntr, n_all)
 
+    teacher = None
+    if args.teacher_model:
+        # Soft targets from the teacher model, computed on the training array itself (the
+        # same uint8 features the student trains on, in the same order), so each shot's
+        # target is the teacher's logit for that very shot.
+        if not os.path.exists(args.teacher_model):
+            raise SystemExit(f"{LOG} MISSING teacher model {args.teacher_model}")
+        if args.teacher_weights:
+            teacher = build_teacher_from_weights(tf, args.teacher_weights, args.teacher_units,
+                                                 d, r, p, args.teacher_params)
+            print(f"{LOG} teacher rebuilt from {os.path.basename(args.teacher_weights)}: "
+                  f"units {args.teacher_units}, {teacher.count_params():,} parameters", flush=True)
+        else:
+            teacher = tf.keras.models.load_model(args.teacher_model, compile=False)
+        if tuple(teacher.input_shape[1:]) != tuple(x_tr.shape[1:]):
+            raise SystemExit(f"{LOG} teacher input {teacher.input_shape[1:]} != training "
+                             f"features {x_tr.shape[1:]}. STOP.")
+    if teacher is not None and not args.fresh_shots_per_epoch:
+        # Fresh-shot runs have no training array (n_train 0); their teacher logits are
+        # computed per batch in the training step (attach_teacher_to_train_step, below).
+        t0_t = time.time()
+        z_teach = teacher.predict(make_dataset(tf, x_tr, None, args.batch_size),
+                                  verbose=0).reshape(-1).astype(np.float32)
+        if z_teach.shape[0] != ntr:
+            raise SystemExit(f"{LOG} teacher gave {z_teach.shape[0]} logits for {ntr} shots. STOP.")
+        t_err = float(((z_teach > 0).astype(np.int8) != f_tr.reshape(-1).astype(np.int8)).mean())
+        print(f"{LOG} teacher {os.path.basename(args.teacher_model)} "
+              f"({teacher.count_params():,} params): logits for all {ntr:,} training shots in "
+              f"{time.time() - t0_t:.0f}s; p_L on the training shots {t_err:.6f}; mean "
+              f"sigmoid {float(np.mean(1 / (1 + np.exp(-z_teach.astype(np.float64))))):.5f}; "
+              f"exactly-zero logits {int((z_teach == 0).sum())}", flush=True)
+
     prov = run_provenance(args, train_fn, teacher_npz)
+    if args.teacher_model:
+        prov['teacher_cache'] = 'model:' + os.path.basename(args.teacher_model)
+        prov['teacher_weights_sha'] = sha16(args.teacher_model)
     print(f"{LOG} provenance: pool={prov['train_pool_dir']}/{prov['train_pool']} "
           f"flips_sha={prov['train_pool_flips_sha']} teacher_sha={prov['teacher_weights_sha']} "
           f"code_sha={prov['code_sha']}", flush=True)
 
     y_tr = np.stack([f_tr.astype(np.float32), z_teach], axis=1)
 
+    # --- fresh training shots (2026-10-09) -------------------------------------------
+    # With --n-train 0 the code above built empty training arrays. The training batches
+    # come from new Stim samples instead; ntr becomes the shots per epoch, so the update
+    # count, the LR schedule and the logs count the shots actually trained on each epoch.
+    fresh = None
+    if args.fresh_shots_per_epoch:
+        import fresh_shots as FS
+        seed_base = FS.SEED_BASE if args.fresh_seed_base is None else args.fresh_seed_base
+        fresh = FS.FreshShots(d, p, r, args.fresh_shots_per_epoch, args.batch_size,
+                              workers=args.fresh_workers, seed_base=seed_base)
+        try:
+            s_lo, s_hi = FS.check_seeds(args.epochs, fresh.chunks_per_epoch, seed_base)
+        except ValueError as e:
+            raise SystemExit(f"{LOG} {e}. STOP.")
+        ntr = args.fresh_shots_per_epoch
+        prov['train_pool'] = f'fresh_stim_seeds_{s_lo}-{s_hi}'
+        print(f"{LOG} fresh shots: {ntr:,} new shots per epoch from Stim "
+              f"({fresh.chunks_per_epoch} chunks of {fresh.chunk:,}, {args.fresh_workers} "
+              f"workers), seeds [{s_lo}, {s_hi}); {ntr * args.epochs:,} distinct training "
+              f"shots over {args.epochs} epochs; no training array in memory", flush=True)
+
     # --- evaluation tail ------------------------------------------------------------
-    zte = np.load(args.test_pool) if args.test_pool else ztr
-    Nte = zte['measurements'].shape[0]
+    zte = args.test_pool or train_fn                 # a path; rows are read per block below
+    Nte = PR.n_rows(zte, 'measurements')
     if args.eval_start is None:
         te = slice(Nte - nte, Nte)
     else:
@@ -736,9 +1016,9 @@ def run():
                              f"exceeds pool size {Nte}")
         te = slice(args.eval_start, args.eval_start + nte)
     print(f"{LOG} scoring shots [{te.start:,}, {te.stop:,})", flush=True)
-    m_te = zte['measurements'][te].astype(binary_t)
-    e_te = zte['det_evts'][te].astype(binary_t)
-    f_te = zte['flips'][te].astype(binary_t).reshape(-1)
+    m_te = PR.rows(zte, 'measurements', te.start, te.stop).astype(binary_t)
+    e_te = PR.rows(zte, 'det_evts', te.start, te.stop).astype(binary_t)
+    f_te = PR.rows(zte, 'flips', te.start, te.stop).astype(binary_t).reshape(-1)
     b_te, _, _ = split_measurements(m_te, d, idx_t)
     x_te = to_host_uint8(assemble_features(b_te, e_te, args.inputs, student=args.student,
                                            d=d, rounds=r, p=p))
@@ -753,14 +1033,14 @@ def run():
         if args.val_n is None:
             raise SystemExit(f"{LOG} --val-start requires --val-n")
         v0, v1 = args.val_start, args.val_start + args.val_n
-        if v0 < ntr_primary:
-            raise SystemExit(f"{LOG} validation [{v0}, {v1}) overlaps the training "
-                             f"prefix [0, {ntr_primary}) of the primary pool -- not disjoint")
+        # Overlap with the training prefix, the scored block and the sealed block was
+        # checked per file in check_pools_and_partitions; validation is read from the same
+        # file as the scored block (zte), which is --test-pool when one is given.
         if v1 > Nte:
             raise SystemExit(f"{LOG} validation [{v0}, {v1}) exceeds pool size {Nte}")
-        m_va = zte['measurements'][v0:v1].astype(binary_t)
-        e_va = zte['det_evts'][v0:v1].astype(binary_t)
-        f_va = zte['flips'][v0:v1].astype(binary_t).reshape(-1)
+        m_va = PR.rows(zte, 'measurements', v0, v1).astype(binary_t)
+        e_va = PR.rows(zte, 'det_evts', v0, v1).astype(binary_t)
+        f_va = PR.rows(zte, 'flips', v0, v1).astype(binary_t).reshape(-1)
         b_va, _, _ = split_measurements(m_va, d, idx_t)
         x_va = to_host_uint8(assemble_features(b_va, e_va, args.inputs, student=args.student,
                                                d=d, rounds=r, p=p))
@@ -770,7 +1050,13 @@ def run():
         # zeros are a teacher saying p=0.5 on every validation shot, which would make the
         # validation loss measure the wrong thing and, with early stopping, select on it.
         # So the logits must come from a cache covering the validation block.
-        if args.alpha < 1.0:
+        if args.alpha < 1.0 and teacher is not None:
+            z_va = teacher.predict(make_dataset(tf, x_va, None, args.batch_size),
+                                   verbose=0).reshape(-1).astype(np.float32)
+            print(f"{LOG} teacher logits on the validation block: p_L "
+                  f"{float(((z_va > 0).astype(np.int8) != f_va.reshape(-1).astype(np.int8)).mean()):.6f}",
+                  flush=True)
+        elif args.alpha < 1.0:
             if not args.val_teacher_cache:
                 raise SystemExit(
                     f"{LOG} --val-start with alpha={args.alpha} < 1 requires "
@@ -798,7 +1084,9 @@ def run():
         extra = ntr - ntr_primary
         print(f"{LOG} partitions: train [0, {ntr_primary:,}) of the primary pool"
               + (f" + {extra:,} augmentation shots" if extra else "")
-              + f"  validation [{v0:,}, {v1:,})  (validation_split disabled)", flush=True)
+              + f"  validation [{v0:,}, {v1:,})"
+              + (f" of --test-pool {os.path.basename(args.test_pool)}" if args.test_pool else "")
+              + "  (validation_split disabled)", flush=True)
         print(f"{LOG} {steps} steps/epoch x {args.epochs} epochs = "
               f"{steps * args.epochs:,} optimizer updates", flush=True)
     else:
@@ -813,7 +1101,7 @@ def run():
     # --- build, compile, fit --------------------------------------------------------
     set_seeds(seed)
     model = build_student(args.student, d=d, rounds=r, inputs=args.inputs,
-                          hidden=tuple(args.hidden), units=args.units,
+                          hidden=hidden, units=units,
                           weight_bits=args.weight_bits, act_bits=args.act_bits,
                           reset_after=args.reset_after, unroll=args.unroll)
     print(f"{LOG} reset_after={args.reset_after} unroll={args.unroll}", flush=True)
@@ -823,29 +1111,81 @@ def run():
     # exactly the one built before.
     lr_value = None
     if args.lr is not None:
-        lr_value = (cosine_lr_schedule(tf, args.lr, args.lr_end, steps * args.epochs)
+        warmup_steps = int(round(args.lr_warmup_epochs * steps))
+        if warmup_steps and args.lr_schedule != 'cosine':
+            raise SystemExit(f"{LOG} --lr-warmup-epochs needs --lr-schedule cosine. STOP.")
+        lr_value = (warmup_cosine_lr_schedule(tf, args.lr, args.lr_end, steps * args.epochs,
+                                              warmup_steps)
                     if args.lr_schedule == 'cosine' else args.lr)
+        if warmup_steps:
+            # The rate at the first updates, the end of the warmup and the last update, so
+            # the log shows the schedule that was used.
+            marks = sorted({0, 1, 2, warmup_steps - 1, warmup_steps, warmup_steps + 1,
+                            steps * args.epochs - 1})
+            print(f"{LOG} warmup {args.lr_warmup_epochs:g} epochs = {warmup_steps:,} updates; "
+                  + "  ".join(f"lr[{m:,}]={float(lr_value(m)):.3e}" for m in marks), flush=True)
     elif args.lr_schedule != 'constant':
         raise SystemExit('--lr-schedule cosine needs --lr (the start rate)')
+    elif args.lr_warmup_epochs:
+        raise SystemExit(f"{LOG} --lr-warmup-epochs needs --lr. STOP.")
     log_gn = args.log_grad_norm or args.global_clipnorm is not None
     gn_stats = None
+    adam_kw = {}
+    if args.ema_decay is not None:
+        if lr_value is None or val_data is None or args.alpha < 1.0:
+            raise SystemExit(f"{LOG} --ema-decay needs --lr, --val-start/--val-n and alpha 1 "
+                             f"(the EMA weights' validation loss is the hard-label loss). STOP.")
+        adam_kw = dict(use_ema=True, ema_momentum=args.ema_decay)
     if log_gn:
         if lr_value is None:
             raise SystemExit('--log-grad-norm / --global-clipnorm need --lr')
         optimizer, gn_stats = make_adam_logging_grad_norm(
-            tf, lr_value, args.global_clipnorm, steps * args.epochs)
+            tf, lr_value, args.global_clipnorm, steps * args.epochs, **adam_kw)
     else:
-        optimizer = (tf.keras.optimizers.Adam(learning_rate=lr_value)
+        optimizer = (tf.keras.optimizers.Adam(learning_rate=lr_value, **adam_kw)
                      if lr_value is not None else 'adam')
     print(f"{LOG} optimizer Adam lr={args.lr} schedule={args.lr_schedule}"
           + (f" lr_end={args.lr_end} over {steps * args.epochs:,} updates"
              if args.lr_schedule == 'cosine' else '')
+          + (f" warmup_epochs={args.lr_warmup_epochs:g}" if args.lr_warmup_epochs else '')
+          + (f" ema_decay={args.ema_decay:g}" if args.ema_decay is not None else '')
           + f" global_clipnorm={args.global_clipnorm} log_grad_norm={log_gn}", flush=True)
+    if fresh is not None and teacher is not None:
+        attach_teacher_to_train_step(tf, model, teacher)
+        print(f"{LOG} fresh-shot distillation: teacher {os.path.basename(args.teacher_model)} "
+              f"({teacher.count_params():,} params) scores every training batch inside the "
+              f"training step; alpha={args.alpha} T={args.temperature}", flush=True)
     model.compile(optimizer=optimizer,
                   loss=make_distillation_loss(args.alpha, args.temperature),
                   metrics=[make_hard_accuracy()])
     n_params = int(model.count_params())
     print(f"{LOG} {args.student} inputs={args.inputs} params={n_params:,}", flush=True)
+    if args.max_params is not None and n_params > args.max_params:
+        raise SystemExit(f"{LOG} {n_params:,} parameters exceed --max-params "
+                         f"{args.max_params:,}. STOP.")
+    if args.warm_start:
+        if args.resume_weights:
+            raise SystemExit(f"{LOG} --warm-start and --resume-weights together. STOP.")
+        if not os.path.exists(args.warm_start):
+            raise SystemExit(f"{LOG} MISSING warm-start model {args.warm_start}")
+        # compile=False: only the architecture and weights are read, not the optimizer.
+        src_model = tf.keras.models.load_model(args.warm_start, compile=False)
+        src_w = {w.name: w for w in src_model.weights}
+        n_loaded = 0
+        for w in model.weights:
+            s_w = src_w.get(w.name)
+            if s_w is not None and tuple(s_w.shape) == tuple(w.shape):
+                w.assign(s_w)
+                n_loaded += 1
+                print(f"{LOG} warm-start: loaded {w.name} {tuple(w.shape)}", flush=True)
+            else:
+                print(f"{LOG} warm-start: fresh  {w.name} {tuple(w.shape)} (source: "
+                      f"{'absent' if s_w is None else tuple(s_w.shape)})", flush=True)
+        if not n_loaded:
+            raise SystemExit(f"{LOG} warm-start: no tensor of {args.warm_start} matches. STOP.")
+        print(f"{LOG} warm-start from {args.warm_start}: {n_loaded}/{len(model.weights)} "
+              f"tensors loaded", flush=True)
+        del src_model, src_w
     if args.resume_weights:
         if args.initial_epoch <= 0:
             raise SystemExit(f"{LOG} --resume-weights needs --initial-epoch > 0")
@@ -859,6 +1199,28 @@ def run():
         if it != steps * args.initial_epoch:
             raise SystemExit(f"{LOG} optimizer state not restored: update count {it} != "
                              f"{steps * args.initial_epoch}. STOP.")
+
+    # Output tag, built before the checkpoint prefix so every file of the run shares it.
+    # The pool directory is part of the auto tag: the same (student, alpha, seed, ntr)
+    # trained on a different pool is a different experiment, and must not land on the same
+    # filenames as an earlier one. Since 2026-10-02 the auto tag also names the width,
+    # Dense layers, learning rate, schedule, epochs and reset_after, which used to differ
+    # between runs that shared a tag. Launchers pass --tag, so their names are unchanged.
+    wb = 'f32' if args.weight_bits is None else f'w{args.weight_bits}'
+    ab = 'f32' if args.act_bits is None else f'a{args.act_bits}'
+    pool_tag = os.path.basename(os.path.dirname(os.path.abspath(train_fn)))
+    tag = args.tag or (f'student_{args.student}_{args.inputs.replace("+", "-")}_'
+                       f'{wb}_{ab}_alpha{args.alpha:g}_T{args.temperature:g}_'
+                       f'seed{seed}_ntr{ntr}_'
+                       + (f'u{units_str}_' if args.student == 'gru' else '')
+                       + f'h{"-".join(str(h) for h in hidden) or 0}_'
+                       f'lr{"teacher" if args.lr is None else format(args.lr, "g")}_'
+                       f'{args.lr_schedule}_e{args.epochs}_ra{int(args.reset_after)}_'
+                       + (f'wu{args.lr_warmup_epochs:g}_' if args.lr_warmup_epochs else '')
+                       + (f'ema{args.ema_decay:g}_' if args.ema_decay is not None else '')
+                       + ('ws_' if args.warm_start else '')
+                       + f'{pool_tag}')
+    ck_name = args.run_tag or tag      # checkpoint and gradient-norm file prefix
 
     # With --lr the rate is constant and the teacher's scheduler is not attached; it would
     # overwrite the constant each epoch and turn an LR comparison into a schedule test.
@@ -908,13 +1270,25 @@ def run():
         # weights back in during its own on_epoch_end on the stopping epoch, and anything
         # that must observe the true final epoch has to run first.
         os.makedirs(args.ckpt_dir, exist_ok=True)
-        _ck = os.path.join(args.ckpt_dir, (args.run_tag or args.tag or 'run'))
+        _ck = os.path.join(args.ckpt_dir, ck_name)
 
         class _SaveLastEpoch(tf.keras.callbacks.Callback):
             def on_epoch_end(self, epoch, logs=None):
                 self.model.save_weights(_ck + '.lastepoch.weights.h5')
 
         callbacks.insert(0, _SaveLastEpoch())
+        if args.save_epochs_from is not None:
+            os.makedirs(args.epochs_dir, exist_ok=True)
+
+            class _SaveEveryEpoch(tf.keras.callbacks.Callback):
+                def on_epoch_end(self, epoch, logs=None):
+                    if epoch + 1 >= args.save_epochs_from:
+                        self.model.save_weights(os.path.join(
+                            args.epochs_dir, f'epoch{epoch + 1:03d}.weights.h5'))
+
+            callbacks.insert(0, _SaveEveryEpoch())
+            print(f"{LOG} every epoch from {args.save_epochs_from} -> "
+                  f"{args.epochs_dir}/epoch<NNN>.weights.h5", flush=True)
         if val_data is not None:
             # Checkpoint rule: keep the epoch with the lowest LER on the explicit
             # validation block (tiebreak: lower val_loss), saved as a full .keras model
@@ -924,7 +1298,8 @@ def run():
             callbacks.insert(0, make_val_ler_checkpoint(
                 tf, make_dataset(tf, x_va, None, args.batch_size), f_va, _ck,
                 args.batch_size, LOG, previous_best=(json.load(open(args.resume_best_json))
-                                                     if args.resume_best_json else None)))
+                                                     if args.resume_best_json else None),
+                ema_optimizer=(optimizer if args.ema_decay is not None else None)))
             print(f"{LOG} checkpoints -> {_ck}.best.keras + .best.weights.h5 "
                   f"(lowest val LER, tiebreak val_loss; epoch in {_ck}.best.json) and "
                   f"{_ck}.lastepoch.weights.h5", flush=True)
@@ -948,8 +1323,13 @@ def run():
         # per-epoch shuffle of all training indices; validation in shot order. The shuffle
         # order differs from Keras' numpy shuffle, so runs are not bit-for-bit comparable
         # with runs from the old pipeline.
-        train_ds = make_dataset(tf, x_tr, y_tr, args.batch_size, shuffle_seed=seed)
-        if args.initial_epoch:
+        if fresh is not None:
+            # One iterator per epoch, each sampling the next epoch's seeds; a resumed run
+            # starts at --initial-epoch's seeds.
+            train_ds = fresh.dataset(tf, first_epoch=args.initial_epoch)
+        else:
+            train_ds = make_dataset(tf, x_tr, y_tr, args.batch_size, shuffle_seed=seed)
+        if args.initial_epoch and fresh is None:
             # Keras opens one iterator of train_ds per epoch, and each new iterator draws
             # the next shuffle order. Opening (and closing) one iterator per epoch already
             # done moves the order forward to where an uninterrupted run would be.
@@ -958,7 +1338,8 @@ def run():
                 del _it
             print(f"{LOG} shuffle order advanced past {args.initial_epoch} epochs", flush=True)
         val_ds = make_dataset(tf, x_va, y_va, args.batch_size)
-        print(f"{LOG} input: host-memory uint8 tf.data, shuffle seed {seed}, "
+        print(f"{LOG} input: " + ('fresh Stim shots each epoch' if fresh is not None else
+                                   f'host-memory uint8 tf.data, shuffle seed {seed}') + f", "
               f"batch {args.batch_size}, prefetch to GPU", flush=True)
         hist = model.fit(train_ds, epochs=args.epochs, verbose=2, callbacks=callbacks,
                          validation_data=val_ds, initial_epoch=args.initial_epoch)
@@ -969,12 +1350,14 @@ def run():
                          epochs=args.epochs, shuffle=True, verbose=2, callbacks=callbacks,
                          validation_split=args.val_split)
     train_time = time.time() - t0
+    if fresh is not None:
+        fresh.close()
     epochs_ran = len(hist.history['loss'])
     if gn_stats is not None and args.out_dir:
         # Every update's global gradient norm (before clipping), and a summary.
         n = int(gn_stats['n_updates'].numpy())
         norms = gn_stats['norms'].numpy()[:n]
-        base = os.path.join(args.out_dir, (args.tag or 'run') + '.grad_norms')
+        base = os.path.join(args.out_dir, ck_name + '.grad_norms')
         os.makedirs(args.out_dir, exist_ok=True)
         np.save(base + '.npy', norms)
         q = [0, 1, 5, 25, 50, 75, 95, 99, 100]
@@ -1000,8 +1383,10 @@ def run():
     # (eval_on_tail.py --mcnemar) instead.
     if args.test_pool or args.eval_start is not None:
         mwpm = None
-        print(f"{LOG} --test-pool given: suppressing the stored MWPM ratio (baselines "
-              "are tail-specific). Decode MWPM on THIS tail to compare.", flush=True)
+        given = ' and '.join(f for f, v in (('--test-pool', args.test_pool),
+                                             ('--eval-start', args.eval_start)) if v is not None)
+        print(f"{LOG} {given} given: suppressing the stored MWPM ratio (baselines "
+              "are tail-specific). Decode MWPM on THIS block to compare.", flush=True)
     else:
         mwpm = lookup_mwpm(args.data_dir, d, p, r)
 
@@ -1011,7 +1396,14 @@ def run():
     ag = {k: '' for k in ('agree_all', 'agree_ambiguous', 'agree_confident', 'n_ambiguous',
                           'frac_ambiguous', 'student_p_L_ambiguous', 'teacher_p_L_ambiguous',
                           'teacher_tail_p_L')}
-    if args.teacher_tail_cache:
+    if teacher is not None:
+        # Teacher on the scored block, for the student-vs-teacher agreement columns.
+        z_te = teacher.predict(make_dataset(tf, x_te, None, args.batch_size),
+                               verbose=0).reshape(-1).astype(np.float64)
+        ag = teacher_agreement(pred, 1 / (1 + np.exp(-z_te)), f_te, tuple(args.ambiguous_band))
+        print(f"{LOG} agreement vs teacher on the scored block: all={ag['agree_all']}  "
+              f"ambiguous={ag['agree_ambiguous']}  teacher p_L={ag['teacher_tail_p_L']}", flush=True)
+    elif args.teacher_tail_cache:
         if not os.path.exists(args.teacher_tail_cache):
             raise SystemExit(f"{LOG} MISSING tail cache {args.teacher_tail_cache}")
         tc = np.load(args.teacher_tail_cache)
@@ -1029,15 +1421,7 @@ def run():
 
     # --- write results --------------------------------------------------------------
     os.makedirs(args.out_dir, exist_ok=True)
-    wb = 'f32' if args.weight_bits is None else f'w{args.weight_bits}'
-    ab = 'f32' if args.act_bits is None else f'a{args.act_bits}'
-    # The pool directory is part of the tag: the same (student, alpha, seed, ntr) trained
-    # on a different pool is a different experiment, and must not land on the same
-    # filenames as an earlier one.
-    pool_tag = prov['train_pool_dir']
-    tag = args.tag or (f'student_{args.student}_{args.inputs.replace("+", "-")}_'
-                       f'{wb}_{ab}_alpha{args.alpha:g}_T{args.temperature:g}_'
-                       f'seed{seed}_ntr{ntr}_{pool_tag}')
+    # (tag: built above, before the checkpoint prefix)
 
     # Never silently replace an existing result. Collisions are archived with the run's
     # timestamp rather than overwritten, so an accidental re-run cannot destroy a number
@@ -1052,13 +1436,17 @@ def run():
         print(f"{LOG} existing results for this tag archived as "
               f"{tag}.superseded_{stamp}.*", flush=True)
 
+    # fresh_shots: distinct training shots sampled during training (--fresh-shots-per-epoch
+    # x epochs run); n_train is then the shots per epoch. Empty for runs on a pool.
     fields = ['architecture', 'student', 'inputs', 'd', 'p', 'rounds', 'seed', 'n_train',
-              'n_test', 'alpha', 'temperature', 'lr', 'lr_schedule', 'lr_end', 'global_clipnorm',
+              'fresh_shots', 'n_test', 'alpha', 'temperature', 'lr', 'lr_schedule', 'lr_end', 'lr_warmup_epochs',
+              'ema_decay', 'warm_start', 'global_clipnorm',
               'clip_frac',
               'weight_bits', 'act_bits',
               # architecture size, so a row is interpretable without parsing its tag
               'hidden', 'units', 'n_params', 'reset_after', 'unroll', 'tf32',
-              'epochs', 'epochs_ran', 'batch_size', 'p_L', 'mwpm_p_L', 'ratio_vs_mwpm',
+              'epochs', 'epochs_ran', 'batch_size', 'p_L', 'scored_weights',
+              'mwpm_p_L', 'ratio_vs_mwpm',
               'base_rate', 'beats_base_rate', 'teacher_tail_p_L',
               # agreement: the raw rate is dominated by the ~80% of shots where this
               # teacher is confident, so agree_ambiguous is the one that carries signal
@@ -1070,23 +1458,34 @@ def run():
         w.writeheader()
         w.writerow(dict(
             architecture=model.name, student=args.student, inputs=args.inputs,
-            d=d, p=p, rounds=r, seed=seed, n_train=ntr, n_test=nte,
+            d=d, p=p, rounds=r, seed=seed, n_train=ntr,
+            fresh_shots=('' if fresh is None else ntr * (epochs_ran + args.initial_epoch)),
+            n_test=nte,
             alpha=args.alpha, temperature=args.temperature,
             lr=('teacher_schedule' if args.lr is None else args.lr),
             lr_schedule=args.lr_schedule,
             lr_end=(args.lr_end if args.lr_schedule == 'cosine' else ''),
+            lr_warmup_epochs=args.lr_warmup_epochs,
+            ema_decay=('' if args.ema_decay is None else args.ema_decay),
+            warm_start=(os.path.abspath(args.warm_start) if args.warm_start else ''),
             global_clipnorm=('' if args.global_clipnorm is None else args.global_clipnorm),
             clip_frac=('' if gn_stats is None or not int(gn_stats['n_updates'].numpy())
                        else round(int(gn_stats['n_clipped'].numpy())
                                   / int(gn_stats['n_updates'].numpy()), 6)),
             weight_bits=('' if args.weight_bits is None else args.weight_bits),
             act_bits=('' if args.act_bits is None else args.act_bits),
-            hidden='-'.join(str(h) for h in args.hidden) if args.hidden else '',
-            units=(args.units if args.student == 'gru' else ''),
+            hidden='-'.join(str(h) for h in hidden),
+            units=(units_str if args.student == 'gru' else ''),
             n_params=n_params, reset_after=int(args.reset_after), unroll=int(args.unroll),
             tf32=('off' if args.no_tf32 else 'on'),
             epochs=args.epochs, epochs_ran=epochs_ran,
             batch_size=args.batch_size, p_L=round(pL, 6),
+            # p_L above is from the weights the model holds when fit() returns: the last
+            # epoch's, or with early stopping on, possibly the restored min-val_loss epoch.
+            # The best-checkpoint number of record comes from eval_student_on_tail.py.
+            scored_weights=(('end_of_fit' if args.no_early_stopping
+                             else 'end_of_fit_early_stopping_restore')
+                            + ('_ema' if args.ema_decay is not None else '')),
             mwpm_p_L=('' if mwpm is None else round(mwpm, 6)),
             ratio_vs_mwpm=('' if mwpm is None else round(pL / mwpm, 4)),
             base_rate=round(base_rate, 5), beats_base_rate=int(beats_base),

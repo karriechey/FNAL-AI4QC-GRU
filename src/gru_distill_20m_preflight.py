@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/gru_distill_20m_preflight.py @ d5ee86f
 # Created: 2026-09-22
-# Last modified: 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml)
+# Last modified: 2026-10-06 (pools read by row range with pool_rows). Earlier: 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml)
 """Preflight and teacher gate for the 20M GRU distillation study (d=5, r=5, p=0.004).
 
 Run twice by eaf_run_gru_distill_20m.sh, before any student trains.
@@ -45,11 +45,12 @@ LOG = '[preflight]'
 
 def stage_inputs(a, record):
     zm, meta_m, sha_m = read_pool(a.main_pool, 'primary', a.d, a.rounds, a.p)
-    n_main_pool = int(zm['flips'].shape[0])
+    import pool_rows as PR
+    n_main_pool = PR.n_rows(zm, 'flips')
     check_partitions(n_main_pool, a.main_n_train, a.val_start, a.val_n, a.eval_start,
                      a.eval_n, a.sealed_start)
     zx, meta_x, sha_x = read_pool(a.extra_pool, 'extension', a.d, a.rounds, a.p)
-    n_extra_pool = int(zx['flips'].shape[0])
+    n_extra_pool = PR.n_rows(zx, 'flips')
     problems = []
     if meta_x['gen_seed'] == meta_m['gen_seed']:
         problems.append(f"extension gen_seed {meta_x['gen_seed']} equals the primary's")
@@ -110,17 +111,18 @@ def stage_inputs(a, record):
 def stage_caches(a, record):
     zm, _meta_m, sha_m = read_pool(a.main_pool, 'primary', a.d, a.rounds, a.p)
     zx, _meta_x, sha_x = read_pool(a.extra_pool, 'extension', a.d, a.rounds, a.p)
-    fm = zm['flips'].astype(np.int8).reshape(-1)
-    fx = zx['flips'].astype(np.int8).reshape(-1)
+    import pool_rows as PR
+    fm = lambda a, b: PR.rows(zm, 'flips', a, b).astype(np.int8).reshape(-1)
+    fx = lambda a, b: PR.rows(zx, 'flips', a, b).astype(np.int8).reshape(-1)
     v0, v1 = a.val_start, a.val_start + a.val_n
     e0, e1 = a.eval_start, a.eval_start + a.eval_n
 
     print(f"{LOG} teacher caches:", flush=True)
     blocks = [
-        ('main-train', a.cache_main, sha_m, fm[0:a.main_n_train], 0, a.main_n_train),
-        ('extra-train', a.cache_extra, sha_x, fx[0:a.extra_n], 0, a.extra_n),
-        ('validation', a.cache_val, sha_m, fm[v0:v1], v0, v1),
-        ('evaluation', a.cache_eval, sha_m, fm[e0:e1], e0, e1),
+        ('main-train', a.cache_main, sha_m, fm(0, a.main_n_train), 0, a.main_n_train),
+        ('extra-train', a.cache_extra, sha_x, fx(0, a.extra_n), 0, a.extra_n),
+        ('validation', a.cache_val, sha_m, fm(v0, v1), v0, v1),
+        ('evaluation', a.cache_eval, sha_m, fm(e0, e1), e0, e1),
     ]
     loaded = {}
     for label, path, sha, flips, lo, hi in blocks:
@@ -142,8 +144,8 @@ def stage_caches(a, record):
     import pymatching
     from circuit_generators import build_circuit
     from helpers import mcnemar_from_correct
-    truth = fm[e0:e1]
-    det = zm['det_evts'][e0:e1].astype(np.int8)
+    truth = fm(e0, e1)
+    det = PR.rows(zm, 'det_evts', e0, e1).astype(np.int8)
     dem = build_circuit(a.d, a.p, a.rounds).detector_error_model(decompose_errors=True)
     m_pred = pymatching.Matching.from_detector_error_model(dem).decode_batch(
         det, bit_packed_predictions=False, bit_packed_shots=False).astype(np.int8).reshape(-1)

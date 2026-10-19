@@ -1,0 +1,33 @@
+{
+  "path": "/home/kchey/pools_d7_p003_19M/data_d7_p0.003_r7_FORMAL_seed52.npz",
+  "d": 7,
+  "p": 0.003,
+  "rounds": 7,
+  "n_total": 19000000,
+  "gen_seed": 52,
+  "flips_sha256": "d3cd19068e2a506640dbfffad920a2c028d40dce2f4b87d0cedee0b12cc83e14",
+  "purpose": "formal",
+  "partition_train": [
+    0,
+    15000000
+  ],
+  "partition_val": [
+    15000000,
+    15200000
+  ],
+  "partition_test_SEALED": [
+    17000000,
+    19000000
+  ],
+  "protocol": "Primary pool for a new p value, same layout as the p=0.004 FORMAL pools (configs/partitions.yaml). The sealed block is not read by any training or model-selection code.",
+  "format": "full: measurements, det_evts, flips",
+  "measurements_shape": "(19000000, 385)",
+  "det_evts_shape": "(19000000, 336)",
+  "base_rate": 0.2535,
+  "size_gb": 12.78,
+  "generated_utc": "2026-09-30T21:06:36Z",
+  "partition_eval": [
+    15200000,
+    17000000
+  ]
+}

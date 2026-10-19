@@ -1,0 +1,87 @@
+[queue12 2026-09-30T20:44:59Z] BEGIN queue12 driver_b pid=1457080 repo=41c573f MAX_JOBS=5 free GPU 97278 MiB host available 458 GB
+[queue12 2026-09-30T21:09:12Z] START R01_d7_u280_200M d=7 units=280 peak_lr=0.003 p=0.004 extra=[5000000,30000000,50000000,50000000,50000000] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R01_d7_u280_200M_20260930T210912Z (free GPU 93894 MiB, host available 378 GB, jobs running 4)
+[queue12 2026-10-01T02:44:53Z] NOTE  driver_b (pid 1457080) stopped to load the new version (epochs column, swap rule, job_env.txt, adoption); R01 container untouched
+[queue12 2026-10-01T02:44:53Z] another driver_b holds driver_b.lock; exiting
+[queue12 2026-10-01T02:45:53Z] BEGIN queue12 driver_b pid=1918650 repo=d31d55a MAX_JOBS=5 free GPU 72485 MiB host available 76 GB
+[queue12 2026-10-01T02:45:54Z] ADOPT R01_d7_u280_200M running -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R01_d7_u280_200M_20260930T210912Z
+[queue12 2026-10-01T05:07:30Z] WAIT  R13_d7_u280_100M_e120 needs host >= 9999 GB available (now 151)
+[queue12 2026-10-01T05:58:35Z] START R13_d7_u280_100M_e120 d=7 units=280 peak_lr=0.003 p=0.004 epochs=120 extra=[5000000,30000000,50000000] env=[] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R13_d7_u280_100M_e120_20261001T055835Z (free GPU 85810 MiB, host available 295 GB, jobs running 1)
+[queue12 2026-10-01T06:09:48Z] WAIT  R02_d9_u280_100M needs host >= 370 GB available (now 242)
+[queue12 2026-10-01T06:36:39Z] START R02_d9_u280_100M d=9 units=280 peak_lr=0.003 p=0.004 epochs=80 extra=[35000000,50000000] env=[] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R02_d9_u280_100M_20261001T063639Z (free GPU 84164 MiB, host available 206 GB, jobs running 2)
+[queue12 2026-10-01T06:46:52Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 38 GB); no new starts
+[queue12 2026-10-01T07:07:38Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 41 GB); no new starts
+[queue12 2026-10-01T07:14:14Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 45 GB); no new starts
+[queue12 2026-10-01T07:34:59Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 72 GB); no new starts
+[queue12 2026-10-01T08:02:21Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 81 GB); no new starts
+[queue12 2026-10-01T08:06:24Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 94 GB); no new starts
+[queue12 2026-10-01T08:37:51Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 102 GB); no new starts
+[queue12 2026-10-01T08:55:35Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 108 GB); no new starts
+[queue12 2026-10-01T10:08:05Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 126 GB); no new starts
+[queue12 2026-10-01T10:37:30Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 131 GB); no new starts
+[queue12 2026-10-01T11:16:00Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 146 GB); no new starts
+[queue12 2026-10-01T11:29:10Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 146 GB); no new starts
+[queue12 2026-10-01T11:33:13Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 157 GB); no new starts
+[queue12 2026-10-01T12:00:35Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 180 GB); no new starts
+[queue12 2026-10-01T12:17:49Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 201 GB); no new starts
+[queue12 2026-10-01T12:43:40Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 209 GB); no new starts
+[queue12 2026-10-01T13:10:31Z] START R14b_d7_u200_200M d=7 units=200 peak_lr=0.003 p=0.004 epochs=80 extra=[5000000,30000000,50000000,50000000,50000000] env=[] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R14b_d7_u200_200M_20261001T131031Z (free GPU 90737 MiB, host available 293 GB, jobs running 3)
+[queue12 2026-10-01T13:12:12Z] DONE  R01_d7_u280_200M: params=276641 p_L=0.004548 mwpm_p_L=0.004291 ratio=1.0598 best_epoch=71 best_val_loss=0.01291 best_val_ler=0.004445 final_train_loss=0.01148 final_val_loss=0.01286 clip_frac_cum=0.000866 runtime_h=16.03 peak_host_gb=276.5 peak_gpu_mib=1652
+[queue12 2026-10-01T13:27:24Z] WAIT  R03_d9_u200_100M needs host >= 190 GB available (now 181)
+[queue12 2026-10-01T14:54:03Z] START R03_d9_u200_100M d=9 units=200 peak_lr=0.003 p=0.004 epochs=80 extra=[35000000,50000000] env=[] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R03_d9_u200_100M_20261001T145403Z (free GPU 90773 MiB, host available 298 GB, jobs running 3)
+[queue12 2026-10-01T14:56:15Z] DONE  R02_d9_u280_100M: params=303521 p_L=0.011378 mwpm_p_L=0.002267 ratio=5.0186 best_epoch=79 best_val_loss=0.03086 best_val_ler=0.01121 final_train_loss=0.02793 final_val_loss=0.03094 clip_frac_cum=0.002391 runtime_h=8.3 peak_host_gb=193.6 peak_gpu_mib=1668
+[queue12 2026-10-01T15:11:57Z] START R04_d9_u140_100M d=9 units=140 peak_lr=0.003 p=0.004 epochs=80 extra=[35000000,50000000] env=[] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R04_d9_u140_100M_20261001T151157Z (free GPU 90220 MiB, host available 205 GB, jobs running 3)
+[queue12 2026-10-01T15:33:50Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 29 GB); no new starts
+[queue12 2026-10-01T15:43:57Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 35 GB); no new starts
+[queue12 2026-10-01T16:02:09Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 56 GB); no new starts
+[queue12 2026-10-01T16:38:04Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 143 GB); no new starts
+[queue12 2026-10-01T16:44:14Z] DONE  R13_d7_u280_100M_e120: params=276641 p_L=0.004562 mwpm_p_L=0.004291 ratio=1.0632 best_epoch=105 best_val_loss=0.01293 best_val_ler=0.004495 final_train_loss=0.00962 final_val_loss=0.01318 clip_frac_cum=0.000547 runtime_h=10.74 peak_host_gb=111.6 peak_gpu_mib=1652
+[queue12 2026-10-01T16:46:16Z] START R08_d5_u280_100M d=5 units=280 peak_lr=0.003 p=0.004 epochs=80 extra=[5000000,30000000,50000000] env=[] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R08_d5_u280_100M_20261001T164616Z (free GPU 89512 MiB, host available 171 GB, jobs running 3)
+[queue12 2026-10-01T17:01:04Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 104 GB); no new starts
+[queue12 2026-10-01T17:14:44Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 141 GB); no new starts
+[queue12 2026-10-01T17:25:22Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 144 GB); no new starts
+[queue12 2026-10-01T17:32:59Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 147 GB); no new starts
+[queue12 2026-10-01T17:42:44Z] NOTE  driver_b (pid 1918650) restarted for the 40 GB swap cap; running jobs untouched
+[queue12 2026-10-01T17:42:44Z] BEGIN queue12 driver_b pid=2967756 repo=e0bb326 MAX_JOBS=5 free GPU 87852 MiB host available 101 GB
+[queue12 2026-10-01T17:42:44Z] ADOPT R14b_d7_u200_200M running -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R14b_d7_u200_200M_20261001T131031Z
+[queue12 2026-10-01T17:42:44Z] ADOPT R03_d9_u200_100M running -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R03_d9_u200_100M_20261001T145403Z
+[queue12 2026-10-01T17:42:44Z] ADOPT R04_d9_u140_100M running -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R04_d9_u140_100M_20261001T151157Z
+[queue12 2026-10-01T17:42:44Z] ADOPT R08_d5_u280_100M running -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R08_d5_u280_100M_20261001T164616Z
+[queue12 2026-10-01T17:42:45Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 154 GB); no new starts
+[queue12 2026-10-01T18:48:25Z] FAIL  R04_d9_u140_100M ended without COMPLETE (exit unknown (podman process belonged to an earlier driver_b; adopted)); last lines: /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R04_d9_u140_100M_20261001T151157Z/seed0/run.log:[gru] epoch 31: val_loss=0.09104 val_ler=0.034845 (6,969/200,000 errors) /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R04_d9_u140_100M_20261001T151157Z/seed0/run.log:10000/10000 - 380s - loss: 0.0927 - hard_accuracy: 0.9643 - val_loss: 0.0910 - val_hard_accuracy: 0.9652 - val_ler: 0.0348 - val_errors: 6969.0000 - lr: 0.0020 - grad_norm_median: 0.1872 - clip_frac: 0.0745 - clip_frac_cum: 0.0169 - 380s/epoch - 38ms/step 
+[queue12 2026-10-01T18:49:09Z] PAUSE R04_d9_u140_100M stopped after 31 epochs to stop swap growth (swap 204 GB, 59 GB free; jobs growing per epoch). Resume later from its lastepoch checkpoint.
+[queue12 2026-10-01T19:39:39Z] NOTE  driver_b (pid 2967756) restarted with MAX_SWAP_GB=100000 (40 GB swap cap removed on request; new jobs run with MALLOC_ARENA_MAX=2 and do not grow); start rule = swap not growing + host threshold; running jobs untouched
+[queue12 2026-10-01T19:39:39Z] BEGIN queue12 driver_b pid=3150115 repo=b9f893c MAX_JOBS=5 free GPU 89075 MiB host available 155 GB
+[queue12 2026-10-01T19:39:39Z] ADOPT R14b_d7_u200_200M running -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R14b_d7_u200_200M_20261001T131031Z
+[queue12 2026-10-01T19:39:39Z] ADOPT R03_d9_u200_100M running -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R03_d9_u200_100M_20261001T145403Z
+[queue12 2026-10-01T19:39:39Z] ADOPT R08_d5_u280_100M running -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R08_d5_u280_100M_20261001T164616Z
+[queue12 2026-10-01T19:39:40Z] START R11_d7_u280_100M_p003 d=7 units=280 peak_lr=0.003 p=0.003 epochs=80 extra=[35000000,50000000] env=[MALLOC_ARENA_MAX=2 ] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R11_d7_u280_100M_p003_20261001T193940Z (free GPU 89075 MiB, host available 155 GB, jobs running 3)
+[queue12 2026-10-01T19:47:22Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 153 GB); no new starts
+[queue12 2026-10-01T19:54:03Z] FAIL  R08_d5_u280_100M ended without COMPLETE (exit unknown (podman process belonged to an earlier driver_b; adopted)); last lines: /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R08_d5_u280_100M_20261001T164616Z/seed0/run.log:[gru] epoch 36: val_loss=0.01648 val_ler=0.005655 (1,131/200,000 errors) /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R08_d5_u280_100M_20261001T164616Z/seed0/run.log:10000/10000 - 295s - loss: 0.0148 - hard_accuracy: 0.9949 - val_loss: 0.0165 - val_hard_accuracy: 0.9943 - val_ler: 0.0057 - val_errors: 1131.0000 - lr: 0.0017 - grad_norm_median: 0.0112 - clip_frac: 0.0000e+00 - clip_frac_cum: 2.7778e-06 - 295s/epoch - 29ms/step 
+[queue12 2026-10-01T19:54:31Z] PAUSE R08_d5_u280_100M stopped after 36 epochs to stop swap growth (164 GB, 99 GB free). Resume later from its lastepoch checkpoint with MALLOC_ARENA_MAX=2.
+[queue12 2026-10-01T19:54:34Z] START R12_d7_u280_100M_p005 d=7 units=280 peak_lr=0.003 p=0.005 epochs=80 extra=[35000000,50000000] env=[MALLOC_ARENA_MAX=2 ] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R12_d7_u280_100M_p005_20261001T195434Z (free GPU 89072 MiB, host available 162 GB, jobs running 3)
+[queue12 2026-10-01T20:04:48Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 122 GB); no new starts
+[queue12 2026-10-01T20:28:40Z] HOLD  swap in use grew by > 2 GB in the last ~10 min (now 158 GB); no new starts
+[queue12 2026-10-01T20:34:02Z] PAUSE R12_d7_u280_100M_p005 stopped after 5 epochs: swap 152 -> 183 GB in 12 min after it started.
+[queue12 2026-10-01T20:34:50Z] FAIL  R12_d7_u280_100M_p005 ended without COMPLETE (exit 137); last lines: /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R12_d7_u280_100M_p005_20261001T195434Z/seed0/run.log:[gru] epoch 5: val_loss=0.04177 val_ler=0.015310 (3,062/200,000 errors)  <- new best /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R12_d7_u280_100M_p005_20261001T195434Z/seed0/run.log:10000/10000 - 313s - loss: 0.0429 - hard_accuracy: 0.9841 - val_loss: 0.0418 - val_hard_accuracy: 0.9847 - val_ler: 0.0153 - val_errors: 3062.0000 - lr: 0.0030 - grad_norm_median: 0.0457 - clip_frac: 0.0000e+00 - clip_frac_cum: 3.9999e-05 - 313s/epoch - 31ms/step 
+[queue12 2026-10-01T20:41:56Z] WAIT  R17_d9_u280_100M_e160 needs host >= 200 GB available (now 188)
+[queue12 2026-10-01T23:10:40Z] START R17_d9_u280_100M_e160 d=9 units=280 peak_lr=0.003 p=0.004 epochs=160 extra=[35000000,50000000] env=[MALLOC_ARENA_MAX=2 ] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R17_d9_u280_100M_e160_20261001T231040Z (free GPU 90767 MiB, host available 347 GB, jobs running 3)
+[queue12 2026-10-01T23:12:52Z] DONE  R03_d9_u200_100M: params=168801 p_L=0.011597 mwpm_p_L=0.002267 ratio=5.1149 best_epoch=76 best_val_loss=0.03131 best_val_ler=0.0114 final_train_loss=0.02941 final_val_loss=0.03116 clip_frac_cum=0.001056 runtime_h=8.3 peak_host_gb=211.2 peak_gpu_mib=1668
+[queue12 2026-10-01T23:28:35Z] WAIT  R16_d9_u280_200M needs host >= 380 GB available (now 238)
+[queue12 2026-10-02T01:49:10Z] DONE  R11_d7_u280_100M_p003: params=276641 p_L=0.001789 mwpm_p_L=0.001363 ratio=1.3131 best_epoch=66 best_val_loss=0.00509 best_val_ler=0.00164 final_train_loss=0.00273 final_val_loss=0.00537 clip_frac_cum=0.000155 runtime_h=6.15 peak_host_gb=84.6 peak_gpu_mib=1652
+[queue12 2026-10-02T03:56:22Z] START R16_d9_u280_200M d=9 units=280 peak_lr=0.003 p=0.004 epochs=80 extra=[35000000,50000000,50000000,50000000] env=[MALLOC_ARENA_MAX=2 ] -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R16_d9_u280_200M_20261002T035622Z (free GPU 92426 MiB, host available 395 GB, jobs running 2)
+[queue12 2026-10-02T03:57:33Z] DONE  R14b_d7_u200_200M: params=149601 p_L=0.007398 mwpm_p_L=0.004291 ratio=1.724 best_epoch=78 best_val_loss=0.02051 best_val_ler=0.00734 final_train_loss=0.02018 final_val_loss=0.02049 clip_frac_cum=0.016113 runtime_h=14.77 peak_host_gb=228.3 peak_gpu_mib=1652
+[queue12 2026-10-02T12:23:40Z] DONE  R17_d9_u280_100M_e160: params=303521 p_L=0.016514 mwpm_p_L=0.002267 ratio=7.284 best_epoch=11 best_val_loss=0.04453 best_val_ler=0.01658 final_train_loss=0.0633 final_val_loss=0.06349 clip_frac_cum=0.131744 runtime_h=13.2 peak_host_gb=142.2 peak_gpu_mib=2692
+[queue12 2026-10-02T17:31:53Z] DONE  R16_d9_u280_200M: params=303521 p_L=0.017192 mwpm_p_L=0.002267 ratio=7.5827 best_epoch=5 best_val_loss=0.04683 best_val_ler=0.01729 final_train_loss=0.07846 final_val_loss=0.07766 clip_frac_cum=0.252844 runtime_h=13.57 peak_host_gb=262.4 peak_gpu_mib=2676
+[queue12 2026-10-02T18:24:06Z] START R12_d7_u280_100M_p005_resume from epoch 5 -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R12_d7_u280_100M_p005_resume_20261002T182406Z (host available 521 GB)
+[R12_d7_u280_100M_p005] [gru] resumed from /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R12_d7_u280_100M_p005_resume_20261002T182406Z/resume_from/gru_d7_p005_u280_ext35000000+50000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.lastepoch.weights.h5: optimizer update count 50,000 (expected 50,000 = 10000 x 5)
+[R12_d7_u280_100M_p005] [gru] shuffle order advanced past 5 epochs
+[queue12 2026-10-02T18:34:36Z] START R08_d5_u280_100M_resume from epoch 36 -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R08_d5_u280_100M_resume_20261002T183436Z (host available 459 GB)
+[R08_d5_u280_100M] [gru] resumed from /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R08_d5_u280_100M_resume_20261002T183436Z/resume_from/gru_d5_p004_u280_ext5000000+30000000+50000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.lastepoch.weights.h5: optimizer update count 360,000 (expected 360,000 = 10000 x 36)
+[R08_d5_u280_100M] [gru] shuffle order advanced past 36 epochs
+[queue12 2026-10-02T18:42:06Z] START R04_d9_u140_100M_resume from epoch 31 -> /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R04_d9_u140_100M_resume_20261002T184206Z (host available 420 GB)
+[R04_d9_u140_100M] [gru] resumed from /home/kchey/FNAL-AI4QC-GRU-compact/experiments/queue12_2026-09-30/R04_d9_u140_100M_resume_20261002T184206Z/resume_from/gru_d9_p004_u140_ext35000000+50000000_cos3e-5_gclip0.64_hard_seed0_ntr15000000_b10000.lastepoch.weights.h5: optimizer update count 310,000 (expected 310,000 = 10000 x 31)
+[R04_d9_u140_100M] [gru] shuffle order advanced past 31 epochs
+[queue12 2026-10-02T21:33:30Z] DONE  R08_d5_u280_100M_resume: params=256481 p_L=0.005764 mwpm_p_L=0.007571 ratio=0.7614 best_epoch=43 best_val_loss=0.01642 best_val_ler=0.00553 final_train_loss=0.01219 final_val_loss=0.01781 runtime_h=2.98
+[queue12 2026-10-02T22:50:54Z] DONE  R04_d9_u140_100M_resume: params=92961 p_L=0.027549 mwpm_p_L=0.002267 ratio=12.1509 best_epoch=80 best_val_loss=0.07272 best_val_ler=0.02737 final_train_loss=0.07208 final_val_loss=0.07272 runtime_h=4.13
+[queue12 2026-10-02T23:37:13Z] DONE  R12_d7_u280_100M_p005_resume: params=276641 p_L=0.010426 mwpm_p_L=0.010025 ratio=1.04 best_epoch=74 best_val_loss=0.02899 best_val_ler=0.01047 final_train_loss=0.02592 final_val_loss=0.0289 runtime_h=5.21
+[queue12 2026-10-02T23:37:13Z] END   resume of paused runs

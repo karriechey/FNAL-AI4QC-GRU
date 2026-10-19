@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
+# Last modified: 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint; the sealed block is scored only with --score-sealed, logged in configs/sealed_access.tsv, once per weights file unless --score-sealed-again; an existing CSV with an older header is left as it is and the row goes to <name>.v2.csv). 2026-10-05: --units takes several values for stacked GRU layers. 2026-10-06: pool rows read by range (pool_rows), so only the scored block is loaded; a block that a decoder already read (partitions spent_blocks) is flagged. Earlier 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
 """Score a saved student on a fixed partition and run the paired McNemar test vs MWPM.
 
 Why a separate script from eval_on_tail.py
@@ -35,9 +35,126 @@ import os
 import numpy as np
 
 # Reuse the statistics and circuit construction, so there is exactly one implementation of
-# the 2x2 and one definition of the noise model.
+# the 2x2 and one definition of the noise model. circuit_generators (stim) is imported where
+# MWPM is decoded, so the checks below can be imported and tested without stim.
 from helpers import mcnemar_from_correct
-from circuit_generators import build_circuit
+
+LOG = '[student-eval]'
+
+CSV_COLS = ['weights', 'student', 'd', 'p', 'rounds', 'eval_start', 'n_test',
+            'n_params', 'p_L', 'mwpm_p_L', 'ratio', 'base_rate',
+            'both_right', 'student_only', 'mwpm_only', 'both_wrong', 'n_discordant',
+            'net_student_wins', 'mcnemar_chi2_cc', 'p_chi2', 'p_exact',
+            'reset_after', 'unroll', 'tf32', 'weights_path', 'is_best_ckpt']
+
+
+def sha256_of(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(1 << 20), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def check_eval_block(args, hidden):
+    """Checks before anything is loaded: pool and weights exist, the pool's d/p/rounds
+    match the arguments, the block fits in the pool, and the sealed block is not touched.
+
+    The sealed block (configs/partitions.yaml, see partitions.sealed_block) is scored only
+    with --score-sealed. Each such scoring is appended to configs/sealed_access.tsv with
+    the sha256 of the weights file, d/p/rounds, the architecture, the block and the UTC
+    time, before any shot is read. A weights file whose sha256 is already in the log is
+    refused unless --score-sealed-again is also given; that row is marked repeat=1.
+    Returns the (start, stop) block.
+    """
+    import partitions as P
+    if args.score_sealed_again and not args.score_sealed:
+        raise SystemExit(f"{LOG} --score-sealed-again needs --score-sealed. STOP.")
+    if not os.path.exists(args.pool):
+        raise SystemExit(f"{LOG} MISSING pool {args.pool}")
+    if not os.path.exists(args.weights):
+        raise SystemExit(f"{LOG} MISSING weights {args.weights}")
+    # The pool's d, p, rounds (fingerprint, else file name) must be the ones given here.
+    try:
+        src = P.check_pool_geometry(args.pool, args.d, args.p, args.rounds)
+    except ValueError as e:
+        raise SystemExit(f"{LOG} {e}")
+    if src is None:
+        print(f"{LOG} WARNING: {os.path.basename(args.pool)} has no fingerprint and "
+              f"no data_d*_p*_r* name; d/p/rounds not checked", flush=True)
+
+    import pool_rows as PR
+    n_pool = PR.n_rows(args.pool, 'flips')         # header only
+    lo, hi = args.eval_start, args.eval_start + args.n_test
+    if hi > n_pool:
+        raise SystemExit(f"{LOG} partition [{lo}, {hi}) exceeds pool size {n_pool}")
+    try:
+        sealed, why = P.sealed_block(args.pool, n_pool)
+    except ValueError as e:
+        raise SystemExit(f"{LOG} {e}")
+    if sealed is None:
+        print(f"{LOG} WARNING: {why}", flush=True)
+        return lo, hi
+    if not (lo < sealed[1] and sealed[0] < hi):
+        if args.score_sealed:
+            print(f"{LOG} --score-sealed given, but [{lo:,}, {hi:,}) does not touch the "
+                  f"sealed block; nothing logged", flush=True)
+        return lo, hi
+    for s0, s1, note in P.spent_blocks(args.pool):
+        if lo < s1 and s0 < hi:
+            print(f"{LOG} NOTE: [{s0:,}, {s1:,}) of this pool is {note}", flush=True)
+    if not args.score_sealed:
+        raise SystemExit(f"{LOG} block [{lo:,}, {hi:,}) overlaps the sealed block "
+                         f"[{sealed[0]:,}, {sealed[1]:,}) of {os.path.basename(args.pool)} "
+                         f"({why}). Scoring it needs --score-sealed. STOP.")
+    sha = sha256_of(args.weights)
+    earlier = P.sealed_accesses(sha)
+    if earlier and not args.score_sealed_again:
+        raise SystemExit(f"{LOG} these weights (sha256 {sha[:16]}) already scored the sealed "
+                         f"block {len(earlier)} time(s), first at {earlier[0]['utc']} "
+                         f"({P.sealed_log_path()}). A repeat needs --score-sealed-again. STOP.")
+    import datetime
+    log = P.record_sealed_access(dict(
+        utc=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+        weights_sha256=sha, weights_path=os.path.abspath(args.weights),
+        student=args.student, units=('x'.join(map(str, args.units)) if args.student == 'gru' else ''),
+        hidden='-'.join(str(h) for h in hidden), d=args.d, p=args.p, rounds=args.rounds,
+        pool=os.path.abspath(args.pool), block_start=lo, block_stop=hi,
+        repeat=int(bool(earlier))))
+    print(f"{LOG} SEALED block [{lo:,}, {hi:,}) scored with --score-sealed"
+          + (f" (repeat {len(earlier) + 1})" if earlier else "")
+          + f"; logged in {log}", flush=True)
+    return lo, hi
+
+
+def append_eval_row(out_csv, row):
+    """Append one row with the CSV_COLS header; returns the path written.
+
+    A file that already exists with a different header (written by an earlier version of
+    this script) is left as it is: the row goes to <name>.v2.csv with the full header
+    instead, so no column is lost or shifted. A .v2.csv with a different header again
+    stops the script.
+    """
+    path = out_csv
+    if os.path.exists(path):
+        with open(path, newline='') as f:
+            header = next(csv.reader(f), [])
+        if header != CSV_COLS:
+            path = os.path.splitext(out_csv)[0] + '.v2.csv'
+            if os.path.exists(path):
+                with open(path, newline='') as f:
+                    if next(csv.reader(f), []) != CSV_COLS:
+                        raise SystemExit(f"{LOG} {out_csv} and {path} both have headers "
+                                         f"other than this script's. STOP.")
+            print(f"{LOG} {out_csv} has an older header; row written to {path}", flush=True)
+    new = not os.path.exists(path)
+    with open(path, 'a', newline='') as f:
+        w = csv.writer(f)
+        if new:
+            w.writerow(CSV_COLS)
+        w.writerow(row)
+    return path
 
 
 def run():
@@ -46,9 +163,12 @@ def run():
                     help='.weights.h5 written by train_student.py')
     ap.add_argument('--student', choices=['mlp', 'gru'], required=True)
     ap.add_argument('--inputs', choices=['evts', 'evts+bits'], default='evts')
-    ap.add_argument('--hidden', type=int, nargs='*', default=[],
-                    help='MLP: the Dense stack (e.g. 209 209). GRU: post-GRU Dense layers.')
-    ap.add_argument('--units', type=int, default=140, help='GRU hidden state size')
+    ap.add_argument('--hidden', type=int, nargs='*', default=None,
+                    help='MLP: the Dense stack (e.g. 209 209). GRU: post-GRU Dense layers. '
+                         'Not given: GRU none, MLP 128 128 (train_student.py defaults). '
+                         'Given with no values: none.')
+    ap.add_argument('--units', type=int, nargs='+', default=[140],
+                    help='GRU hidden state size; several values = stacked GRU layers')
     ap.add_argument('--reset-after', action='store_true',
                     help='the checkpoint was trained with reset_after=True')
     ap.add_argument('--unroll', action='store_true', help='build the GRU with unroll=True')
@@ -64,6 +184,13 @@ def run():
     ap.add_argument('--eval-start', type=int, required=True,
                     help='first shot of the partition to score (e.g. 20000000)')
     ap.add_argument('--n-test', type=int, default=200000)
+    ap.add_argument('--score-sealed', action='store_true',
+                    help='allow a block overlapping the sealed block (configs/partitions.yaml). '
+                         'Each such scoring is logged in configs/sealed_access.tsv with the '
+                         'sha256 of the weights; without this flag the block is refused.')
+    ap.add_argument('--score-sealed-again', action='store_true',
+                    help='with --score-sealed: allow weights already in the sealed-access '
+                         'log to score the sealed block again (the row is marked repeat=1)')
     ap.add_argument('--batch-size', type=int, default=10000)
     ap.add_argument('--out-csv', default=None)
     ap.add_argument('--dump-per-shot', default=None,
@@ -72,6 +199,12 @@ def run():
     ap.add_argument('--gpu-mem-mib', type=int, default=None,
                     help='cap this process to N MiB of GPU memory')
     args = ap.parse_args()
+
+    # --hidden: same defaults as train_student.py (resolve_hidden). Checks on the pool, the
+    # weights and the block run before TensorFlow is imported.
+    from train_student import resolve_hidden
+    hidden = resolve_hidden(args.student, args.hidden)
+    lo, hi = check_eval_block(args, hidden)
 
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
     import tensorflow as tf
@@ -95,23 +228,14 @@ def run():
     d, p, r, k = args.d, args.p, args.rounds, args.kernel
     binary_t, _t, idx_t, _pk = get_types(d, r, k)
 
-    if not os.path.exists(args.pool):
-        raise SystemExit(f"[student-eval] MISSING pool {args.pool}")
-    if not os.path.exists(args.weights):
-        raise SystemExit(f"[student-eval] MISSING weights {args.weights}")
-
-    z = np.load(args.pool)
-    N = z['measurements'].shape[0]
-    lo, hi = args.eval_start, args.eval_start + args.n_test
-    if hi > N:
-        raise SystemExit(f"[student-eval] partition [{lo}, {hi}) exceeds pool size {N}")
-    te = slice(lo, hi)
+    import pool_rows as PR
+    te = slice(lo, hi)            # checked in check_eval_block; only these rows are read
     print(f"[student-eval] scoring shots [{lo:,}, {hi:,}) of {os.path.basename(args.pool)}",
           flush=True)
 
-    m_te = z['measurements'][te].astype(binary_t)
-    e_te = z['det_evts'][te].astype(binary_t)
-    truth = z['flips'][te].astype(np.int8).reshape(-1)
+    m_te = PR.rows(args.pool, 'measurements', lo, hi).astype(binary_t)
+    e_te = PR.rows(args.pool, 'det_evts', lo, hi).astype(binary_t)
+    truth = PR.rows(args.pool, 'flips', lo, hi).astype(np.int8).reshape(-1)
     b_te, _, _ = split_measurements(m_te, d, idx_t)
     from host_data import to_host_uint8, make_dataset
     x_te = assemble_features(b_te, e_te, args.inputs, student=args.student,
@@ -122,13 +246,13 @@ def run():
     # Rebuild the SAME architecture the weights were trained with, then load. A mismatch
     # in units/hidden raises on load rather than silently producing a wrong score.
     if args.student == 'gru':
-        model = build_gru_student(d=d, rounds=r, inputs=args.inputs, units=args.units,
-                                  hidden=tuple(args.hidden), p=p,
+        units = args.units[0] if len(args.units) == 1 else tuple(args.units)
+        model = build_gru_student(d=d, rounds=r, inputs=args.inputs, units=units,
+                                  hidden=hidden, p=p,
                                   weight_bits=args.weight_bits, act_bits=args.act_bits,
                                   reset_after=args.reset_after, unroll=args.unroll)
     else:
-        model = build_student('mlp', d=d, rounds=r, inputs=args.inputs,
-                              hidden=tuple(args.hidden) or (209, 209),
+        model = build_student('mlp', d=d, rounds=r, inputs=args.inputs, hidden=hidden,
                               weight_bits=args.weight_bits, act_bits=args.act_bits)
     model.load_weights(args.weights)
     print(f"[student-eval] {args.student} params={model.count_params():,}", flush=True)
@@ -145,6 +269,7 @@ def run():
     # whichever tail it was computed on, and mixing the two has already caused one real
     # bug in this repo.
     import pymatching
+    from circuit_generators import build_circuit
     circ = build_circuit(d, p, r)
     dem = circ.detector_error_model(decompose_errors=True)
     pym = pymatching.Matching.from_detector_error_model(dem)
@@ -180,26 +305,19 @@ def run():
         print(f"[student-eval] dumped per-shot -> {args.dump_per_shot}", flush=True)
 
     if args.out_csv:
-        cols = ['weights', 'student', 'd', 'p', 'rounds', 'eval_start', 'n_test',
-                'n_params', 'p_L', 'mwpm_p_L', 'ratio', 'base_rate',
-                'both_right', 'student_only', 'mwpm_only', 'both_wrong', 'n_discordant',
-                'net_student_wins', 'mcnemar_chi2_cc', 'p_chi2', 'p_exact',
-                'reset_after', 'unroll', 'tf32']
-        new = not os.path.exists(args.out_csv)
-        with open(args.out_csv, 'a', newline='') as f:
-            w = csv.writer(f)
-            if new:
-                w.writerow(cols)
-            w.writerow([os.path.basename(args.weights), args.student, d, p, r,
-                        lo, args.n_test, int(model.count_params()),
-                        round(pL, 6), round(mwpm_pL, 6), round(pL / mwpm_pL, 4),
-                        round(base_rate, 5),
-                        mc['both_right'], mc['rcnn_only'], mc['mwpm_only'],
-                        mc['both_wrong'], mc['n_discordant'], mc['net_rcnn_wins'],
-                        round(mc['mcnemar_chi2_cc'], 3), mc['p_chi2'], mc['p_exact'],
-                        int(args.reset_after), int(args.unroll),
-                        'off' if args.no_tf32 else 'on'])
-        print(f"[student-eval] appended -> {args.out_csv}", flush=True)
+        written = append_eval_row(args.out_csv, [
+            os.path.basename(args.weights), args.student, d, p, r,
+            lo, args.n_test, int(model.count_params()),
+            round(pL, 6), round(mwpm_pL, 6), round(pL / mwpm_pL, 4),
+            round(base_rate, 5),
+            mc['both_right'], mc['rcnn_only'], mc['mwpm_only'],
+            mc['both_wrong'], mc['n_discordant'], mc['net_rcnn_wins'],
+            round(mc['mcnemar_chi2_cc'], 3), mc['p_chi2'], mc['p_exact'],
+            int(args.reset_after), int(args.unroll),
+            'off' if args.no_tf32 else 'on',
+            os.path.abspath(args.weights),
+            int(os.path.basename(args.weights).endswith(('.best.weights.h5', '.best.keras')))])
+        print(f"[student-eval] appended -> {written}", flush=True)
 
 
 if __name__ == '__main__':

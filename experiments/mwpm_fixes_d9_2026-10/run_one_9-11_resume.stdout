@@ -1,0 +1,3 @@
+[mwpm-d9 2026-10-05T14:35:49Z] NOTE  run_one: resuming 9-11 alongside the queue's running job (amendment 5); epoch-60 kill threshold 0.024360
+[mwpm-d9 2026-10-05T14:35:49Z] RESUME 9-11 from /home/kchey/FNAL-AI4QC-GRU-mwpm/experiments/mwpm_fixes_d9_2026-10/9-11_20261004T231954Z after epoch 68
+[mwpm-d9 2026-10-05T14:35:49Z] START 9-11 lr=0.0005 warmup=3 clip=0.64 epochs=160 batch=10000 data=100M seed=0 ema=- warm_start=- -> /home/kchey/FNAL-AI4QC-GRU-mwpm/experiments/mwpm_fixes_d9_2026-10/9-11_20261005T143549Z

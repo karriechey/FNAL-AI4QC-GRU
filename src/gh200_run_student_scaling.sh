@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-18 (TEACHER_WEIGHTS/UNITS/PARAMS, SAVE_EPOCHS_FROM). Earlier 2026-10-11 (FRESH_SEED_BASE: first Stim seed of the fresh shots, for replicates on different shots; tag _fsb<base> when set). Earlier 2026-10-09 (FRESH_SHOTS=<n>: n new Stim shots per epoch replace the training array; needs NTRAIN=0 and no EXTRA_POOL; tag _fresh<n>). Earlier 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -32,6 +32,42 @@ LR="${LR:-0.003}"          # start rate; passing --lr detaches the teacher LR sc
 # warmup) and adds _cos<LR_END> to the tag. Default constant = as before.
 LR_SCHEDULE="${LR_SCHEDULE:-constant}"
 LR_END="${LR_END:-3e-5}"
+# LR_WARMUP_EPOCHS=<n> (with LR_SCHEDULE=cosine) raises the rate linearly over the first n
+# epochs of updates, then runs the cosine over the rest, and adds _wu<n> to the tag.
+# Default 0 = no warmup, as before.
+LR_WARMUP_EPOCHS="${LR_WARMUP_EPOCHS:-0}"
+# EMA_DECAY=<m> keeps a moving average of the weights (Adam use_ema, momentum m); the best
+# checkpoint and the scored weights are the averaged ones. Adds _ema<m> to the tag.
+# Default empty = no EMA, as before.
+EMA_DECAY="${EMA_DECAY:-}"
+# WARM_START=<.best.keras> initialises from another run's model: tensors of matching name and
+# shape are loaded, the rest (e.g. the GRU input kernel across distances) stay fresh. Adds
+# _ws to the tag. Default empty = fresh initialisation, as before.
+WARM_START="${WARM_START:-}"
+# MAX_PARAMS=<n> stops before training when the model has more than n parameters (checked
+# in the parameter-count step below and again by train_student.py). Default empty = none.
+MAX_PARAMS="${MAX_PARAMS:-}"
+# Distillation: TEACHER_MODEL=<.keras GRU teacher> with ALPHA < 1 trains on the teacher's
+# logits, computed by train_student.py on the training array itself. Adds _kd<ALPHA>_T<T> to
+# the tag. Defaults ALPHA=1.0 (hard labels, as before), no teacher.
+ALPHA="${ALPHA:-1.0}"
+TEMPERATURE="${TEMPERATURE:-1.0}"
+TEACHER_MODEL="${TEACHER_MODEL:-}"
+# Instead of TEACHER_MODEL: TEACHER_WEIGHTS=<.weights.h5> TEACHER_UNITS="280 280" [TEACHER_PARAMS=<n>]
+TEACHER_WEIGHTS="${TEACHER_WEIGHTS:-}"
+TEACHER_UNITS="${TEACHER_UNITS:-}"
+TEACHER_PARAMS="${TEACHER_PARAMS:-}"
+# SAVE_EPOCHS_FROM=<n>: every epoch from n in seed<S>/epochs/ (snapshot_epochs.py layout)
+SAVE_EPOCHS_FROM="${SAVE_EPOCHS_FROM:-}"
+# FRESH_SHOTS=<n> trains on n NEW shots per epoch sampled from Stim during training
+# (train_student.py --fresh-shots-per-epoch, src/fresh_shots.py), so no training shot is seen
+# twice. Needs NTRAIN=0, no EXTRA_POOL and hard labels. FRESH_WORKERS sampling processes
+# (default 8). Adds _fresh<n> to the tag. Default empty = the training array, as before.
+FRESH_SHOTS="${FRESH_SHOTS:-}"
+FRESH_WORKERS="${FRESH_WORKERS:-8}"
+# FRESH_SEED_BASE=<n>: first Stim seed of the fresh shots (default 10**12 in fresh_shots.py).
+# A replicate on different shots sets another base, e.g. 2000000000000. Adds _fsb<n> to the tag.
+FRESH_SEED_BASE="${FRESH_SEED_BASE:-}"
 # GLOBAL_CLIPNORM=<v> passes Adam global_clipnorm=<v> (norm of all gradients together; the
 # per-update norms and clipped fraction are logged) and adds _gclip<v> to the tag.
 # Default empty = no clipping, as before.
@@ -45,10 +81,12 @@ RESUME_BEST_JSON="${RESUME_BEST_JSON:-}"
 RESUME_HISTORY="${RESUME_HISTORY:-}"
 OPT=(--lr-schedule "$LR_SCHEDULE")
 [ "$LR_SCHEDULE" = "cosine" ] && OPT+=(--lr-end "$LR_END")
+[ "$LR_WARMUP_EPOCHS" != "0" ] && OPT+=(--lr-warmup-epochs "$LR_WARMUP_EPOCHS")
+[ -n "$EMA_DECAY" ] && OPT+=(--ema-decay "$EMA_DECAY")
 [ -n "$GLOBAL_CLIPNORM" ] && OPT+=(--global-clipnorm "$GLOBAL_CLIPNORM")
 
 STUDENT="${STUDENT:-gru}"  # gru or mlp
-UNITS="${UNITS:-140}"      # GRU state width
+UNITS="${UNITS:-140}"      # GRU state width; several, space separated = stacked layers
 HIDDEN="${HIDDEN:-}"       # MLP layer widths, space separated, e.g. "160 160"
 
 # Quantization-aware training. Empty = float32 layers, the anchor every quantized run is
@@ -252,12 +290,15 @@ PYEXT
 done
 
 # Print the measured layout and parameter count
-"$PY" - "$STUDENT" "$UNITS" "$D" "$ROUNDS" "$P" $HIDDEN <<'PYPARAM'
+"$PY" - "$STUDENT" "$UNITS" "$D" "$ROUNDS" "$P" "${MAX_PARAMS:-0}" $HIDDEN <<'PYPARAM'
 import os, sys
 os.environ['CUDA_VISIBLE_DEVICES'] = ''      # shape check, no GPU needed
-student, units = sys.argv[1], int(sys.argv[2])
+student = sys.argv[1]
+units = [int(u) for u in sys.argv[2].split()]
+units = units[0] if len(units) == 1 else tuple(units)
 d, r, p = int(sys.argv[3]), int(sys.argv[4]), float(sys.argv[5])
-hidden = tuple(int(h) for h in sys.argv[6:])
+max_params = int(sys.argv[6])
+hidden = tuple(int(h) for h in sys.argv[7:])
 from StudentModels import build_student, detector_sequence_layout, input_width
 if student == 'gru':
     n_t, n_pos, _ = detector_sequence_layout(d, r, p)
@@ -266,7 +307,10 @@ else:
     print(f"[gru] flat input width: {input_width(d, r, 'evts')}")
 m = build_student(student, d=d, rounds=r, inputs='evts', hidden=hidden, units=units)
 print(f"[gru] {student} units={units} hidden={hidden}  params={m.count_params():,}")
+if max_params and m.count_params() > max_params:
+    raise SystemExit(f"[gru] {m.count_params():,} parameters exceed MAX_PARAMS {max_params:,}. STOP.")
 PYPARAM
+[ $? -eq 0 ] || exit 1
 
 PROV=$("$PY" -c "import json;m=json.load(open('$OUT/pool_provenance.json'));\
 print(f\"gen_seed={m['gen_seed']} flips_sha={m['flips_sha256']} n_total={m['n_total']}\")")
@@ -287,14 +331,16 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "pool         : $POOL"
   echo "pool prov    : $PROV"
   echo "$GEOMETRY"
-  echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=1.0 hard labels"
+  echo "recipe       : $STUDENT units=$UNITS hidden=($HIDDEN) inputs=evts alpha=$ALPHA T=$TEMPERATURE teacher=${TEACHER_MODEL:-${TEACHER_WEIGHTS:-none}}${TEACHER_UNITS:+ (units $TEACHER_UNITS)}"
   echo "             : batch=$BATCH lr=$LR epochs=$EPOCHS early_stop=$EARLY_STOP"
-  echo "optimizer    : lr_schedule=$LR_SCHEDULE lr_end=$LR_END global_clipnorm=${GLOBAL_CLIPNORM:-none}"
+  echo "optimizer    : lr_schedule=$LR_SCHEDULE lr_end=$LR_END warmup_epochs=$LR_WARMUP_EPOCHS ema_decay=${EMA_DECAY:-none} global_clipnorm=${GLOBAL_CLIPNORM:-none}"
   echo "gru layer    : reset_after=$RESET_AFTER unroll=$UNROLL"
+  echo "warm start   : ${WARM_START:-none}"
   echo "tf32         : training $([ "$TRAIN_NO_TF32" = 1 ] && echo off || echo on), evaluation $([ "$EVAL_NO_TF32" = 1 ] && echo off || echo on)"
   echo "gpu cap      : ${GPU_MEM_MIB:-none} MiB per process"
   echo "quantization : weights=${W_BITS:-float32} activations=${A_BITS:-float32}"
   echo "extension    : ${EXTRA_POOL:-none} n=${EXTRA_N:-all}"
+  echo "fresh shots  : ${FRESH_SHOTS:-none} per epoch (new Stim shots every epoch; ${FRESH_WORKERS} workers; seed base ${FRESH_SEED_BASE:-default 10**12})"
   echo "selection    : min val_loss checkpoint, scored once on the evaluation block"
   if [ "$STUDENT" = "mlp" ]; then
     echo "reading      : size-matched feed-forward comparison against the GRU at this"
@@ -315,7 +361,8 @@ QUIET='cuda_|Unable to register|^Total number|^Number of unique'
 # Architecture flags, identical between the training call and the scoring call so the
 # model rebuilt for scoring is the one that was trained.
 if [ "$STUDENT" = "gru" ]; then
-  ARCH=(--student gru --inputs evts --hidden --units "$UNITS")
+  read -r -a UNITS_LIST <<< "$UNITS"
+  ARCH=(--student gru --inputs evts --hidden --units "${UNITS_LIST[@]}")
 else
   ARCH=(--student mlp --inputs evts --hidden $HIDDEN)
 fi
@@ -331,6 +378,17 @@ if [ -n "$EXTRA_POOL" ]; then
   TRAIN_ONLY+=(--extra-train-pool "${EXTRA_POOLS[@]}")
   [ -n "$EXTRA_N" ] && TRAIN_ONLY+=(--extra-train-n "${EXTRA_NS[@]}")
 fi
+
+[ -n "$WARM_START" ] && TRAIN_ONLY+=(--warm-start "$WARM_START")
+[ -n "$MAX_PARAMS" ] && TRAIN_ONLY+=(--max-params "$MAX_PARAMS")
+[ -n "$TEACHER_MODEL" ] && TRAIN_ONLY+=(--teacher-model "$TEACHER_MODEL")
+if [ -n "$TEACHER_WEIGHTS" ]; then
+  read -r -a TEACHER_UNITS_LIST <<< "$TEACHER_UNITS"
+  TRAIN_ONLY+=(--teacher-weights "$TEACHER_WEIGHTS" --teacher-units "${TEACHER_UNITS_LIST[@]}")
+  [ -n "$TEACHER_PARAMS" ] && TRAIN_ONLY+=(--teacher-params "$TEACHER_PARAMS")
+fi
+[ -n "$FRESH_SHOTS" ] && TRAIN_ONLY+=(--fresh-shots-per-epoch "$FRESH_SHOTS" --fresh-workers "$FRESH_WORKERS")
+[ -n "$FRESH_SEED_BASE" ] && TRAIN_ONLY+=(--fresh-seed-base "$FRESH_SEED_BASE")
 
 if [ -n "$RESUME_WEIGHTS" ]; then
   TRAIN_ONLY+=(--resume-weights "$RESUME_WEIGHTS" --initial-epoch "$INITIAL_EPOCH")
@@ -353,16 +411,23 @@ fi
 # both modes, so sequential and concurrent runs produce the same layout.
 run_seed () {
   local SEED="$1"
-  local SIZE; [ "$STUDENT" = "gru" ] && SIZE="u${UNITS}" || SIZE="h$(echo $HIDDEN | tr ' ' '-')"
+  local SIZE; [ "$STUDENT" = "gru" ] && SIZE="u$(echo $UNITS | tr ' ' 'x')" || SIZE="h$(echo $HIDDEN | tr ' ' '-')"
   # Float runs keep their original tag, so finished results still match the skip guard.
   local QTAG=""
   [ -n "$W_BITS$A_BITS" ] && QTAG="_w${W_BITS:-f32}_a${A_BITS:-f32}"
   [ -n "$EXTRA_POOL" ] && QTAG="${QTAG}_ext$(echo "${EXTRA_N:-all}" | tr ' ' '+')"
+  [ -n "$FRESH_SHOTS" ] && QTAG="${QTAG}_fresh${FRESH_SHOTS}"
+  [ -n "$FRESH_SEED_BASE" ] && QTAG="${QTAG}_fsb${FRESH_SEED_BASE}"
   [ "$RESET_AFTER" = "1" ] && QTAG="${QTAG}_ra1"
   [ "$UNROLL" = "1" ] && QTAG="${QTAG}_ur1"
   [ "$LR_SCHEDULE" = "cosine" ] && QTAG="${QTAG}_cos${LR_END}"
+  [ "$LR_WARMUP_EPOCHS" != "0" ] && QTAG="${QTAG}_wu${LR_WARMUP_EPOCHS}"
+  [ -n "$EMA_DECAY" ] && QTAG="${QTAG}_ema${EMA_DECAY}"
+  [ -n "$WARM_START" ] && QTAG="${QTAG}_ws"
+  [ "$ALPHA" != "1.0" ] && QTAG="${QTAG}_kd${ALPHA}_T${TEMPERATURE}"
   [ -n "$GLOBAL_CLIPNORM" ] && QTAG="${QTAG}_gclip${GLOBAL_CLIPNORM}"
-  local TAG="${STUDENT}_d${D}_${PTAG}_${SIZE}${QTAG}_hard_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
+  local MODE=hard; [ "$ALPHA" != "1.0" ] && MODE=soft
+  local TAG="${STUDENT}_d${D}_${PTAG}_${SIZE}${QTAG}_${MODE}_seed${SEED}_ntr${NTRAIN}_b${BATCH}"
   local SEEDDIR="$OUT/seed${SEED}"
   local SRUNS="$SEEDDIR/runs"
   local SCKPT="$SEEDDIR/ckpt"
@@ -387,11 +452,12 @@ run_seed () {
       --n-train "$NTRAIN" \
       --val-start "$VAL_START" --val-n "$VAL_N" \
       --eval-start "$EVAL_START" --n-test "$EVAL_N" \
-      --alpha 1.0 --temperature 1.0 \
+      --alpha "$ALPHA" --temperature "$TEMPERATURE" \
       --batch-size "$BATCH" --lr "$LR" "${OPT[@]}" \
       --epochs "$EPOCHS" \
       --seed "$SEED" --require-determinism \
-      --ckpt-dir "$SCKPT" --out-dir "$SRUNS" --tag "$TAG" --run-tag "$TAG"
+      --ckpt-dir "$SCKPT" --out-dir "$SRUNS" --tag "$TAG" --run-tag "$TAG" \
+      ${SAVE_EPOCHS_FROM:+--save-epochs-from "$SAVE_EPOCHS_FROM" --epochs-dir "$SEEDDIR/epochs"}
 
     # Ratio of record: MWPM decoded on these shots, paired shot by shot.
     # train_student.py suppresses its own MWPM column under --eval-start.

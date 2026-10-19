@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/mwpm_on_block.py @ d5ee86f
 # Created: 2026-08-19
-# Last modified: 2026-09-25 (build_circuit from circuit_generators)
+# Last modified: 2026-10-06 (only the block's rows are read, via pool_rows; --flips-sha streams the whole flips array and refuses a pool with a sealed block). Earlier: 2026-09-25 (build_circuit from circuit_generators)
 """Decode MWPM on one shot block of a pool and record the baseline.
 
 Gives the evaluation-block denominator before any model is trained. Baselines are
@@ -49,24 +49,29 @@ def main():
     if not os.path.exists(args.pool):
         raise SystemExit(f"[mwpm] missing pool {args.pool}")
 
-    z = np.load(args.pool)
-    N = z['det_evts'].shape[0]
+    import pool_rows as PR
+    N = PR.n_rows(args.pool, 'det_evts')            # header only
     lo, hi = args.start, args.start + args.n
     if hi > N:
         raise SystemExit(f"[mwpm] block [{lo:,}, {hi:,}) exceeds pool size {N:,}")
-    print(f"[mwpm] pool {args.pool}  shots={N:,}  det_evts{z['det_evts'].shape}",
-          flush=True)
+    print(f"[mwpm] pool {args.pool}  shots={N:,}", flush=True)
     print(f"[mwpm] block [{lo:,}, {hi:,})  d={args.d} r={args.rounds} p={args.p}",
           flush=True)
 
-    det = z['det_evts'][lo:hi].astype(np.int8)
-    truth = z['flips'][lo:hi].astype(np.int8).reshape(-1)
+    det = PR.rows(args.pool, 'det_evts', lo, hi).astype(np.int8)
+    truth = PR.rows(args.pool, 'flips', lo, hi).astype(np.int8).reshape(-1)
 
     flips_sha = ''   # hash of the whole flips array, pins the baseline to this pool
     if args.flips_sha:
         t = time.time()
-        flips_sha = hashlib.sha256(
-            np.ascontiguousarray(z['flips']).tobytes()).hexdigest()
+        import partitions as P
+        if P.sealed_block(args.pool, N)[0] is not None:
+            raise SystemExit("[mwpm] --flips-sha reads every row, the sealed rows too; the "
+                             "pool's .fingerprint.json already holds its flips SHA-256. STOP.")
+        h = hashlib.sha256()
+        for a in range(0, N, 10_000_000):
+            h.update(np.ascontiguousarray(PR.rows(args.pool, 'flips', a, min(a + 10_000_000, N))).tobytes())
+        flips_sha = h.hexdigest()
         print(f"[mwpm] flips sha256 {flips_sha[:16]} ({time.time() - t:.0f}s)", flush=True)
 
     import pymatching

@@ -1,0 +1,6 @@
+code 739e2288b12d34866ae2e4b721d6f521b8e30688
+A max GB while in epoch (completed epochs: GB): 0:41.9 1:29.2 2:32.0 3:30.1 4:36.0 5:30.9 6:31.1 7:35.8 8:39.0 9:40.7
+   growth from 2 to 9 completed epochs: 1.25 GB per epoch
+M max GB while in epoch (completed epochs: GB): 0:41.8 1:31.5 2:32.9 3:38.6 4:38.7 5:39.0 6:39.2 7:39.1 8:39.2 9:39.2
+   growth from 2 to 9 completed epochs: 0.91 GB per epoch
+M vs A max |diff| loss, val_loss: 0.0 0.0
