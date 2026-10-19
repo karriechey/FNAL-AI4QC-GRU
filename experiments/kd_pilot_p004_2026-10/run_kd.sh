@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-10-18
-# Last modified: 2026-10-18
+# Last modified: 2026-10-19 (u70 e160 pair)
 #   bash run_kd.sh kd5_u140          (SMOKE=1: 2 epochs of 10M shots, for timing)
 set -uo pipefail
 RUN=$1
@@ -10,7 +10,7 @@ HOSTPY=${HOSTPY:-$HOME/tfenv/bin/python}
 ALPHA=0.0
 case "$RUN" in
   kd5_u140|hl5_u140) D=5; UNITS="140" ;;
-  kd5_u70|hl5_u70) D=5; UNITS="70" ;;
+  kd5_u70|hl5_u70|kd5_u70_e160|hl5_u70_e160) D=5; UNITS="70" ;;
   kd7_2x140|hl7_2x140) D=7; UNITS="140 140" ;;
   kd7_2x70|hl7_2x70) D=7; UNITS="70 70" ;;
   kd7_1x113) D=7; UNITS="113" ;;
@@ -26,6 +26,7 @@ case "$D" in             # teacher recipe
   7) LRV=0.001; WU=3; EPOCHS=80 ;;
   9) LRV=0.0005; WU=3; EPOCHS=160 ;;
 esac
+[[ "$RUN" == *_e160 ]] && EPOCHS=160    # same seed base, so epochs 1-80 see the same shots as the 80-epoch run
 FRESH=100000000; SAVE_FROM=40; BASE="$HERE/runs"
 if [ -n "${SMOKE:-}" ]; then
   FRESH=10000000; EPOCHS=2; WU=0; SAVE_FROM=1; BASE="$HERE/smoke"

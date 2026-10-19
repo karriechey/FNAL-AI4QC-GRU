@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last updated: 2026-10-18 (fresh_seed_ranges). Earlier 2026-10-16 (FORMAL pools d5 p = 0.005 seed 62 and d9 p = 0.005 seed 63, from
+# Last updated: 2026-10-19 (d5 pilot seed base extended to 160 epochs). Earlier 2026-10-18 (fresh_seed_ranges). Earlier 2026-10-16 (FORMAL pools d5 p = 0.005 seed 62 and d9 p = 0.005 seed 63, from
 # experiments/pools_p005_2026-10-15/generate.sh). Before that 2026-10-14 (FORMAL pools d5 p = 0.003 seed 60 and d9 p = 0.003 seed 61, from
 # experiments/pools_p003_2026-10-14/generate.sh). Earlier 2026-10-06 (the single complete record of every pool: all FORMAL and TRAINONLY
 # pools for d = 5, 7, 9 and p = 0.003, 0.004, 0.005 with seeds, sizes, formats and flips
@@ -150,7 +150,7 @@ fresh_seed_ranges:
   - {base: 1000000000000, max_epochs: 240,
      used_by: "default base, all fresh-shot runs 2026-10-09 to 10-16 incl. the pilot teachers"}
   - {base: 2000000000000, max_epochs: 160, used_by: "f3280s1 (d9 p 0.004)"}
-  - {base: 3000000000000, max_epochs: 80, used_by: "kd_pilot_p004 d5"}
+  - {base: 3000000000000, max_epochs: 160, used_by: "kd_pilot_p004 d5 (80-epoch runs and the u70 e160 pair)"}
   - {base: 4000000000000, max_epochs: 80, used_by: "kd_pilot_p004 d7"}
   - {base: 5000000000000, max_epochs: 160, used_by: "kd_pilot_p004 d9"}
 

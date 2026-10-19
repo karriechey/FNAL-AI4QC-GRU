@@ -1,7 +1,7 @@
 # Distillation pilot, p = 0.004, FP32
 
 Created: 2026-10-18
-Last modified: 2026-10-18
+Last modified: 2026-10-19 (u70 e160 pair, launch.sh)
 
 Matrix and rules fixed before any pilot run trained. FP32 only; separate from QAT and FPGA synthesis.
 
@@ -47,6 +47,7 @@ the teachers trained on base 10^12).
 |---|---|---|---|---|
 | kd5_u140, hl5_u140 | 1 x GRU 140 | 69,441 | 3.69x | distilled, hard label |
 | kd5_u70, hl5_u70 | 1 x GRU 70 | 20,021 | 12.81x | distilled, hard label |
+| kd5_u70_e160, hl5_u70_e160 | 1 x GRU 70 | 20,021 | 12.81x | distilled, hard label |
 | kd7_2x140, hl7_2x140 | 2 x GRU 140 | 197,541 | 3.79x | distilled, hard label |
 | kd7_2x70, hl7_2x70 | 2 x GRU 70 | 54,671 | 13.68x | distilled, hard label |
 | kd7_1x113 | 1 x GRU 113 | 55,032 | 13.59x | distilled |
@@ -58,6 +59,10 @@ hl9_3x70 (pre-registered, conditional): runs only if kd9_3x70's selected checkpo
 1.0x and 2.3x MWPM on the selection block (`run_kd.sh` checks this).
 
 Order: d5, then d7, then d9. After the d5 runs finish, results are reported before d7 starts.
+
+The *_e160 pair was added after the d5 results (2026-10-19): every 80-epoch d5 run was still
+improving at epoch 80. Identical to kd5_u70/hl5_u70 except cosine over 160 epochs; same seed
+base, so epochs 1-80 see the same shots. Selection from epoch 40. Runs alongside d7.
 
 ## Checkpoint and reporting
 
@@ -79,4 +84,5 @@ Order: d5, then d7, then d9. After the d5 runs finish, results are reported befo
     bash run_teacher_check.sh 5      # then 7, 9 before those distances train
     bash smoke.sh                    # timing runs, GPU otherwise idle
     bash launch_d5.sh                # the four d5 runs at once
+    bash launch.sh kd5_u70_e160 hl5_u70_e160 kd7_2x140 hl7_2x140 kd7_2x70 hl7_2x70 kd7_1x113
     ~/tfenv/bin/python report.py --d 5
