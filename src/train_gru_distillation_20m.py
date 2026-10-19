@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_gru_distillation_20m.py @ d5ee86f
 # Created: 2026-09-22
-# Last modified: 2026-10-18 (docstrings cut to comments). Earlier: 2026-10-06 (pools read by row range with pool_rows: only the blocks used are loaded, never the sealed rows), 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml; best checkpoint chosen by val LER, saved as full .keras)
+# Last modified: 2026-10-19 (validation block read with pool_rows; det_main was undefined after the 2026-10-06 change). Earlier: 2026-10-18 (docstrings cut to comments), 2026-10-06 (pools read by row range with pool_rows: only the blocks used are loaded, never the sealed rows), 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml; best checkpoint chosen by val LER, saved as full .keras)
 # One GRU student distilled from the 20M-shot u140 d5 teacher (Run 11); one run = (units,
 # alpha, T, seed), grid in eaf_run_gru_distill_20m.sh. Each training pool has its own teacher
 # cache; the sealed block is never read.
@@ -396,7 +396,7 @@ def run():
     v0, v1 = args.val_start, args.val_start + args.val_n
     f_va = main_flips(v0, v1)
     x_va = np.empty((args.val_n, n_t, n_pos), dtype=np.float32)
-    fill_sequences(x_va, 0, det_main[v0:v1], d, r, p)
+    fill_sequences(x_va, 0, PR.rows(zm, 'det_evts', v0, v1), d, r, p)
     if args.teacher_val_cache:
         t_val = load_teacher_block(args.teacher_val_cache, 'validation', sha_m, f_va,
                                    v0, v1, args.teacher_units)
@@ -406,7 +406,6 @@ def run():
     else:
         z_va = np.zeros(args.val_n, np.float32)  # alpha == 1 only
     y_va = np.stack([f_va.astype(np.float32), z_va], axis=1)
-    del det_main
 
     # --- one teacher behind every cache -----------------------------------------------
     teacher_sha = ''
