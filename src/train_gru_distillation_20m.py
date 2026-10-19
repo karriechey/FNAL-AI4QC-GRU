@@ -1,83 +1,10 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_gru_distillation_20m.py @ d5ee86f
 # Created: 2026-09-22
-# Last modified: 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml; best checkpoint chosen by val LER, saved as full .keras)
-"""Train one reduced GRU student from the 20M-shot u140 GRU teacher, d=5 r=5 p=0.004.
-
-Purpose
--------
-The u140 GRU trained on 20M shots (15M primary + 5M training-only extension, Run 11 of
-Experiment 16) beats MWPM at d=5, p=0.004. This script trains one smaller GRU against it,
-so the experiment can measure whether knowledge distillation holds that performance while
-the parameter count falls to something more attractive for hls4ml / FPGA synthesis.
-Everything stays FP32 here. Quantization is a later, separate experiment.
-
-One run = (units, alpha, temperature, seed). The launcher eaf_run_gru_distill_20m.sh
-drives the 24-run grid.
-
-  alpha = 1.0   hard Stim labels only (the control arm)
-  alpha = 0.0   pure distillation: match the frozen teacher's logit, softened by T
-
-Why a separate script from train_student.py
--------------------------------------------
-train_student.py appends --extra-train-pool shots with a teacher logit of exactly 0 for
-every extension shot (see its "optional independent training extension" block). At
-alpha=1 the teacher column is multiplied by zero and the fill is harmless. At alpha<1 it
-tells the student that a quarter of the 20M training set is a p=0.5 coin flip, which
-would corrupt the distilled arm. Rather than edit the generic trainer that every earlier
-study used, this file handles the two-pool case explicitly and leaves train_student.py
-untouched, so every earlier result stays reproducible from unchanged code.
-
-What is reused, so nothing drifts from the earlier studies
-----------------------------------------------------------
-  StudentModels.build_gru_student      the GRU (reset_after=False, linear logit head)
-  StudentModels.assemble_features      det_evts -> [6 timesteps, 24 positions] layout
-  StudentModels.student_pred_and_correct   decision rule: logit > 0
-  train_student.make_distillation_loss    the alpha / temperature loss
-  train_student.make_hard_accuracy     accuracy against the hard label column only
-  train_student.teacher_agreement      student-vs-teacher agreement, raw and ambiguous-band
-  train_student.cap_gpu_memory         per-process GPU cap
-  train_one.set_seeds                  seed order identical to every earlier student run
-  dump_teacher_probs.pool_fingerprint / sha256_file   pool and checkpoint identity
-  eval_on_tail.build_circuit / mcnemar_from_correct   MWPM circuit and the paired test
-
-Data flow for the 20M training set
-----------------------------------
-  primary pool   [0, main_n_train)        15M shots, teacher cache --teacher-main-cache
-  extension pool [0, extra_n)              5M shots, teacher cache --teacher-extra-cache
-      concatenated in that order -> x_train [20M, 6, 24], y_train [20M, 2]
-      y_train[:, 0] = Stim logical flip (hard label)
-      y_train[:, 1] = teacher logit for the SAME shot, same position in the array
-  validation     [val_start, +val_n)       primary pool, teacher cache --teacher-val-cache
-  evaluation     [eval_start, +eval_n)     primary pool, read only AFTER training finishes
-  sealed test    [sealed_start, end)       never read
-
-Checks that stop the run (SystemExit) rather than warn
-------------------------------------------------------
-  * pool fingerprint JSON present, geometry (d, r, p) matches, flips SHA-256 on disk
-    matches the fingerprint
-  * extension pool generated with a different seed than the primary pool
-  * training / validation / evaluation / sealed blocks do not overlap
-  * every teacher cache: GRU teacher of the stated width, built from a pool whose flips
-    SHA-256 equals this pool's, covering exactly the requested shot range, carrying flips
-    identical to the pool's flips for those shots, finite logits, nonzero spread
-  * all teacher caches come from the same checkpoint (same weights SHA-256), and that
-    SHA matches --teacher-weights / --teacher-sha256 when given
-  * the extension cache holds exactly extra_n genuine outputs (not a constant fill)
-  * alpha < 1 cannot start without the main, extension (when used) and validation caches
-  * after concatenation, the teacher column is re-compared against both caches and the
-    hard-label column against both pools' flips
-
-Outputs, all inside --out-dir (one directory per run, never overwritten)
-------------------------------------------------------------------------
-  <tag>.csv                   one result row (p_L, MWPM, ratio, teacher, agreement, hashes)
-  <tag>.history.json          per-epoch loss / val_loss / hard_accuracy
-  <tag>.best.weights.h5       min-val_loss checkpoint, the one that is scored
-  <tag>.lastepoch.weights.h5  true final-epoch weights
-  <tag>.per_shot_eval.npz     per-shot student logit, MWPM prediction, teacher logit, truth
-  <tag>.teacher_alignment.json   per-segment proof that both training pools got teacher logits
-  COMPLETE                    written last; the launcher's skip test keys on it
-"""
+# Last modified: 2026-10-18 (docstrings cut to comments). Earlier 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml; best checkpoint chosen by val LER, saved as full .keras)
+# One GRU student distilled from the 20M-shot u140 d5 teacher (Run 11); one run = (units,
+# alpha, T, seed), grid in eaf_run_gru_distill_20m.sh. Each training pool has its own teacher
+# cache; the sealed block is never read.
 import argparse
 import csv
 import datetime
@@ -103,21 +30,14 @@ REQUIRED_CACHE_KEYS = ('p_teacher', 'logit_teacher', 'flips', 'shot_idx', 'teach
 # them without importing TensorFlow.
 # ---------------------------------------------------------------------------------------
 def sha256_of(path):
-    """Full SHA-256 of a file, or '' if the path is empty or missing."""
     from dump_teacher_probs import sha256_file
     if not path or not os.path.exists(path):
         return ''
     return sha256_file(path)
 
 
+# The fingerprint is required: only it records the gen seed that makes the extension independent.
 def read_pool(path, label, d, rounds, p):
-    """Open a pool, check it against its fingerprint JSON, and return (npz, meta, flips_sha).
-
-    The fingerprint is required. It is the only record of the generation seed, which is
-    what proves the extension pool is an independent draw from the primary pool. The
-    flips SHA-256 is recomputed from the file on disk, so a pool regenerated under the same
-    name with different content is caught here.
-    """
     from dump_teacher_probs import pool_fingerprint
     if not os.path.exists(path):
         raise SystemExit(f"{LOG} MISSING {label} pool {path}")
@@ -144,15 +64,9 @@ def read_pool(path, label, d, rounds, p):
     return z, meta, flips_sha
 
 
+# A misaligned cache still gives a smooth loss curve, so every check here stops the run.
 def load_teacher_block(cache_path, label, pool_flips_sha, pool_flips, lo, hi,
                        teacher_units):
-    """Load one teacher cache and prove it describes shots [lo, hi) of the given pool.
-
-    pool_flips is the pool's own flips array for exactly [lo, hi). Returns a dict with the
-    teacher logits and probabilities for those shots plus the cache's identity fields.
-    Every check here fails the run: a misaligned cache still produces a smooth loss curve,
-    so nothing downstream would reveal it.
-    """
     if not cache_path:
         raise SystemExit(f"{LOG} no teacher cache given for the {label} block. STOP.")
     if not os.path.exists(cache_path):
@@ -234,7 +148,6 @@ def load_teacher_block(cache_path, label, pool_flips_sha, pool_flips, lo, hi,
 
 def check_partitions(n_main_pool, main_n_train, val_start, val_n, eval_start, eval_n,
                      sealed_start):
-    """Assert the four primary-pool blocks are in order and disjoint. Integers only."""
     v1, e1 = val_start + val_n, eval_start + eval_n
     problems = []
     if main_n_train > val_start:
@@ -254,14 +167,8 @@ def check_partitions(n_main_pool, main_n_train, val_start, val_n, eval_start, ev
           f"sealed [{sealed_start:,}, {n_main_pool:,}) not read -- disjoint", flush=True)
 
 
+# Chunked so the 20M-shot set never needs a second full float32 copy (~11.5 GB).
 def fill_sequences(dst, dst_offset, det_evts, d, rounds, p, chunk=1_000_000):
-    """Write the GRU input layout for det_evts into dst[dst_offset:], one chunk at a time.
-
-    Same assemble_features call as every earlier student run, applied per chunk into a
-    preallocated array. The values are identical to converting all at once; the chunking
-    only avoids holding a second full-size float32 copy of the 20M-shot training set
-    (about 11.5 GB) during concatenation.
-    """
     from StudentModels import assemble_features
     n = det_evts.shape[0]
     for a in range(0, n, chunk):
