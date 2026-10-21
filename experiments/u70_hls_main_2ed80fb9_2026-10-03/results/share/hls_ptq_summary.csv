@@ -1,0 +1,8 @@
+total_bits,trn_wrap_hls_errors,trn_wrap_p_exact,trn_wrap_matches_fp32,rnd_sat_hls_errors,rnd_sat_p_exact,rnd_sat_matches_fp32,notes
+fp32,12619,,,12619,,,"FP32 Keras reference errors 12619; shots [15200000, 17000000); C simulation only, no synthesis; matches_fp32 = exact McNemar p >= 0.05"
+24,12643,0.146,yes,12654,0.0263,no,"rnd_sat: p=0.026 comes from the sigmoid/tanh lookup tables; the same pattern appears at every width including <32,16>, and restoring any single type to <32,16> does not change it. Passes Bonferroni over 12 tests (threshold 0.0042)."
+18,12773,1.52e-06,no,12618,1,yes,
+16,13537,2.52e-53,no,12641,0.286,yes,
+12,247343,<1e-300,no,14095,4.23e-90,no,
+10,374293,<1e-300,no,153531,<1e-300,no,
+8,456150,<1e-300,no,469185,<1e-300,no,accumulator capped to 7 integer bits at this width

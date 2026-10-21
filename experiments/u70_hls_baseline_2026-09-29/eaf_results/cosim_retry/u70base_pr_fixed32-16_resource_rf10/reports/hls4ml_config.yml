@@ -1,0 +1,70 @@
+Backend: Vivado
+ClockPeriod: 5.0
+ClockUncertainty: 12.5%
+HLSConfig:
+  LayerName:
+    gru:
+      Precision:
+        accum: auto
+        bias: auto
+        recurrent_bias: auto
+        recurrent_weight: auto
+        result: auto
+        table: fixed<18,8,TRN,WRAP,0>
+        weight: auto
+      RecurrentReuseFactor: 1
+      ReuseFactor: 10
+      Static: true
+      Strategy: Resource
+      TableSize: 1024
+      Trace: false
+      static: true
+    logit:
+      Precision:
+        accum: auto
+        bias: auto
+        result: auto
+        weight: auto
+      ReuseFactor: 10
+      Strategy: Resource
+      Trace: false
+    logit_linear:
+      Precision:
+        result: auto
+        table: fixed<18,8,TRN,WRAP,0>
+      ReuseFactor: 1
+      TableSize: 1024
+      Trace: false
+    syndrome_sequence:
+      Precision:
+        result: auto
+      Trace: false
+  Model:
+    BitExact: null
+    BramFactor: 1000000000
+    Precision:
+      default: ap_fixed<32,16>
+    ReuseFactor: 10
+    Strategy: Resource
+    TraceOutput: false
+IOType: io_parallel
+InputData: /home/kchey/hls4ml_pr1568/runs/u70base_pr_fixed32-16_resource_rf10/tb_x.npy
+InputShapes:
+  syndrome_sequence:
+  - 6
+  - 24
+KerasModel: !keras_model '/home/kchey/hls4ml_pr1568/runs/u70base_pr_fixed32-16_resource_rf10/prj/keras_model.keras'
+OutputDir: /home/kchey/hls4ml_pr1568/runs/u70base_pr_fixed32-16_resource_rf10/prj
+OutputPredictions: /home/kchey/hls4ml_pr1568/runs/u70base_pr_fixed32-16_resource_rf10/tb_y.npy
+OutputShapes:
+  layer3_out:
+  - 1
+Part: xcvu13p-flga2577-2-e
+ProjectName: myproject
+Stamp: 6ad9e09c
+Version: 1.0.0
+WriterConfig:
+  Namespace: null
+  TBOutputStream: both
+  WriteTar: false
+  WriteWeightsTxt: true

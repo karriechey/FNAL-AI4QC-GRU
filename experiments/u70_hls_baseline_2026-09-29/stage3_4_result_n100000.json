@@ -1,0 +1,219 @@
+{
+ "versions": {
+  "hls4ml_import_path": "/Users/karriechey/Documents/hls4ml-upstream/hls4ml/__init__.py",
+  "hls4ml_branch": "fix/vivado-gru-reset-before",
+  "hls4ml_commit": "6dad7ab4fdb3b8e5c84f638b481b68936f8e9c34",
+  "hls4ml_describe": "v1.3.0-68-g6dad7ab4",
+  "hls4ml_worktree_clean": true,
+  "hls4ml_version_attr": "1.4.0.dev53+ga2abb4d2.d20260927",
+  "tensorflow": "2.15.1",
+  "tf_keras": "2.15.1",
+  "keras_used_by_hls4ml": "keras.api._v2.keras",
+  "numpy": "1.26.4",
+  "python": "3.11.15",
+  "vivado_hls": "not installed on this machine (Mac)"
+ },
+ "config": {
+  "Model": {
+   "Precision": {
+    "default": "ap_fixed<32,16>"
+   },
+   "ReuseFactor": 1,
+   "Strategy": "Latency",
+   "BramFactor": 1000000000,
+   "TraceOutput": false,
+   "BitExact": null
+  },
+  "LayerName": {
+   "syndrome_sequence": {
+    "Trace": false,
+    "Precision": {
+     "result": "auto"
+    }
+   },
+   "gru": {
+    "Trace": false,
+    "Precision": {
+     "result": "auto",
+     "weight": "auto",
+     "bias": "auto",
+     "recurrent_weight": "auto",
+     "recurrent_bias": "auto",
+     "accum": "auto",
+     "table": "fixed<18,8,TRN,WRAP,0>"
+    },
+    "ReuseFactor": 1,
+    "RecurrentReuseFactor": 1,
+    "Static": true,
+    "TableSize": 1024,
+    "Strategy": "Latency",
+    "static": true
+   },
+   "logit": {
+    "Trace": false,
+    "Precision": {
+     "result": "auto",
+     "weight": "auto",
+     "bias": "auto",
+     "accum": "auto"
+    },
+    "ReuseFactor": 1,
+    "Strategy": "Latency"
+   },
+   "logit_linear": {
+    "Trace": false,
+    "Precision": {
+     "result": "auto",
+     "table": "fixed<18,8,TRN,WRAP,0>"
+    },
+    "ReuseFactor": 1,
+    "TableSize": 1024
+   }
+  }
+ },
+ "gru_layer": {
+  "apply_reset_gate": "before",
+  "strategy": "latency",
+  "reuse_factor": "1",
+  "recurrent_reuse_factor": "1",
+  "static": "True",
+  "weight_weight_shape": [
+   24,
+   210
+  ],
+  "weight_recurrent_weight_shape": [
+   70,
+   210
+  ],
+  "weight_bias_shape": [
+   210
+  ],
+  "weight_recurrent_bias_shape": [
+   210
+  ],
+  "generated_reset_after": [
+   "false"
+  ]
+ },
+ "n": 100000,
+ "shots": [
+  15200000,
+  15300000
+ ],
+ "max_abs_diff": 0.7416651248931885,
+ "mean_abs_diff": 0.04026156970347743,
+ "decision_agreement": 0.99987,
+ "decisions_differ": 13,
+ "errors_keras": 686,
+ "errors_hls_csim": 687,
+ "p_L_keras": 0.00686,
+ "p_L_hls_csim": 0.00687,
+ "differing_shots": [
+  {
+   "shot": 15221048,
+   "keras_logit": 0.0035131797194480896,
+   "hls_logit": -0.009758779779076576,
+   "truth": true,
+   "keras_correct": true,
+   "hls_correct": false
+  },
+  {
+   "shot": 15224843,
+   "keras_logit": 0.06358049809932709,
+   "hls_logit": -0.012365248054265976,
+   "truth": false,
+   "keras_correct": false,
+   "hls_correct": true
+  },
+  {
+   "shot": 15224891,
+   "keras_logit": 0.0006527155637741089,
+   "hls_logit": -0.03581371530890465,
+   "truth": true,
+   "keras_correct": true,
+   "hls_correct": false
+  },
+  {
+   "shot": 15228840,
+   "keras_logit": -0.03277438133955002,
+   "hls_logit": 0.004633279051631689,
+   "truth": false,
+   "keras_correct": true,
+   "hls_correct": false
+  },
+  {
+   "shot": 15248678,
+   "keras_logit": 0.02258560061454773,
+   "hls_logit": -0.012451188638806343,
+   "truth": true,
+   "keras_correct": true,
+   "hls_correct": false
+  },
+  {
+   "shot": 15254175,
+   "keras_logit": 0.0050913020968437195,
+   "hls_logit": -0.04260658845305443,
+   "truth": true,
+   "keras_correct": true,
+   "hls_correct": false
+  },
+  {
+   "shot": 15258141,
+   "keras_logit": 0.13700351119041443,
+   "hls_logit": -0.01994103007018566,
+   "truth": false,
+   "keras_correct": false,
+   "hls_correct": true
+  },
+  {
+   "shot": 15258154,
+   "keras_logit": 0.020930036902427673,
+   "hls_logit": -0.011521263979375362,
+   "truth": true,
+   "keras_correct": true,
+   "hls_correct": false
+  },
+  {
+   "shot": 15259408,
+   "keras_logit": -0.007498063147068024,
+   "hls_logit": 0.004365425556898117,
+   "truth": true,
+   "keras_correct": false,
+   "hls_correct": true
+  },
+  {
+   "shot": 15281792,
+   "keras_logit": 0.0004814639687538147,
+   "hls_logit": -0.14910836517810822,
+   "truth": true,
+   "keras_correct": true,
+   "hls_correct": false
+  },
+  {
+   "shot": 15297715,
+   "keras_logit": -0.027243085205554962,
+   "hls_logit": 0.0055939191952347755,
+   "truth": true,
+   "keras_correct": false,
+   "hls_correct": true
+  },
+  {
+   "shot": 15298192,
+   "keras_logit": 0.01923879235982895,
+   "hls_logit": -0.004491983912885189,
+   "truth": false,
+   "keras_correct": false,
+   "hls_correct": true
+  },
+  {
+   "shot": 15298801,
+   "keras_logit": 0.00909356027841568,
+   "hls_logit": -0.01613006368279457,
+   "truth": false,
+   "keras_correct": false,
+   "hls_correct": true
+  }
+ ],
+ "compile_s": 7.2,
+ "predict_s": 366.4
+}

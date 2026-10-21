@@ -1,0 +1,244 @@
+{
+ "name": "u70base_pr_fixed32-16_resource_rf10",
+ "complete": true,
+ "args": {
+  "name": "u70base_pr_fixed32-16_resource_rf10",
+  "phase": "synth",
+  "src": "/home/kchey/hls4ml_pr1568/src/pr",
+  "runs": "/home/kchey/hls4ml_pr1568/runs",
+  "data": "/home/kchey/hls4ml_pr1568/eaf_u70_baseline_bundle/data",
+  "part": "xcvu13p-flga2577-2-e",
+  "clock": 5.0,
+  "precision": "ap_fixed<32,16>",
+  "strategy": "Resource",
+  "rf": 10,
+  "n_tb": 100,
+  "pysim_shots": 10000,
+  "min_agreement": 0.999,
+  "timeout_h": 12.0
+ },
+ "started_utc": "2026-09-29T20:44:14Z",
+ "versions": {
+  "hls4ml_src": "/home/kchey/hls4ml_pr1568/src/pr",
+  "hls4ml_sha": "38affb5a77ff6d869774d1744c6590e72cae9cee",
+  "tensorflow": "2.15.1",
+  "tf_keras": "2.15.1",
+  "numpy": "1.26.4",
+  "python": "3.11.16",
+  "vivado_hls": [
+   "Vivado(TM) HLS - High-Level Synthesis from C, C++ and SystemC v2020.1 (64-bit)"
+  ]
+ },
+ "keras_rebuild_vs_stored_logits_max_abs_diff": 1.52587890625e-05,
+ "model": {
+  "params": 20021,
+  "units": 70,
+  "reset_after": false,
+  "input_shape": [
+   6,
+   24
+  ],
+  "n_tb": 100
+ },
+ "hls_config": {
+  "Model": {
+   "Precision": {
+    "default": "ap_fixed<32,16>"
+   },
+   "ReuseFactor": 10,
+   "Strategy": "Resource",
+   "BramFactor": 1000000000,
+   "TraceOutput": false,
+   "BitExact": null
+  },
+  "LayerName": {
+   "syndrome_sequence": {
+    "Trace": false,
+    "Precision": {
+     "result": "auto"
+    }
+   },
+   "gru": {
+    "Trace": false,
+    "Precision": {
+     "result": "auto",
+     "weight": "auto",
+     "bias": "auto",
+     "recurrent_weight": "auto",
+     "recurrent_bias": "auto",
+     "accum": "auto",
+     "table": "fixed<18,8,TRN,WRAP,0>"
+    },
+    "ReuseFactor": 10,
+    "RecurrentReuseFactor": 1,
+    "Static": true,
+    "TableSize": 1024,
+    "Strategy": "Resource",
+    "static": true
+   },
+   "logit": {
+    "Trace": false,
+    "Precision": {
+     "result": "auto",
+     "weight": "auto",
+     "bias": "auto",
+     "accum": "auto"
+    },
+    "ReuseFactor": 10,
+    "Strategy": "Resource"
+   },
+   "logit_linear": {
+    "Trace": false,
+    "Precision": {
+     "result": "auto",
+     "table": "fixed<18,8,TRN,WRAP,0>"
+    },
+    "ReuseFactor": 1,
+    "TableSize": 1024
+   }
+  }
+ },
+ "gru_layer": {
+  "apply_reset_gate": "before",
+  "strategy": "resource",
+  "reuse_factor": "8",
+  "recurrent_reuse_factor": "10",
+  "static": "True"
+ },
+ "generated_reset_after": [
+  "false"
+ ],
+ "multiply_reuse_factors": {
+  "config2_1": {
+   "role": "GRU input multiply (24 x 210)",
+   "n_in": "24",
+   "n_out": "210",
+   "requested_reuse_factor": "10",
+   "effective_reuse_factor": "8",
+   "strategy": "nnet::resource",
+   "kernel": "nnet::DenseResource_rf_leq_nin",
+   "multipliers_per_call": 630
+  },
+  "config2_2": {
+   "role": "GRU recurrent multiply (70 x 210; called on h and on r*h)",
+   "n_in": "70",
+   "n_out": "210",
+   "requested_reuse_factor": "10",
+   "effective_reuse_factor": "10",
+   "strategy": "nnet::resource",
+   "kernel": "nnet::DenseResource_rf_leq_nin",
+   "multipliers_per_call": 1470
+  },
+  "config3": {
+   "role": "Dense output layer (70 x 1)",
+   "n_in": "70",
+   "n_out": "1",
+   "requested_reuse_factor": "10",
+   "effective_reuse_factor": "10",
+   "strategy": "nnet::resource",
+   "kernel": "nnet::DenseResource_rf_leq_nin",
+   "multipliers_per_call": 7
+  }
+ },
+ "reuse_factor_changed_by_hls4ml": [
+  "config2_1"
+ ],
+ "implementation": {
+  "top_function_pragma": [
+   "DATAFLOW"
+  ],
+  "kernels": [
+   "nnet::DenseResource_rf_leq_nin",
+   "nnet::DenseResource_rf_leq_nin",
+   "nnet::DenseResource_rf_leq_nin"
+  ],
+  "uses_dense_latency_kernel": false,
+  "largest_unrolled_mult_block": 1470,
+  "resource_kernel_weights_reshaped_block": true,
+  "resource_kernel_weights_rom_bram": true
+ },
+ "pre_synthesis_rough_estimate": {
+  "label": "rough pre-synthesis extrapolation, not a synthesis result",
+  "multipliers": 2317,
+  "dsp_per_multiply_assumed": 3.9,
+  "dsp": 9036
+ },
+ "pysim_vs_keras": {
+  "n": 10000,
+  "max_abs_diff": 0.4011211395263672,
+  "mean_abs_diff": 0.04028008889462799,
+  "decision_agreement": 1.0,
+  "decisions_differ": 0,
+  "bit_identical": false,
+  "errors_ref": 66,
+  "errors_this": 66
+ },
+ "vivado_synth": {
+  "cmd": "vivado_hls -f build_prj.tcl \"reset=1 csim=1 synth=1 cosim=0 validation=0 export=0 vsynth=0\"",
+  "rc": 0,
+  "wall_s": 1424.5,
+  "peak_memory_mb": 5626.719,
+  "errors": [],
+  "xform_warnings": [
+   "WARNING: [XFORM 203-104] Completely partitioning array 'h_state.V'  accessed through non-constant indices on dimension 1 (firmware/nnet_utils/nnet_dense_resource.h:59:17), which may result in long runtime and suboptimal QoR due to large multiplexers. Please consider wrapping the array access into a function or using a regi",
+   "WARNING: [XFORM 203-104] Completely partitioning array 'layer2_out.V' (firmware/myproject.cpp:36) accessed through non-constant indices on dimension 1 (firmware/nnet_utils/nnet_dense_resource.h:59:17), which may result in long runtime and suboptimal QoR due to large multiplexers. Please consider wrapping the array access i"
+  ],
+  "step_times": [
+   [
+    "C SIMULATION",
+    "0h0m13s"
+   ],
+   [
+    "C/RTL SYNTHESIS",
+    "0h23m24s"
+   ]
+  ],
+  "license_error": false,
+  "validation": null
+ },
+ "csynth": {
+  "part": "xcvu13p-flga2577-2-e",
+  "target_clock_ns": "5.00",
+  "clock_uncertainty_ns": "0.62",
+  "est_clock_ns": "4.328",
+  "latency_min_cycles": "247",
+  "latency_max_cycles": "260",
+  "interval_min_cycles": "236",
+  "interval_max_cycles": "248",
+  "BRAM_18K": "1978",
+  "BRAM_18K_available": "5376",
+  "BRAM_18K_pct": 36.79,
+  "DSP": "9262",
+  "DSP_available": "12288",
+  "DSP_pct": 75.37,
+  "FF": "239969",
+  "FF_available": "3456000",
+  "FF_pct": 6.94,
+  "LUT": "694953",
+  "LUT_available": "1728000",
+  "LUT_pct": 40.22,
+  "URAM": "0",
+  "URAM_available": "1280",
+  "URAM_pct": 0.0
+ },
+ "vivado_csim_vs_keras": {
+  "n": 100,
+  "max_abs_diff": 0.21963819046020472,
+  "mean_abs_diff": 0.0462835803928375,
+  "decision_agreement": 1.0,
+  "decisions_differ": 0,
+  "bit_identical": false,
+  "errors_ref": 0,
+  "errors_this": 0
+ },
+ "latency_ns_at_est_clock": [
+  1069.0,
+  1125.3
+ ],
+ "latency_ns_at_target_clock": [
+  1235.0,
+  1300.0
+ ],
+ "elapsed_s": 1466.6,
+ "resource_label": "Actual Vivado HLS C synthesis results (resource numbers are the synthesis report estimates, not post-route utilization). Percentages use the device totals in the same report (AvailableResources)."
+}

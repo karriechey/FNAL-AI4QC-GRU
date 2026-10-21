@@ -1,0 +1,13 @@
+Scope,d,p,Training shots,Training %,Validation shots,Validation %,Evaluation shots,Evaluation %,FORMAL sealed shots,Sealed %,Extra held-out shots,Extra held-out %,Total shots,Note
+One FORMAL pool on its own,any,any,15000000,78.947,200000,1.053,1800000,9.474,2000000,10.526,0,0,19000000,"train [0, 15M), validation [15.0M, 15.2M), evaluation [15.2M, 17M), sealed [17M, 19M)"
+d5 run with 20M training shots,5,0.004,20000000,76.923,200000,0.769,1800000,6.923,2000000,7.692,2000000,7.692,26000000,"FORMAL sealed block spent (MWPM decoded on it 2026-08-21); new held-out block: 2M shots, seed 7001"
+d5 run with 100M training shots (e.g. R08),5,0.004,100000000,94.34,200000,0.189,1800000,1.698,2000000,1.887,2000000,1.887,106000000,same held-out arrangement
+d7 run with 100M training shots (e.g. L1),7,0.004,100000000,96.154,200000,0.192,1800000,1.731,2000000,1.923,0,0,104000000,FORMAL sealed block unread
+"d7 run with 200M training shots (e.g. R01, C1, D1)",7,0.004,200000000,98.039,200000,0.098,1800000,0.882,2000000,0.98,0,0,204000000,FORMAL sealed block unread
+"d7 p=0.003 / p=0.005 run, 100M",7,0.003 / 0.005,100000000,96.154,200000,0.192,1800000,1.731,2000000,1.923,0,0,104000000,own FORMAL pools (seeds 52 / 55)
+d9 run with 100M training shots (e.g. 9-1),9,0.004,100000000,92.593,200000,0.185,1800000,1.667,2000000,1.852,4000000,3.704,108000000,"FORMAL sealed block unread + new held-out block: 4M shots, seed 7002"
+d9 run with 200M training shots (e.g. 9-5),9,0.004,200000000,96.154,200000,0.096,1800000,0.865,2000000,0.962,4000000,1.923,208000000,same
+
+Training shots = FORMAL prefix (15M) + training-only pools (different generation seeds). Validation and evaluation come from the FORMAL pool only.
+"Validation [15.0M, 15.2M) chooses the checkpoint; evaluation [15.2M, 17M) gives every reported ratio and McNemar; sealed [17M, 19M) and the extra held-out blocks are not read (scoring them needs --score-sealed and is logged)."
+Percentages are of all shots in that scope (training + validation + evaluation + sealed + extra held-out). Source: configs/partitions.yaml.

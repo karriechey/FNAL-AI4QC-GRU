@@ -1,0 +1,91 @@
+setting,value,source
+package created,2026-10-20,this file
+scope,u70 GRU decoder on hls4ml: RF sweep (C synthesis) and PTQ width sweep (C simulation),results/
+model: file,gru_u70_reset_after_False.keras,data/
+model: file sha256,6271fe29ebd52c36194a60fe60407cca7580c02761b40023545d7c94c7b21762,results/eaf_rf_sweep_20261015T194454Z/MANIFEST.txt
+model: Keras version saved with,2.15.1,"data/gru_u70_reset_after_False.keras (config.json, metadata.json)"
+model: TensorFlow / tf_keras at conversion,2.15.1 / 2.15.1,results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json
+model: layers,InputLayer syndrome_sequence -> GRU gru -> Dense logit,"data/gru_u70_reset_after_False.keras (config.json, metadata.json)"
+model: input shape (timesteps x features),"6 x 24, values 0/1 (uint8 in the data file)","data/gru_u70_reset_after_False.keras (config.json, metadata.json); data/u70_eval_first10000.npz"
+model: GRU units,70,"data/gru_u70_reset_after_False.keras (config.json, metadata.json)"
+model: GRU reset_after,False,"data/gru_u70_reset_after_False.keras (config.json, metadata.json)"
+model: GRU return_sequences,False,"data/gru_u70_reset_after_False.keras (config.json, metadata.json)"
+model: GRU activation / recurrent_activation,tanh / sigmoid,"data/gru_u70_reset_after_False.keras (config.json, metadata.json)"
+"model: GRU use_bias, unroll, implementation","True, False, 2","data/gru_u70_reset_after_False.keras (config.json, metadata.json)"
+model: output layer,"Dense logit, 1 unit, linear activation, use_bias True","data/gru_u70_reset_after_False.keras (config.json, metadata.json)"
+model: total parameters,20021,results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json
+"hls4ml: commit (RF 35/70/140, PTQ)",2ed80fb9a6d5150a7f1ec21a8cf6564900244a0e,results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json
+hls4ml: commit (RF 10),38affb5a77ff6d869774d1744c6590e72cae9cee,../u70_hls_baseline_2026-09-29/eaf_results/*/u70base_pr_fixed32-16_resource_rf10/result.json
+hls4ml: version string,1.4.0.dev59+g2ed80fb9,results/step1_csim_gate_*.json (environment)
+hls4ml: backend,Vivado,results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+hls4ml: io_type,io_parallel,results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+hls4ml: strategy (model and each layer),Resource,results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+hls4ml: GRU static,true (use_static = true),results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml; results/eaf_rf_sweep_20261015T194454Z/runs/*/parameters.h
+hls4ml: granularity,name,u70_common.py base_config
+hls4ml: BramFactor,1000000000,results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+hls4ml: store_weights_in_bram,false (all multiplies),results/eaf_rf_sweep_20261015T194454Z/runs/*/parameters.h
+hls4ml: RecurrentReuseFactor setting,1 in the config; the generated recurrent multiply uses the main RF (see effective RF rows),results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml; results/eaf_rf_sweep_20261015T194454Z/runs/*/parameters.h
+hls4ml: generated GRU flags,"reset_after = false, pytorch_order = false, n_sequence 6, n_sequence_out 1",results/eaf_rf_sweep_20261015T194454Z/runs/*/parameters.h
+target: part,xcvu13p-flga2577-2-e,results/eaf_rf_sweep_20261015T194454Z/runs/*/myproject_csynth.rpt
+target: clock period,5.0 ns,results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+target: clock uncertainty,12.5% (0.62 ns),results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml; results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json
+HLS tool,Vivado HLS v2020.1 (64-bit),results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json
+"machine: Vivado HLS synthesis, Vivado C-sim and cosim (RF 10, 35, 70, 140)",Fermilab Elastic Analysis Facility (EAF); host name and CPU not recorded in the result files,results/eaf_rf_sweep_20261015T194454Z/; ../u70_hls_baseline_2026-09-29/eaf_results/
+"machine: Python C-sim gate, PTQ sweep, QGRU check","grace1.fnal.gov (aarch64), g++ (GCC) 14.3.1 20251022 (Red Hat 14.3.1-4)",results/step3_profiled_ranges.json (environment); results/step1_csim_gate_*.json
+HLS steps run (RF 35/70/140),csim=1 synth=1 cosim=0 validation=0 export=0 vsynth=0,results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json (vivado_synth.cmd)
+HLS steps run (RF 10),"csim + synth, then a separate cosim=1 validation=1 run",../u70_hls_baseline_2026-09-29/eaf_results/*/u70base_pr_fixed32-16_resource_rf10/result.json
+Vivado logic synthesis / place and route,not run,results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json (vsynth=0)
+resource numbers,"Vivado HLS C-synthesis report estimates, not post-route utilization",results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json (resource_label)
+"<32,16> runs: default precision","ap_fixed<32,16> (AP_TRN, AP_WRAP: ap_q_mode 5, ap_o_mode 3)",results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml; results/eaf_rf_sweep_20261015T194454Z/runs/*/vivado_hls_synth.log.gz
+"<32,16> runs: input type","ap_fixed<32,16> AP_TRN AP_WRAP (input port 4608 bits = 6 x 24 x 32)",results/eaf_rf_sweep_20261015T194454Z/runs/*/vivado_hls_synth.log.gz; results/eaf_rf_sweep_20261015T194454Z/runs/*/myproject_csynth.rpt
+"<32,16> runs: GRU weight","ap_fixed<32,16> AP_TRN AP_WRAP","results/eaf_rf_sweep_20261015T194454Z/runs/*/vivado_hls_synth.log.gz (product::mult<ap_fixed<32,16>, ap_fixed<32,16>>)"
+"<32,16> runs: GRU bias",not recorded for the synthesized runs (config: auto),results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+"<32,16> runs: GRU recurrent weight and recurrent bias","ap_fixed<32,16> AP_TRN AP_WRAP","logs/step1_rf70_stock_n10000.log (assert message, config2_2 weight_t and bias_t; same commit and config)"
+"<32,16> runs: GRU accumulator",not recorded for the synthesized runs (config: auto),results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+"<32,16> runs: GRU result and hidden state","ap_fixed<32,16> AP_TRN AP_WRAP (gru_static<ap_fixed<32,16>, ap_fixed<32,16>>)",results/eaf_rf_sweep_20261015T194454Z/runs/*/vivado_hls_synth.log.gz
+"<32,16> runs: Dense weight","ap_fixed<32,16> AP_TRN AP_WRAP",results/eaf_rf_sweep_20261015T194454Z/runs/*/vivado_hls_synth.log.gz (product::mult in config3)
+"<32,16> runs: Dense bias",not recorded for the synthesized runs (config: auto),results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+"<32,16> runs: Dense accumulator",not recorded for the synthesized runs (config: auto),results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+"<32,16> runs: Dense result (model output)","ap_fixed<72,40> AP_TRN AP_WRAP (output port 72 bits)",results/eaf_rf_sweep_20261015T194454Z/runs/*/vivado_hls_synth.log.gz; results/eaf_rf_sweep_20261015T194454Z/runs/*/myproject_csynth.rpt
+"<32,16> runs: sigmoid/tanh table type","fixed<18,8,TRN,WRAP,0>",results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml
+"<32,16> runs: table size",1024 (sigmoid and tanh),results/eaf_rf_sweep_20261015T194454Z/runs/*/hls4ml_config.yml; results/eaf_rf_sweep_20261015T194454Z/runs/*/parameters.h
+activation table range: sigmoid,"[-8, 8), 1024 entries",hls4ml nnet_utils/nnet_activation.h at 2ed80fb9 (GitHub) and the 2026-09-29 generated firmware copy
+activation table range: tanh,"[-4, 4), 1024 entries",hls4ml nnet_utils/nnet_activation.h at 2ed80fb9 (GitHub) and the 2026-09-29 generated firmware copy
+multiply shapes,"GRU input 24 x 210 (config2_1); GRU recurrent 70 x 210 (config2_2, called on h and on r*h); Dense 70 x 1 (config3)",results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json (multiply_reuse_factors); results/eaf_rf_sweep_20261015T194454Z/runs/*/parameters.h
+effective RF rule,"hls4ml replaces an invalid requested RF with a valid value for that multiply and prints a warning; valid RFs for the GRU input multiply: 1,2,3,4,6,8,12,24,48,72,120,144,168,240,336,360,504,720,840,1008,1680,2520,5040",results/eaf_rf_sweep_20261015T194454Z/u70main_fixed32-16_resource_rf35.log
+"effective RF, requested 10",8 / 10 / 10 (GRU input / GRU recurrent / Dense),../u70_hls_baseline_2026-09-29/eaf_results/*/u70base_pr_fixed32-16_resource_rf10/result.json
+"effective RF, requested 35",24 / 35 / 35,results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json
+"effective RF, requested 70",72 / 70 / 70,results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json
+"effective RF, requested 140",144 / 140 / 70,results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json
+dense kernels used,"RF <= n_in: DenseResource_rf_leq_nin; RF > n_in: DenseResource_rf_gt_nin_rem0 (per multiply, listed in result.json)",results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json (multiply_reuse_factors.kernel)
+PTQ: integer bit rule,"I = floor(log2(max|v|)) + 2, min 1 (smallest I with 2^(I-1) > max|v|, signed)",results/step3_profiled_ranges.json; step3_ptq_sweep.py
+PTQ: profiling data,"all 1800000 shots [15200000, 17000000); GRU internals from a float64 numpy replay of the Keras recurrence",results/step3_profiled_ranges.json; step3_ptq_sweep.py
+"PTQ: integer bits, input",2 (max|v| 1),results/step3_profiled_ranges.json
+"PTQ: integer bits, gru_weight",6 (max|v| 25.92),results/step3_profiled_ranges.json
+"PTQ: integer bits, gru_recurrent_weight",7 (max|v| 47.01),results/step3_profiled_ranges.json
+"PTQ: integer bits, gru_bias",5 (max|v| 8.655),results/step3_profiled_ranges.json
+"PTQ: integer bits, gru_recurrent_bias",5 (max|v| 8.655),results/step3_profiled_ranges.json
+"PTQ: integer bits, gru_accum",8 (max|v| 81.92),results/step3_profiled_ranges.json
+"PTQ: integer bits, gru_result",2 (max|v| 1),results/step3_profiled_ranges.json
+"PTQ: integer bits, gru_table",1 (max|v| 1),results/step3_profiled_ranges.json
+"PTQ: integer bits, logit_weight",4 (max|v| 6.655),results/step3_profiled_ranges.json
+"PTQ: integer bits, logit_bias",1 (max|v| 0.1066),results/step3_profiled_ranges.json
+"PTQ: integer bits, logit_accum",6 (max|v| 20.8),results/step3_profiled_ranges.json
+"PTQ: integer bits, logit_result",6 (max|v| 20.8),results/step3_profiled_ranges.json
+PTQ: type per width,"ap_fixed<W, I_type> for every type; trn_wrap = hls4ml default AP_TRN AP_WRAP, rnd_sat = AP_RND AP_SAT",results/step3_ptq_<mode>_w<W>.json (types)
+PTQ: capped types,W=8 only: gru_accum needs I=8 and is capped to I=7 (W-1),results/step3_ptq_<mode>_w<W>.json (capped_types)
+PTQ: table type,"ap_fixed<W,1> in the same mode as the other types",results/step3_ptq_<mode>_w<W>.json (types.gru_table)
+PTQ: table size,"not recorded in the PTQ result files (same base_config as the <32,16> runs, which generated 1024)",u70_common.py base_config; step3_ptq_sweep.py make_cfg
+PTQ: strategy and RF,"Resource, RF 35; not synthesized",step3_ptq_sweep.py (RF = 35)
+data: source block,"evaluation block [15200000, 17000000) of the d=5 r=5 p=0.004 dataset (1800000 shots)",u70_common.py; data/u70_eval_block_15200000_17000000.npz
+data: held-out test block,"not used; [17000000, 19000000) is not in the data files",u70_common.py
+data: RF sweep Python C-sim check,"10000 shots [15200000, 15210000)",data/u70_eval_first10000.npz (note field); results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json
+data: RF sweep Vivado C-sim and RF 10 cosim testbench,"100 shots, the first 100 of [15200000, 15210000)",for_eaf/eaf_u70_main_rf_sweep/run_rf.py and for_eaf/eaf_u70_baseline_bundle/run_u70.py (x_tb = xs[:n_tb]); results/eaf_rf_sweep_20261015T194454Z/runs/*/result.json (n_tb)
+data: RF 35 full-block C-sim check,"1800000 shots [15200000, 17000000)",results/step1_csim_gate_resource_rf35_n1800000.json
+data: PTQ sweep,"1800000 shots [15200000, 17000000) per width and mode","results/step3_ptq_<mode>_w<W>.json (shots, stats_vs_fp32_keras.n)"
+data: PTQ per-layer trace,first 10000 shots,step3_ptq_sweep.py (TRACE_N)
+data: PTQ limiting-type ablation,first 200000 shots,results/step3_ablation_*.json (n)
+accuracy check,McNemar exact test on identical shots; p >= 0.05 means matches FP32,u70_common.py paired_stats; full b/c tables in results/step3_ptq_table.csv and results/step1_csim_gate_*.json
+issue: recurrent kernel choice,on 2ed80fb9 the GRU recurrent multiply kernel is picked from the input-multiply RF; requested RF 70 gives input 72 / recurrent 70 and C-sim stops on the assert in dense_resource_rf_gt_nin_rem0. Local one-line fix used for RF 70; fixed upstream in hls4ml #1577,patch_recurrent_kernel_choice.py; logs/step1_rf70_stock_n10000.log
+issue: QGRU weight quantizers not applied,"hls4ml GRU.initialize adds weights without the QKeras quantizer, so raw float weights are cast by truncation; workaround: set weights to quantizer(w) before conversion. Open upstream as hls4ml issue #1579. QKeras hard activations rejected (AssertionError: Hard activation not supported)",results/step4_qgru_check.json; hls4ml/model/layers.py on main
+issue: profiling helpers on GRU,hls4ml.model.profiling.weights_keras raises IndexError: list index out of range; get_ymodel_keras tries to assign GRU.activation (read-only in Keras 2.15),results/step3_profiled_ranges.json (hls4ml_profiling); step3_ptq_sweep.py

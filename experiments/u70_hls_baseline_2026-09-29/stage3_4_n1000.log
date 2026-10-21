@@ -1,0 +1,118 @@
+== versions
+{
+ "hls4ml_import_path": "/Users/karriechey/Documents/hls4ml-upstream/hls4ml/__init__.py",
+ "hls4ml_branch": "fix/vivado-gru-reset-before",
+ "hls4ml_commit": "6dad7ab4fdb3b8e5c84f638b481b68936f8e9c34",
+ "hls4ml_describe": "v1.3.0-68-g6dad7ab4",
+ "hls4ml_worktree_clean": true,
+ "hls4ml_version_attr": "1.4.0.dev53+ga2abb4d2.d20260927",
+ "tensorflow": "2.15.1",
+ "tf_keras": "2.15.1",
+ "keras_used_by_hls4ml": "keras.api._v2.keras",
+ "numpy": "1.26.4",
+ "python": "3.11.15",
+ "vivado_hls": "not installed on this machine (Mac)"
+}
+PR fix present: nnet_recurrent.h reads CONFIG_T::reset_after
+
+== hls4ml config
+{
+ "Model": {
+  "Precision": {
+   "default": "ap_fixed<32,16>"
+  },
+  "ReuseFactor": 1,
+  "Strategy": "Latency",
+  "BramFactor": 1000000000,
+  "TraceOutput": false
+ },
+ "LayerName": {
+  "syndrome_sequence": {
+   "Trace": false,
+   "Precision": {
+    "result": "auto"
+   }
+  },
+  "gru": {
+   "Trace": false,
+   "Precision": {
+    "result": "auto",
+    "weight": "auto",
+    "bias": "auto",
+    "recurrent_weight": "auto",
+    "recurrent_bias": "auto",
+    "accum": "auto",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 1,
+   "RecurrentReuseFactor": 1,
+   "Static": true,
+   "TableSize": 1024,
+   "Strategy": "Latency",
+   "static": true
+  },
+  "logit": {
+   "Trace": false,
+   "Precision": {
+    "result": "auto",
+    "weight": "auto",
+    "bias": "auto",
+    "accum": "auto"
+   },
+   "ReuseFactor": 1,
+   "Strategy": "Latency"
+  },
+  "logit_linear": {
+   "Trace": false,
+   "Precision": {
+    "result": "auto",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 1,
+   "TableSize": 1024
+  }
+ }
+}
+
+== hls4ml GRU layer
+{
+ "apply_reset_gate": "before",
+ "strategy": "latency",
+ "reuse_factor": "1",
+ "recurrent_reuse_factor": "1",
+ "static": "True",
+ "weight_weight_shape": [
+  24,
+  210
+ ],
+ "weight_recurrent_weight_shape": [
+  70,
+  210
+ ],
+ "weight_bias_shape": [
+  210
+ ],
+ "weight_recurrent_bias_shape": [
+  210
+ ],
+ "generated_reset_after": [
+  "false"
+ ]
+}
+  syndrome_sequence  Input      {'input_t': 'fixed<32,16,TRN,WRAP,0>'}
+  gru                GRU        {'gru_accum_t': 'fixed<32,16,TRN,WRAP,0>', 'layer2_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_weight_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_recurrent_weight_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_bias_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_recurrent_bias_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_table_t': 'fixed<18,8,TRN,WRAP,0>', 'layer2_index': 'uint<1>'}
+  logit              Dense      {'logit_accum_t': 'fixed<72,40,TRN,WRAP,0>', 'result_t': 'fixed<72,40,TRN,WRAP,0>', 'logit_weight_t': 'fixed<32,16,TRN,WRAP,0>', 'logit_bias_t': 'fixed<32,16,TRN,WRAP,0>', 'layer3_index': 'uint<1>'}
+
+== C simulation (Python, hls4ml compile + predict) vs Keras
+  n: 1000
+  shots: [15200000, 15201000]
+  max_abs_diff: 0.2196369171142578
+  mean_abs_diff: 0.039590856283903124
+  decision_agreement: 1.0
+  decisions_differ: 0
+  errors_keras: 11
+  errors_hls_csim: 11
+  p_L_keras: 0.011
+  p_L_hls_csim: 0.011
+  compile_s: 6.9
+  predict_s: 3.8

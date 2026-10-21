@@ -1,0 +1,16 @@
+Run,What,Parameters,Train shots scored,GRU p_L (train shots),MWPM p_L (train shots),GRU / MWPM (train shots),McNemar b: GRU-only right (train),McNemar c: MWPM-only right (train),n_discordant (train),McNemar p (train),Eval shots scored,GRU p_L (eval block),MWPM p_L (eval block),GRU / MWPM (eval block),McNemar b (eval),McNemar c (eval),n_discordant (eval),McNemar p (eval),"GRU p_L change, train -> eval",Note
+R01,"d7 u280 200M, peak 3e-3",276641,2000000,0.004129,0.004356,0.9479,4961,4507,9468,3.2e-06,1800000,0.004548,0.004291,1.0598,4252,4714,8966,1.1e-06,+10%,
+L1,"d7 u280 100M, peak 3e-3",276641,2000000,0.003569,0.004356,0.8192,5317,3742,9059,9.9e-62,1800000,0.004556,0.004291,1.0616,4267,4743,9010,5.6e-07,+28%,
+C1,"d7 u280 200M, peak 1e-3",276641,2000000,0.003561,0.004356,0.8176,5184,3595,8779,8.9e-65,1800000,0.00395,0.004291,0.9205,4382,3768,8150,1.1e-11,+11%,
+D1,"d7 u280 200M, distilled from u560",276641,2000000,0.003367,0.004356,0.7728,5100,3121,8221,1.6e-106,1800000,0.003568,0.004291,0.8316,4450,3149,7599,1.6e-50,+6%,
+arm a,"d7 u560 200M (diagnostic, over budget)",1023681,2000000,0.002366,0.004356,0.5432,6130,2150,8280,<1e-300,1800000,0.003403,0.004291,0.7931,4807,3209,8016,1.2e-71,+44%,
+arm b,"d7 2xu280 200M (diagnostic, over budget)",747881,2000000,0.002526,0.004356,0.5799,5755,2095,7850,<1e-300,1800000,0.003076,0.004291,0.7169,4735,2548,7283,6.2e-147,+22%,
+9-1,"d9 u280 100M, peak 1e-3",303521,2000000,0.004243,0.00241,1.7604,3000,6666,9666,7.8e-312,1800000,0.005762,0.002267,2.5413,2316,8606,10922,<1e-300,+36%,
+overfit d9 (last epoch),"d9 u280 trained 300 epochs on 2M shots only, last-epoch weights",303521,2000000,0.00094,0.00241,0.39,4789,1848,6637,3e-295,,,,,,,,,,memorization test: the model saw these 2M shots 300 times; not scored on the eval block (only the val-chosen checkpoint was)
+"overfit d9 (val-chosen, ep 42)","same run, checkpoint chosen on validation (epoch 42)",303521,2000000,0.064667,0.00241,26.827,3205,127717,130922,<1e-300,1800000,0.105013,0.002267,46.3181,2125,187068,189193,<1e-300,+62%,the checkpoint a validation rule would keep; generalizes badly (trained on 2M shots only)
+overfit d7 (last epoch),"d7 u280 trained 300 epochs on 2M shots only, last-epoch weights",276641,2000000,0.0,0.004356,0.0,8712,0,8712,<1e-300,,,,,,,,,,memorization test: zero errors on its own 2M training shots
+"overfit d7 (val-chosen, ep 38)","same run, checkpoint chosen on validation (epoch 38)",276641,2000000,0.027085,0.004356,6.218,5455,50914,56369,<1e-300,1800000,0.041977,0.004291,9.7822,3905,71739,75644,<1e-300,+55%,"as above, d7"
+
+"Train shots = rows [0, 2,000,000) of the run's own FORMAL pool, inside the training prefix [0, 15M) the run trained on. Eval block = [15.2M, 17M) of the same pool, never trained on."
+"MWPM is decoded on exactly the same shots in each column, and McNemar pairs the two decoders shot by shot (b = shots only the GRU got right, c = shots only MWPM got right)."
+All d7/d9 runs at p = 0.004. Generated 2026-10-06 from the runs' own eval and train-slice CSVs on grace1.

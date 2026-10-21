@@ -1,0 +1,70 @@
+Backend: Vivado
+ClockPeriod: 5.0
+ClockUncertainty: 12.5%
+HLSConfig:
+  LayerName:
+    gru:
+      Precision:
+        accum: auto
+        bias: auto
+        recurrent_bias: auto
+        recurrent_weight: auto
+        result: auto
+        table: fixed<18,8,TRN,WRAP,0>
+        weight: auto
+      RecurrentReuseFactor: 1
+      ReuseFactor: 1
+      Static: true
+      Strategy: Latency
+      TableSize: 1024
+      Trace: false
+      static: true
+    logit:
+      Precision:
+        accum: auto
+        bias: auto
+        result: auto
+        weight: auto
+      ReuseFactor: 1
+      Strategy: Latency
+      Trace: false
+    logit_linear:
+      Precision:
+        result: auto
+        table: fixed<18,8,TRN,WRAP,0>
+      ReuseFactor: 1
+      TableSize: 1024
+      Trace: false
+    syndrome_sequence:
+      Precision:
+        result: auto
+      Trace: false
+  Model:
+    BitExact: null
+    BramFactor: 1000000000
+    Precision:
+      default: ap_fixed<32,16>
+    ReuseFactor: 1
+    Strategy: Latency
+    TraceOutput: false
+IOType: io_parallel
+InputData: /Users/karriechey/Documents/FNAL-AI4QC-GRU/experiments/u70_hls_baseline_2026-09-29/prj_u70_pr_fixed32_16_latency_rf1_n1800000/tb_x.npy
+InputShapes:
+  syndrome_sequence:
+  - 6
+  - 24
+KerasModel: !keras_model '/Users/karriechey/Documents/FNAL-AI4QC-GRU/experiments/u70_hls_baseline_2026-09-29/prj_u70_pr_fixed32_16_latency_rf1_n1800000/keras_model.keras'
+OutputDir: /Users/karriechey/Documents/FNAL-AI4QC-GRU/experiments/u70_hls_baseline_2026-09-29/prj_u70_pr_fixed32_16_latency_rf1_n1800000
+OutputPredictions: /Users/karriechey/Documents/FNAL-AI4QC-GRU/experiments/u70_hls_baseline_2026-09-29/prj_u70_pr_fixed32_16_latency_rf1_n1800000/tb_y.npy
+OutputShapes:
+  layer3_out:
+  - 1
+Part: xcvu13p-flga2577-2-e
+ProjectName: myproject
+Stamp: 28bfd4de
+Version: 1.0.0
+WriterConfig:
+  Namespace: null
+  TBOutputStream: both
+  WriteTar: false
+  WriteWeightsTxt: true

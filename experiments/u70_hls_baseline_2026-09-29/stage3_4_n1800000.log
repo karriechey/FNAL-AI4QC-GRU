@@ -1,0 +1,371 @@
+== versions
+{
+ "hls4ml_import_path": "/Users/karriechey/Documents/hls4ml-upstream/hls4ml/__init__.py",
+ "hls4ml_branch": "fix/vivado-gru-reset-before",
+ "hls4ml_commit": "6dad7ab4fdb3b8e5c84f638b481b68936f8e9c34",
+ "hls4ml_describe": "v1.3.0-68-g6dad7ab4",
+ "hls4ml_worktree_clean": true,
+ "hls4ml_version_attr": "1.4.0.dev53+ga2abb4d2.d20260927",
+ "tensorflow": "2.15.1",
+ "tf_keras": "2.15.1",
+ "keras_used_by_hls4ml": "keras.api._v2.keras",
+ "numpy": "1.26.4",
+ "python": "3.11.15",
+ "vivado_hls": "not installed on this machine (Mac)"
+}
+PR fix present: nnet_recurrent.h reads CONFIG_T::reset_after
+
+== hls4ml config
+{
+ "Model": {
+  "Precision": {
+   "default": "ap_fixed<32,16>"
+  },
+  "ReuseFactor": 1,
+  "Strategy": "Latency",
+  "BramFactor": 1000000000,
+  "TraceOutput": false
+ },
+ "LayerName": {
+  "syndrome_sequence": {
+   "Trace": false,
+   "Precision": {
+    "result": "auto"
+   }
+  },
+  "gru": {
+   "Trace": false,
+   "Precision": {
+    "result": "auto",
+    "weight": "auto",
+    "bias": "auto",
+    "recurrent_weight": "auto",
+    "recurrent_bias": "auto",
+    "accum": "auto",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 1,
+   "RecurrentReuseFactor": 1,
+   "Static": true,
+   "TableSize": 1024,
+   "Strategy": "Latency",
+   "static": true
+  },
+  "logit": {
+   "Trace": false,
+   "Precision": {
+    "result": "auto",
+    "weight": "auto",
+    "bias": "auto",
+    "accum": "auto"
+   },
+   "ReuseFactor": 1,
+   "Strategy": "Latency"
+  },
+  "logit_linear": {
+   "Trace": false,
+   "Precision": {
+    "result": "auto",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 1,
+   "TableSize": 1024
+  }
+ }
+}
+
+== hls4ml GRU layer
+{
+ "apply_reset_gate": "before",
+ "strategy": "latency",
+ "reuse_factor": "1",
+ "recurrent_reuse_factor": "1",
+ "static": "True",
+ "weight_weight_shape": [
+  24,
+  210
+ ],
+ "weight_recurrent_weight_shape": [
+  70,
+  210
+ ],
+ "weight_bias_shape": [
+  210
+ ],
+ "weight_recurrent_bias_shape": [
+  210
+ ],
+ "generated_reset_after": [
+  "false"
+ ]
+}
+  syndrome_sequence  Input      {'input_t': 'fixed<32,16,TRN,WRAP,0>'}
+  gru                GRU        {'gru_accum_t': 'fixed<32,16,TRN,WRAP,0>', 'layer2_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_weight_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_recurrent_weight_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_bias_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_recurrent_bias_t': 'fixed<32,16,TRN,WRAP,0>', 'gru_table_t': 'fixed<18,8,TRN,WRAP,0>', 'layer2_index': 'uint<1>'}
+  logit              Dense      {'logit_accum_t': 'fixed<72,40,TRN,WRAP,0>', 'result_t': 'fixed<72,40,TRN,WRAP,0>', 'logit_weight_t': 'fixed<32,16,TRN,WRAP,0>', 'logit_bias_t': 'fixed<32,16,TRN,WRAP,0>', 'layer3_index': 'uint<1>'}
+
+== C simulation (Python, hls4ml compile + predict) vs Keras
+  n: 1800000
+  shots: [15200000, 17000000]
+  max_abs_diff: 0.8680734634399414
+  mean_abs_diff: 0.04031899587042565
+  decision_agreement: 0.9998594444444444
+  decisions_differ: 253
+  errors_keras: 12619
+  errors_hls_csim: 12638
+  p_L_keras: 0.0070105555555555555
+  p_L_hls_csim: 0.007021111111111111
+  compile_s: 4.7
+  predict_s: 8152.9
+  differs: {'shot': 15221048, 'keras_logit': 0.0035131797194480896, 'hls_logit': -0.009758779779076576, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15224843, 'keras_logit': 0.06358049809932709, 'hls_logit': -0.012365248054265976, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15224891, 'keras_logit': 0.0006527155637741089, 'hls_logit': -0.03581371530890465, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15228840, 'keras_logit': -0.03277438133955002, 'hls_logit': 0.004633279051631689, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15248678, 'keras_logit': 0.02258560061454773, 'hls_logit': -0.012451188638806343, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15254175, 'keras_logit': 0.0050913020968437195, 'hls_logit': -0.04260658845305443, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15258141, 'keras_logit': 0.13700351119041443, 'hls_logit': -0.01994103007018566, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15258154, 'keras_logit': 0.020930036902427673, 'hls_logit': -0.011521263979375362, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15259408, 'keras_logit': -0.007498063147068024, 'hls_logit': 0.004365425556898117, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15281792, 'keras_logit': 0.0004814639687538147, 'hls_logit': -0.14910836517810822, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15297715, 'keras_logit': -0.027243085205554962, 'hls_logit': 0.0055939191952347755, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15298192, 'keras_logit': 0.01923879235982895, 'hls_logit': -0.004491983912885189, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15298801, 'keras_logit': 0.00909356027841568, 'hls_logit': -0.01613006368279457, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15300653, 'keras_logit': 0.022627659142017365, 'hls_logit': -0.03853967785835266, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15302440, 'keras_logit': 0.01352914422750473, 'hls_logit': -0.012616815976798534, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15323549, 'keras_logit': -0.028115279972553253, 'hls_logit': 0.1235617846250534, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15329417, 'keras_logit': -0.00242634117603302, 'hls_logit': 0.0021909698843955994, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15332136, 'keras_logit': 0.03518713265657425, 'hls_logit': -0.010983635671436787, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15338824, 'keras_logit': -0.13824528455734253, 'hls_logit': 0.1368030160665512, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15344316, 'keras_logit': -0.014963291585445404, 'hls_logit': 0.08226680010557175, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15346008, 'keras_logit': 0.016853101551532745, 'hls_logit': -0.0074439337477087975, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15348157, 'keras_logit': 0.008046440780162811, 'hls_logit': -0.02860657311975956, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15348285, 'keras_logit': 0.03743878751993179, 'hls_logit': -0.033559251576662064, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15348757, 'keras_logit': 0.01631617546081543, 'hls_logit': -0.044296372681856155, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15352955, 'keras_logit': 0.01707441359758377, 'hls_logit': -0.0018652922008186579, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15361389, 'keras_logit': 0.0021779313683509827, 'hls_logit': -0.017563018947839737, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15364709, 'keras_logit': 0.05079058185219765, 'hls_logit': -1.9468367099761963e-05, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15368213, 'keras_logit': -0.006276614964008331, 'hls_logit': 0.06491541117429733, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15375725, 'keras_logit': -0.06467709690332413, 'hls_logit': 0.020942647010087967, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15376152, 'keras_logit': 0.0045689791440963745, 'hls_logit': -0.012719915248453617, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15390553, 'keras_logit': 0.004062272608280182, 'hls_logit': -0.06614962965250015, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15398431, 'keras_logit': 0.002909362316131592, 'hls_logit': -0.05162203311920166, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15398757, 'keras_logit': 0.02152402698993683, 'hls_logit': -0.022777851670980453, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15413642, 'keras_logit': -0.002253219485282898, 'hls_logit': 0.022996343672275543, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15422017, 'keras_logit': 0.031537145376205444, 'hls_logit': -0.0001560831442475319, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15427387, 'keras_logit': 0.01957840472459793, 'hls_logit': -0.11848047375679016, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15429143, 'keras_logit': 0.004859961569309235, 'hls_logit': -0.03329501673579216, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15441352, 'keras_logit': 0.06870345026254654, 'hls_logit': -0.012001123279333115, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15442635, 'keras_logit': -0.035657964646816254, 'hls_logit': 0.027087336406111717, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15443305, 'keras_logit': 0.0349099263548851, 'hls_logit': -0.027361063286662102, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15455261, 'keras_logit': 0.02340063452720642, 'hls_logit': -0.06243728846311569, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15468807, 'keras_logit': 0.050814323127269745, 'hls_logit': -0.010263049043715, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15469805, 'keras_logit': 0.012887619435787201, 'hls_logit': -0.02828577533364296, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15470724, 'keras_logit': 0.036509498953819275, 'hls_logit': -0.01575079932808876, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15471565, 'keras_logit': 0.02777756005525589, 'hls_logit': -0.01050219964236021, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15481325, 'keras_logit': 0.011489197611808777, 'hls_logit': -0.022786302492022514, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15482755, 'keras_logit': -0.01801728457212448, 'hls_logit': 0.040898390114307404, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15483227, 'keras_logit': 0.010403335094451904, 'hls_logit': -0.024043800309300423, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15492118, 'keras_logit': 0.051134370267391205, 'hls_logit': -0.0011925213038921356, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15518970, 'keras_logit': -0.013308458030223846, 'hls_logit': 0.003388006240129471, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15519193, 'keras_logit': 0.04133901745080948, 'hls_logit': -0.004375501535832882, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15524733, 'keras_logit': 0.035519279539585114, 'hls_logit': -0.041139837354421616, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15532450, 'keras_logit': -0.007806085050106049, 'hls_logit': 0.04616478085517883, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15533133, 'keras_logit': -0.015799328684806824, 'hls_logit': 0.02987469732761383, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15545097, 'keras_logit': -0.04916705936193466, 'hls_logit': 0.002310489071533084, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15561028, 'keras_logit': 0.03169257193803787, 'hls_logit': -0.019120901823043823, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15561868, 'keras_logit': 0.00930842012166977, 'hls_logit': -0.005660431459546089, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15563307, 'keras_logit': 0.13635900616645813, 'hls_logit': -0.07831345498561859, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15574438, 'keras_logit': 0.056564681231975555, 'hls_logit': -0.0032685280311852694, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15576216, 'keras_logit': -0.019899792969226837, 'hls_logit': 0.06281642615795135, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15580022, 'keras_logit': 0.06309431791305542, 'hls_logit': -0.020336106419563293, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15580023, 'keras_logit': 0.003986135125160217, 'hls_logit': -0.03478676453232765, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15587670, 'keras_logit': 0.03960386663675308, 'hls_logit': -0.053391993045806885, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15588511, 'keras_logit': 0.04655429720878601, 'hls_logit': -0.016110923141241074, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15589182, 'keras_logit': 0.05748416855931282, 'hls_logit': -0.023481382057070732, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15590456, 'keras_logit': -0.02032046765089035, 'hls_logit': 0.01664009317755699, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15592828, 'keras_logit': 0.04758337140083313, 'hls_logit': -0.03792820870876312, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15593756, 'keras_logit': -0.019130684435367584, 'hls_logit': 0.04509064927697182, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15599795, 'keras_logit': -0.002322182059288025, 'hls_logit': 0.13064008951187134, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15601993, 'keras_logit': 0.007075481116771698, 'hls_logit': -0.04038764536380768, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15602847, 'keras_logit': 0.0129818394780159, 'hls_logit': -0.011875937692821026, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15607163, 'keras_logit': 0.0477282740175724, 'hls_logit': -0.012611450627446175, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15609812, 'keras_logit': 0.02441626787185669, 'hls_logit': -0.0010791912209242582, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15619685, 'keras_logit': 0.0847027599811554, 'hls_logit': -0.005710071884095669, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15626428, 'keras_logit': 0.0054666027426719666, 'hls_logit': -0.02662455476820469, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15628323, 'keras_logit': -0.012739904224872589, 'hls_logit': 0.009352915920317173, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15630484, 'keras_logit': 0.06334519386291504, 'hls_logit': -0.0475718230009079, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15634582, 'keras_logit': 0.003411397337913513, 'hls_logit': -0.01255657710134983, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15649187, 'keras_logit': -0.044920988380908966, 'hls_logit': 0.12127002328634262, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15649555, 'keras_logit': 0.03082945942878723, 'hls_logit': -0.002608564682304859, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15649899, 'keras_logit': 0.028621889650821686, 'hls_logit': -0.04464711248874664, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15656870, 'keras_logit': 0.025295495986938477, 'hls_logit': -0.00698050856590271, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15664691, 'keras_logit': 0.09252499788999557, 'hls_logit': -0.014608096331357956, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15673128, 'keras_logit': 0.03591939061880112, 'hls_logit': -0.03769027069211006, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15676701, 'keras_logit': 0.0067840442061424255, 'hls_logit': -0.03371473401784897, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15683976, 'keras_logit': 0.05591104179620743, 'hls_logit': -0.007116665132343769, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15688363, 'keras_logit': 0.00894930213689804, 'hls_logit': -0.029686175286769867, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15704241, 'keras_logit': 0.14159363508224487, 'hls_logit': -0.03495616093277931, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15707416, 'keras_logit': 0.03870895504951477, 'hls_logit': -0.07077781111001968, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15709277, 'keras_logit': -0.10011502355337143, 'hls_logit': 0.0035197811666876078, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15712744, 'keras_logit': 0.02039102464914322, 'hls_logit': -0.01175711676478386, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15741533, 'keras_logit': 0.11070486158132553, 'hls_logit': -0.005043861456215382, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15745423, 'keras_logit': 0.06606986373662949, 'hls_logit': -0.022512249648571014, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15759144, 'keras_logit': 0.011595569550991058, 'hls_logit': -0.06513421982526779, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15762036, 'keras_logit': 0.04113911837339401, 'hls_logit': -0.017303097993135452, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15770633, 'keras_logit': -0.05636680871248245, 'hls_logit': 0.023731309920549393, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15775460, 'keras_logit': 0.024465173482894897, 'hls_logit': -0.016949856653809547, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15790208, 'keras_logit': 0.0007602423429489136, 'hls_logit': -0.026646481826901436, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15796389, 'keras_logit': 0.01972547173500061, 'hls_logit': -0.038576699793338776, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15797812, 'keras_logit': 0.04965735971927643, 'hls_logit': -0.0031772591173648834, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15814378, 'keras_logit': 0.010249696671962738, 'hls_logit': -0.0200546532869339, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15814712, 'keras_logit': 0.005029261112213135, 'hls_logit': -0.02253817766904831, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15825233, 'keras_logit': 0.031282320618629456, 'hls_logit': -0.030386298894882202, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15844710, 'keras_logit': 0.01792217791080475, 'hls_logit': -0.04339343309402466, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15863734, 'keras_logit': 0.07899898290634155, 'hls_logit': -0.024090882390737534, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15866406, 'keras_logit': 0.06727993488311768, 'hls_logit': -0.03252675384283066, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15868947, 'keras_logit': -0.06667891889810562, 'hls_logit': 0.04268742352724075, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15869916, 'keras_logit': 0.011018611490726471, 'hls_logit': -0.03396984189748764, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15871272, 'keras_logit': 0.022891797125339508, 'hls_logit': -0.030352596193552017, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15874362, 'keras_logit': -0.013877198100090027, 'hls_logit': 0.017602629959583282, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15884108, 'keras_logit': 0.04109879583120346, 'hls_logit': -0.0021056432742625475, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15885321, 'keras_logit': 0.01500876247882843, 'hls_logit': -0.035527464002370834, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15912279, 'keras_logit': -0.0028189867734909058, 'hls_logit': 0.03241603448987007, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15917944, 'keras_logit': -0.03665369004011154, 'hls_logit': 0.0065469518303871155, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15923122, 'keras_logit': 0.005396537482738495, 'hls_logit': -0.017369451001286507, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15927257, 'keras_logit': 0.15578745305538177, 'hls_logit': -0.03433898091316223, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15928792, 'keras_logit': 0.005873426795005798, 'hls_logit': -0.1025317832827568, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15948443, 'keras_logit': 0.01593325287103653, 'hls_logit': -0.024438902735710144, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15958026, 'keras_logit': -0.04342416673898697, 'hls_logit': 0.04194815084338188, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15962346, 'keras_logit': -0.06306026130914688, 'hls_logit': 0.060690052807331085, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 15983184, 'keras_logit': 0.0008354932069778442, 'hls_logit': -0.02999762073159218, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 15991231, 'keras_logit': 0.0400494784116745, 'hls_logit': -0.024351246654987335, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16001110, 'keras_logit': -0.011300705373287201, 'hls_logit': 0.04570379480719566, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16011812, 'keras_logit': 0.004812799394130707, 'hls_logit': -0.03022199310362339, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16013133, 'keras_logit': 0.0789342075586319, 'hls_logit': -0.015592578798532486, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16016778, 'keras_logit': 0.010168969631195068, 'hls_logit': -0.016028694808483124, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16023412, 'keras_logit': 0.0015852376818656921, 'hls_logit': -0.024953782558441162, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16028674, 'keras_logit': 0.0010817497968673706, 'hls_logit': -0.02672743611037731, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16033959, 'keras_logit': 0.008790187537670135, 'hls_logit': -0.020096784457564354, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16034715, 'keras_logit': -0.02452217787504196, 'hls_logit': 0.048460863530635834, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16036520, 'keras_logit': 0.038016654551029205, 'hls_logit': -0.009433459490537643, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16051062, 'keras_logit': 0.050016697496175766, 'hls_logit': -0.08002015203237534, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16063350, 'keras_logit': 0.02349754422903061, 'hls_logit': -0.02228117361664772, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16078966, 'keras_logit': 0.0553232878446579, 'hls_logit': -0.033279456198215485, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16092972, 'keras_logit': 0.0608832873404026, 'hls_logit': -0.0036626604851335287, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16097477, 'keras_logit': 0.0076482221484184265, 'hls_logit': -0.06655580550432205, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16103620, 'keras_logit': -0.09001385420560837, 'hls_logit': 0.013721426017582417, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16112682, 'keras_logit': 0.02640298753976822, 'hls_logit': -0.03197060152888298, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16121352, 'keras_logit': 0.004451572895050049, 'hls_logit': -0.094985231757164, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16130388, 'keras_logit': 0.01922479271888733, 'hls_logit': -0.07147077471017838, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16138551, 'keras_logit': 0.047735363245010376, 'hls_logit': -0.023869432508945465, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16140556, 'keras_logit': 0.017690137028694153, 'hls_logit': -0.01781562715768814, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16163275, 'keras_logit': 0.09723787754774094, 'hls_logit': -0.10599973052740097, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16167929, 'keras_logit': 0.06988919526338577, 'hls_logit': -0.01446064468473196, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16169664, 'keras_logit': 0.06054485961794853, 'hls_logit': -0.012839166447520256, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16169782, 'keras_logit': 0.011525861918926239, 'hls_logit': -0.011090239509940147, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16186873, 'keras_logit': 0.07391665875911713, 'hls_logit': -0.007013884373009205, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16201617, 'keras_logit': 0.10652351379394531, 'hls_logit': -0.03285904973745346, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16204399, 'keras_logit': -0.07673054188489914, 'hls_logit': 0.012220991775393486, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16212255, 'keras_logit': 0.04936010763049126, 'hls_logit': -0.05251247435808182, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16218151, 'keras_logit': 0.0460737869143486, 'hls_logit': -0.04746759310364723, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16221761, 'keras_logit': 0.016968928277492523, 'hls_logit': -0.0004696408286690712, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16222148, 'keras_logit': 0.0023507699370384216, 'hls_logit': -0.061501793563365936, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16223499, 'keras_logit': -0.011127002537250519, 'hls_logit': 0.02970763109624386, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16239953, 'keras_logit': 0.02058834582567215, 'hls_logit': -0.006093068979680538, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16243801, 'keras_logit': -0.07709801942110062, 'hls_logit': 0.0013717773836106062, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16252194, 'keras_logit': 0.03542422503232956, 'hls_logit': -0.015675220638513565, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16272728, 'keras_logit': -0.05643882602453232, 'hls_logit': 0.005569650791585445, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16279569, 'keras_logit': -0.010098323225975037, 'hls_logit': 0.00024219066835939884, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16291995, 'keras_logit': -0.03865142911672592, 'hls_logit': 0.0649661123752594, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16294810, 'keras_logit': 0.035494156181812286, 'hls_logit': -0.01499958336353302, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16303166, 'keras_logit': -0.03340073674917221, 'hls_logit': 0.06036543846130371, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16304722, 'keras_logit': -0.037595830857753754, 'hls_logit': 0.022564740851521492, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16310467, 'keras_logit': 0.061158448457717896, 'hls_logit': -0.0006379641126841307, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16314015, 'keras_logit': 0.029084689915180206, 'hls_logit': -0.0007340102456510067, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16318881, 'keras_logit': 0.009843111038208008, 'hls_logit': -0.0247366800904274, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16319251, 'keras_logit': 0.11705485731363297, 'hls_logit': -0.019915873184800148, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16327512, 'keras_logit': 0.011264130473136902, 'hls_logit': -0.011720973066985607, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16328981, 'keras_logit': 0.052092764526605606, 'hls_logit': -0.03524819388985634, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16329721, 'keras_logit': 0.001035533845424652, 'hls_logit': -0.006490267813205719, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16330578, 'keras_logit': 0.04830183833837509, 'hls_logit': -0.0330154150724411, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16338018, 'keras_logit': 0.07231589406728745, 'hls_logit': -0.015458211302757263, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16345657, 'keras_logit': 0.04673082008957863, 'hls_logit': -0.009603245183825493, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16348013, 'keras_logit': 0.008477546274662018, 'hls_logit': -0.005057516507804394, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16355580, 'keras_logit': -0.01061508059501648, 'hls_logit': 0.004659963771700859, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16363798, 'keras_logit': 0.01603531837463379, 'hls_logit': -0.038571715354919434, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16366405, 'keras_logit': 0.05155274644494057, 'hls_logit': -0.056430697441101074, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16372087, 'keras_logit': 0.05186104401946068, 'hls_logit': -0.041455578058958054, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16376416, 'keras_logit': 0.03801264613866806, 'hls_logit': -0.007517361082136631, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16378722, 'keras_logit': -0.03263434022665024, 'hls_logit': 0.018370499834418297, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16399346, 'keras_logit': -0.004309631884098053, 'hls_logit': 0.06532292068004608, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16405687, 'keras_logit': -0.030241332948207855, 'hls_logit': 0.02023182064294815, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16414940, 'keras_logit': 0.02159818261861801, 'hls_logit': -0.043303340673446655, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16416821, 'keras_logit': 0.044936612248420715, 'hls_logit': -0.007614605128765106, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16420218, 'keras_logit': -0.023467503488063812, 'hls_logit': 0.010672293603420258, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16438850, 'keras_logit': -0.0014947056770324707, 'hls_logit': 0.02851104736328125, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16439200, 'keras_logit': 0.03341767191886902, 'hls_logit': -0.002016985323280096, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16448977, 'keras_logit': 0.010301120579242706, 'hls_logit': -0.08310630917549133, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16452028, 'keras_logit': 0.0607369989156723, 'hls_logit': -0.00905328057706356, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16461786, 'keras_logit': 0.03927293419837952, 'hls_logit': -0.047997716814279556, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16463380, 'keras_logit': 0.011193007230758667, 'hls_logit': -0.008590884506702423, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16474436, 'keras_logit': 0.007367067039012909, 'hls_logit': -0.0766834244132042, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16479249, 'keras_logit': 0.07217814773321152, 'hls_logit': -0.07694479078054428, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16487093, 'keras_logit': -0.035536058247089386, 'hls_logit': 0.012738514691591263, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16489967, 'keras_logit': -0.009338803589344025, 'hls_logit': 0.024436961859464645, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16491446, 'keras_logit': 0.017917871475219727, 'hls_logit': -0.042557571083307266, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16497550, 'keras_logit': -0.048768796026706696, 'hls_logit': 0.009825386106967926, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16500369, 'keras_logit': 0.020436741411685944, 'hls_logit': -0.05322132259607315, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16506996, 'keras_logit': 0.03274773061275482, 'hls_logit': -0.013037402182817459, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16513841, 'keras_logit': -0.045872725546360016, 'hls_logit': 0.06842564046382904, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16513889, 'keras_logit': 0.01675345003604889, 'hls_logit': -0.009180668741464615, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16520675, 'keras_logit': 0.016633331775665283, 'hls_logit': -0.032313272356987, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16521666, 'keras_logit': 0.00615866482257843, 'hls_logit': -0.055046986788511276, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16523390, 'keras_logit': -0.020330436527729034, 'hls_logit': 0.01996573805809021, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16525701, 'keras_logit': 0.030124753713607788, 'hls_logit': -0.04043998941779137, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16529561, 'keras_logit': 0.1145486831665039, 'hls_logit': -0.10662871599197388, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16553514, 'keras_logit': -0.00406193733215332, 'hls_logit': 0.02297182008624077, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16580747, 'keras_logit': -0.024299539625644684, 'hls_logit': 0.011229848489165306, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16582198, 'keras_logit': 0.02516767382621765, 'hls_logit': -0.01251217257231474, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16601413, 'keras_logit': 0.022647812962532043, 'hls_logit': -0.019913244992494583, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16602464, 'keras_logit': 0.002615198493003845, 'hls_logit': -0.0002643745392560959, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16615215, 'keras_logit': 0.0026792511343955994, 'hls_logit': -0.012871483340859413, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16623281, 'keras_logit': -0.014915436506271362, 'hls_logit': 0.0035015330649912357, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16627161, 'keras_logit': -0.001200065016746521, 'hls_logit': 0.12620030343532562, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16631493, 'keras_logit': 0.03795573115348816, 'hls_logit': -0.023627467453479767, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16638613, 'keras_logit': 0.009617514908313751, 'hls_logit': -0.0815986916422844, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16642523, 'keras_logit': 0.0027609094977378845, 'hls_logit': -0.007350495085120201, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16651501, 'keras_logit': -0.00020910054445266724, 'hls_logit': 0.020070835947990417, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16654392, 'keras_logit': -0.0020151883363723755, 'hls_logit': 0.03557752072811127, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16657614, 'keras_logit': 0.004542216658592224, 'hls_logit': -0.009087985381484032, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16661082, 'keras_logit': -0.012564897537231445, 'hls_logit': 0.006336349993944168, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16672895, 'keras_logit': -0.017674520611763, 'hls_logit': 0.006666528061032295, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16689493, 'keras_logit': 0.029323704540729523, 'hls_logit': -0.0036890937481075525, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16693000, 'keras_logit': -0.009099982678890228, 'hls_logit': 0.012743719853460789, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16709248, 'keras_logit': 0.014146380126476288, 'hls_logit': -0.12297466397285461, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16723304, 'keras_logit': 0.014249637722969055, 'hls_logit': -0.036996353417634964, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16736629, 'keras_logit': 0.014654561877250671, 'hls_logit': -0.018777279183268547, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16750985, 'keras_logit': 0.002180039882659912, 'hls_logit': -0.007569262757897377, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16776179, 'keras_logit': 0.050889648497104645, 'hls_logit': -0.060762450098991394, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16779088, 'keras_logit': 0.03219420462846756, 'hls_logit': -0.025318847969174385, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16795244, 'keras_logit': 0.010251924395561218, 'hls_logit': -0.01533513143658638, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16796193, 'keras_logit': 0.031084395945072174, 'hls_logit': -0.003856342751532793, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16798032, 'keras_logit': 0.002720959484577179, 'hls_logit': -0.05417941138148308, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16803620, 'keras_logit': -0.004074797034263611, 'hls_logit': 0.018537351861596107, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16806401, 'keras_logit': -0.01275724172592163, 'hls_logit': 0.07108580321073532, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16822464, 'keras_logit': -0.02484724670648575, 'hls_logit': 0.060273248702287674, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16835361, 'keras_logit': 0.03844574838876724, 'hls_logit': -0.0018799109384417534, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16841736, 'keras_logit': 0.028983287513256073, 'hls_logit': -0.026019982993602753, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16851105, 'keras_logit': 0.020993344485759735, 'hls_logit': -0.005930372513830662, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16851568, 'keras_logit': 0.002404533326625824, 'hls_logit': -0.05802442505955696, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16858326, 'keras_logit': 0.029819197952747345, 'hls_logit': -0.011587726883590221, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16871258, 'keras_logit': 0.042360588908195496, 'hls_logit': -0.0025317659601569176, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16878563, 'keras_logit': -0.011105276644229889, 'hls_logit': 0.02921941690146923, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16893673, 'keras_logit': 0.0006671622395515442, 'hls_logit': -0.023660147562623024, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16914342, 'keras_logit': 0.015545189380645752, 'hls_logit': -0.005787095054984093, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16923001, 'keras_logit': 0.029333099722862244, 'hls_logit': -0.012268662452697754, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16927781, 'keras_logit': 0.005788765847682953, 'hls_logit': -0.00900314562022686, 'truth': True, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16971519, 'keras_logit': 0.02182020992040634, 'hls_logit': -0.057974692434072495, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16978305, 'keras_logit': 0.001451939344406128, 'hls_logit': -0.047123223543167114, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16983818, 'keras_logit': -0.03452811390161514, 'hls_logit': 0.0025259011890739202, 'truth': False, 'keras_correct': True, 'hls_correct': False}
+  differs: {'shot': 16986090, 'keras_logit': 0.03513854742050171, 'hls_logit': -0.012165293097496033, 'truth': False, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16992172, 'keras_logit': -0.038925983011722565, 'hls_logit': 0.03068985976278782, 'truth': True, 'keras_correct': False, 'hls_correct': True}
+  differs: {'shot': 16999088, 'keras_logit': 0.1486995816230774, 'hls_logit': -0.11470723152160645, 'truth': True, 'keras_correct': True, 'hls_correct': False}

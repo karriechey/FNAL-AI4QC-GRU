@@ -1,0 +1,19 @@
+tensorflow 2.15.1 | tf_keras 2.15.1 | numpy 1.26.4
+
+== architecture (from the .keras file)
+layers: [('syndrome_sequence', 'InputLayer'), ('gru', 'GRU'), ('logit', 'Dense')]
+input shape: (None, 6, 24) | timesteps: 6 | features per timestep: 24
+GRU: units=70 reset_after=False return_sequences=False activation=tanh recurrent_activation=sigmoid use_bias=True
+GRU weight shapes: [(24, 210), (70, 210), (210,)] | GRU params: 19950
+Dense: units=1 activation=linear use_bias=True params=71
+output shape: (None, 1) | total params: 20021
+
+weights bit-identical to package model_legacy.h5 (run gkd20m_u70_hard_seed0): True
+
+== evaluation: FORMAL pool shots [15,200,000, 17,000,000), N = 1800000
+max |logit - 2026-09-23 CPU reference| = 0.0
+model errors 12619  p_L 0.00701056
+MWPM  errors 13630  p_L 0.00757222
+p_L(model)/p_L(MWPM) = 0.925825
+
+eval_inputs_10000.npy == first 10,000 shots of the block: False
