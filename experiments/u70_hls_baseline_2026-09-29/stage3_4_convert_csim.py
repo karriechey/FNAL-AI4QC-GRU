@@ -1,22 +1,13 @@
 # Created: 2026-09-29 | Last updated: 2026-09-29
-"""Stages 2-4 of the u70 hls4ml baseline: record versions, convert the trained u70 GRU
-(reset_after=False) with the hls4ml PR #1568 source tree, and compare the Python C simulation
-(hls_model.compile + predict) with Keras on labelled shots of the official evaluation block.
 
-Model and weights are used as they are: no retraining, no quantization-aware changes.
-Conversion settings (the baseline):
-    backend Vivado, part xcvu13p-flga2577-2-e, clock 5 ns, io_parallel,
-    ap_fixed<32,16> default precision (hls4ml defaults for accumulators and activation tables),
-    Strategy Latency, ReuseFactor 1, static GRU.
+"""Convert the trained u70 GRU (reset_after=False) with hls4ml PR #1568 and compare C-sim with Keras.
 
-The project also gets a Vivado HLS testbench (tb_data/) of the first N_TB shots, with the Keras
-logits as the reference, so a later Vivado HLS run (C sim, synthesis, co-simulation) uses the
-same shots.
+Vivado, xcvu13p-flga2577-2-e, 5 ns, io_parallel, ap_fixed<32,16>, Latency, ReuseFactor 1, static GRU.
+No retraining or quantization. The project gets a tb_data/ testbench of the first N_TB shots with
+Keras logits as reference. Writes prj_u70_pr_fixed32_16_latency_rf1/ and stage3_4_result_n<N>.json here.
 
-Usage (Mac; Vivado HLS is not needed for these stages):
-    PYTHONPATH=~/Documents/hls4ml-upstream ~/qkeras_preflight/.venv/bin/python \
-        stage3_4_convert_csim.py [n_shots]
-Writes only inside this folder: prj_u70_pr_fixed32_16_latency_rf1/, stage3_4_result_n<N>.json.
+PYTHONPATH=~/Documents/hls4ml-upstream ~/qkeras_preflight/.venv/bin/python \
+    stage3_4_convert_csim.py [n_shots]
 """
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = ''

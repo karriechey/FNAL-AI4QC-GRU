@@ -29,3 +29,4 @@ experiments/gru_check/hls4ml_pr1568_check/synthesis_package/hls_projects/
 # temporary folders of the d7 50M sanity check
 experiments/overnight_2026-09-27/A_sanity/tmp_ckpt/
 experiments/overnight_2026-09-27/A_sanity/tmp_runs/
+**/prj_*/

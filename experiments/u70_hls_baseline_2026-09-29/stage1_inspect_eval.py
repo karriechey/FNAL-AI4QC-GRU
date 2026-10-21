@@ -1,22 +1,13 @@
 # Created: 2026-09-29 | Last updated: 2026-09-29
-"""Stage 1 of the u70 hls4ml baseline: inspect the trained model and evaluate it on the
-official evaluation block. Read-only: no file outside this folder is written.
 
-What it does:
-  1. Loads gru_u70_reset_after_False.keras with tf_keras (the file was saved with tf_keras 2.15;
-     tf.keras 2.15 loads such GRU files without an error but with wrong predictions) and prints
-     the architecture.
-  2. Rebuilds the same architecture with tf.keras (the object hls4ml parses) and copies the
-     weights in, then checks the weights are bit-identical to the 2026-09-23 package
-     (model_legacy.h5, run gkd20m_u70_hard_seed0, weights SHA 95d1d3e3...).
-  3. Runs the model on the full evaluation block, shots [15,200,000, 17,000,000) of the
-     FORMAL d=5 r=5 p=0.004 pool (1,800,000 shots), on CPU, and counts logical errors.
-     MWPM errors come from the per-shot MWPM predictions recorded by the training run on the
-     same shots.
-  4. Checks whether eval_inputs_10000.npy (the inputs used for the hls4ml checks) are the
-     first 10,000 shots of that block.
+"""Inspect the trained u70 GRU and evaluate it on the evaluation block [15.2M, 17M) of the d=5 FORMAL pool.
 
-Run from anywhere:  ~/qkeras_preflight/.venv/bin/python stage1_inspect_eval.py
+Loads the .keras file with tf_keras (tf.keras 2.15 loads it without error but predicts wrong),
+rebuilds it in tf.keras for hls4ml and checks the weights match the 2026-09-23 package, counts
+GRU and MWPM errors on CPU, and checks eval_inputs_10000.npy is the first 10,000 shots of the block.
+Writes nothing outside this folder.
+
+~/qkeras_preflight/.venv/bin/python stage1_inspect_eval.py
 """
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
