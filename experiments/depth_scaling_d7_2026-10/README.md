@@ -51,3 +51,11 @@ Times UTC.
   committed first; without it Part B starts and the amendment follows.
 - Commits are local on branch `depth-scaling`, not pushed. Code on grace1:
   `~/FNAL-AI4QC-GRU-depth`, a `git archive` of the commit in `CODE_COMMIT.txt`.
+- 2026-10-21 07:20 Part A, all 8 runs at once: L=10 1,720-1,775 s per epoch, L=1 about 450 s,
+  GPU utilization 100%, 26 GB GPU and 134 GB host in use. Expected end of Part A about 16:00.
+- 2026-10-21 08:37 `lrscan_d7_L01_lr5e-3` killed at epoch 17 by the kill rule: best val p_L 0.0211
+  (epoch 7), epochs 13-17 at 0.032-0.040 with training loss up from 0.058 to 0.088. Classified
+  diverged. The sweep LR rule uses only L=10, so the scan continues unchanged.
+- 2026-10-21 08:55 L=1 at 1e-3, 2e-3 and 3e-3 finished 20 epochs.
+- 2026-10-21 10:21 `lrscan_d7_L10_lr5e-3` killed at epoch 9: best val p_L 0.0160 (epoch 2),
+  epochs 5-9 at 0.027-0.088 with training loss up from 0.044 to 0.180. Classified diverged.

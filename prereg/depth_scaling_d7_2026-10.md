@@ -144,3 +144,30 @@ Single seed per depth. Same-recipe seed spread on the eval block: f3280 seed 0 v
 - `figures/depth_scaling.py`: eval-block p_L / MWPM vs L, and LR stability vs depth.
 
 ## Amendments
+
+### 2026-10-21: Part A result
+
+Part A finished 2026-10-21 13:54 UTC. Classification by the rules above (all 20-epoch runs on
+the 80-epoch schedule; grad norm and clip fraction are per-epoch medians and fractions of steps
+clipped at 0.64):
+
+| run | L | peak LR | eta x N_det | status | epochs | final train loss | longest rise (epochs) | max loss / running min | max epoch grad norm median | max epoch clip fraction |
+|---|---|---|---|---|---|---|---|---|---|---|
+| lrscan_d7_L01_lr1e-3 | 1 | 1e-3 | 0.34 | stable | 20 | 0.04995 | 0 | 0.99 | 0.1463 | 0.0013 |
+| lrscan_d7_L01_lr2e-3 | 1 | 2e-3 | 0.67 | stable | 20 | 0.04047 | 0 | 0.991 | 0.1523 | 0.0026 |
+| lrscan_d7_L01_lr3e-3 | 1 | 3e-3 | 1.01 | stable | 20 | 0.04935 | 0 | 1.01 | 0.1501 | 0.0051 |
+| lrscan_d7_L01_lr5e-3 | 1 | 5e-3 | 1.68 | diverged | 17 | 0.08800 | 7 | 1.552 | 0.2477 | 0.1417 |
+| lrscan_d7_L10_lr1e-3 | 10 | 1e-3 | 0.34 | stable | 20 | 0.01345 | 0 | 0.981 | 0.8313 | 0.6018 |
+| lrscan_d7_L10_lr2e-3 | 10 | 2e-3 | 0.67 | stable | 20 | 0.01670 | 0 | 1.01 | 0.7495 | 0.5689 |
+| lrscan_d7_L10_lr3e-3 | 10 | 3e-3 | 1.01 | unstable | 20 | 0.03784 | 9 | 1.622 | 0.6977 | 0.5395 |
+| lrscan_d7_L10_lr5e-3 | 10 | 5e-3 | 1.68 | diverged | 9 | 0.18040 | 5 | 4.128 | 0.6106 | 0.4801 |
+
+Kills: L01 at 5e-3, epoch 17 (val p_L above 1.5 x its best 0.02107 for epochs 13-17); L10 at
+5e-3, epoch 9 (above 1.5 x its best 0.01604 for epochs 5-9).
+
+Sweep LR: 1e-3 (L=10 at 1e-3 stable). The conditional L=10 run at 5e-4 was not needed. L=2 is
+`hl7_2x70` from the kd pilot, so `depth_d7_L02_u70` does not run.
+
+Order of events: Part B started 2026-10-21 16:55 UTC, after the 3-hour wait for this amendment
+ran out (access to the cluster lapsed between 10:23 and 19:00). This amendment was committed after
+Part B started; it records Part A only and changes no Part B rule.
