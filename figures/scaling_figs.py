@@ -1,36 +1,19 @@
+# Created: 2026-10-05
+# Last updated: 2026-10-06 (distilled runs are their own recipe; summary_md writes each notebook section's text from its figure)
+
 """
 Scaling-law and comparison figures for the GRU decoder study.
 
-Created: 2026-10-05
-Last updated: 2026-10-05
+Shared by notebooks/scaling_laws.ipynb and the command line. Writes to figures/output/:
+a PDF and 300-dpi PNG per figure, scaling_summary.pdf, fit_parameters.csv/.md,
+lambda_table.csv and runs_used.csv.
 
-Everything (loading, run selection, fitting, plotting) lives here as importable functions,
-one per figure, so the notebook notebooks/scaling_laws.ipynb and the command line
-produce identical output:
+Filled markers are evaluation-block scores only; pending runs (figures/data/pending_runs.csv)
+are hollow, validation p_L only. Each fitted series is one recipe (check_one_recipe).
+Diverged, unstable or killed runs are drawn as "x" and never fitted. Error bars are Wilson 95%.
 
-    python figures/scaling_figs.py                  # newest GRU_all_runs_*.csv in the repo root
-    python figures/scaling_figs.py --csv path.csv   # a specific all-runs table
-
-Outputs go to figures/output/: one PDF + one 300-dpi PNG per figure, scaling_summary.pdf
-(all figures), fit_parameters.csv/.md (every fit, with bootstrap CIs and the exact runs it
-used), lambda_table.csv and runs_used.csv (every run each figure plotted, and why runs
-were excluded).
-
-Data rules this module enforces:
-  * Only evaluation-block numbers are plotted as filled markers. The evaluation block is
-    shots [15.2M, 17M) of the FORMAL p=0.004 pool of each distance (1.8M shots). The
-    sealed block [17M, 19M) is never read; this module only reads result tables.
-  * Runs still training (listed in figures/data/pending_runs.csv) appear as hollow markers
-    labelled "pending, val-only" when a validation p_L exists, and are omitted otherwise.
-    As soon as a matching scored row appears in the all-runs CSV, the pending entry is
-    dropped automatically and the scored row is used instead.
-  * A fitted series contains one recipe only: check_one_recipe() raises if a fitted set of
-    runs mixes LR schedule, peak LR, epochs, checkpoint criterion, pipeline, reset_after,
-    warmup or data pool.
-  * Diverged / unstable / killed runs are drawn with an "x" and never enter a fit.
-  * Error bars are Wilson 95% binomial intervals on p_L from the number of scored shots.
-    The MWPM p_L on the same block is treated as a fixed reference: every run at a given
-    (d, p) is scored on the same shots, so the same MWPM value divides all of them.
+python figures/scaling_figs.py                  # newest GRU_all_runs_*.csv in the repo root
+python figures/scaling_figs.py --csv path.csv   # a specific all-runs table
 """
 
 from __future__ import annotations
@@ -62,17 +45,14 @@ REPO = Path(__file__).resolve().parents[1]
 DATA_DIR = REPO / "figures" / "data"
 OUT_DIR = REPO / "figures" / "output"
 
-# Shots in the scored evaluation block [15.2M, 17M). Every row of the all-runs CSV that is
-# not a diagnostic was scored on this block (p=0.003 and p=0.005 runs use their own FORMAL
-# pools with the same partition, so also 1.8M shots).
+# evaluation block [15.2M, 17M); p=0.003 and 0.005 FORMAL pools use the same partition
 N_EVAL = 1_800_000
 N_VAL = 200_000  # validation block [15.0M, 15.2M)
 
 N_BOOT = 2000  # bootstrap replicates for every fit and every Lambda
-RNG_SEED = 20261005  # fixed so reruns on the same data reproduce the same CIs
+RNG_SEED = 20261005  # fixed so reruns reproduce the same CIs
 
-# Okabe-Ito colours, one per width, identical in every figure. Yellow is left out because
-# it is unreadable on white. Order checked with a colour-vision-deficiency validator.
+# Okabe-Ito colours, one per width, same in every figure (yellow left out)
 WIDTH_COLOR = {
     "u70": "#E69F00",     # orange
     "u140": "#56B4E9",    # sky blue
@@ -80,14 +60,16 @@ WIDTH_COLOR = {
     "u280": "#0072B2",    # blue
     "u560": "#D55E00",    # vermillion
     "2xu280": "#CC79A7",  # reddish purple
+    "2xu160": "#882255",  # wine (stacked GRUs within the u280 budget)
+    "2xu140": "#AA4499",  # purple
 }
 MWPM_COLOR = "#000000"
 NEUTRAL = "#7F7F7F"  # used for references (best-of envelope, train-slice markers)
 
-# One marker per code distance, identical in every figure.
+# one marker per code distance
 D_MARKER = {5: "o", 7: "s", 9: "^"}
 
-# Eval-block MWPM per distance at p=0.004 (from the all-runs CSV; read again at load time).
+# eval-block MWPM per distance at p=0.004 (re-read from the CSV at load time)
 MWPM_FALLBACK = {5: 0.007571, 7: 0.004291, 9: 0.002267}
 
 plt.rcParams.update({
@@ -109,7 +91,7 @@ plt.rcParams.update({
     "axes.axisbelow": True,
     "lines.linewidth": 1.6,
     "errorbar.capsize": 0,
-    "pdf.fonttype": 42,  # embed TrueType so text stays editable / searchable in the PDF
+    "pdf.fonttype": 42,  # embed TrueType so PDF text stays editable
     "ps.fonttype": 42,
     "savefig.dpi": 300,
 })
@@ -119,7 +101,7 @@ plt.rcParams.update({
 # Loading and labelling runs
 # --------------------------------------------------------------------------------------
 def newest_runs_csv() -> Path:
-    """The newest GRU_all_runs_<date>.csv in the repo root (dates sort as strings)."""
+    # newest GRU_all_runs_<date>.csv in the repo root
     hits = sorted(REPO.glob("GRU_all_runs_*.csv"))
     if not hits:
         raise FileNotFoundError(f"no GRU_all_runs_*.csv in {REPO}")
@@ -127,7 +109,7 @@ def newest_runs_csv() -> Path:
 
 
 def parse_shots(s) -> float:
-    """'100M' -> 1e8, '2M' -> 2e6."""
+    # '100M' -> 1e8, '2M' -> 2e6
     s = str(s).strip()
     m = re.fullmatch(r"([\d.]+)\s*([kKmM]?)", s)
     if not m:
@@ -150,20 +132,14 @@ def fmt_params(p: float) -> str:
 
 
 def fmt_lr(lr: float) -> str:
-    """0.003 -> '3e-3', 0.0015 -> '1.5e-3'."""
+    # 0.003 -> '3e-3', 0.0015 -> '1.5e-3'
     m, e = f"{lr:.2e}".split("e")
     return f"{float(m):g}e{int(e)}"
 
 
 def load_runs(csv_path: Path | str | None = None) -> pd.DataFrame:
-    """
-    Read the all-runs CSV and add the derived columns every selection uses.
-
-    The CSV has one row per training run; the free-text 'Checkpoint criterion' column
-    carries the recipe details that have no column of their own (pipeline generation,
-    warmup, data pool, divergence notes). Those are parsed here into explicit columns so
-    selections and the recipe check never depend on string matching downstream.
-    """
+    # Read the all-runs CSV and parse the free-text 'Checkpoint criterion' column into
+    # explicit recipe columns (pipeline, warmup, data pool, divergence).
     csv_path = Path(csv_path) if csv_path else newest_runs_csv()
     raw = pd.read_csv(csv_path)
     df = pd.DataFrame({
@@ -195,13 +171,14 @@ def load_runs(csv_path: Path | str | None = None) -> pd.DataFrame:
     df["pool"] = np.where(note.str.contains("eaf"), "EAF", "grace1")
     df["warmup"] = note.str.contains("warmup")
     df["warm_start"] = note.str.contains("warm start")
+    # a distilled student is its own recipe, never a replicate of the label-trained model
+    df["distilled"] = note.str.contains("distilled")
     df["diagnostic"] = df["status_raw"].str.contains("diagnostic") | note.str.contains("overfit test")
     df["stability"] = np.select(
         [df["status_raw"].str.startswith("Killed"), note.str.contains("diverged"),
          note.str.contains("unstable")],
         ["killed", "diverged", "unstable"], default="stable")
-    # Scored on the evaluation block: finished, has a p_L, not a diagnostic, FORMAL pool on
-    # grace1 (the EAF distillation rows used a different pool with different shots).
+    # scored: finished, has p_L, not a diagnostic, FORMAL pool on grace1
     df["scored"] = (df["status_raw"].str.startswith("Yes") & df["p_L"].notna()
                     & ~df["diagnostic"] & df["pool"].eq("grace1"))
     df["n_shots"] = N_EVAL
@@ -210,34 +187,37 @@ def load_runs(csv_path: Path | str | None = None) -> pd.DataFrame:
     df["val_only"] = False
     df["recipe"] = df.apply(recipe_string, axis=1)
     df["label"] = df.apply(
-        lambda r: f"d{r.d} {r.width} {r.data} s{r.seed} {r.schedule} {fmt_lr(r.lr)} {r.epochs}ep", axis=1)
+        lambda r: f"d{r.d} {r.width} {r.data} s{r.seed} {r.schedule} {fmt_lr(r.lr)} {r.epochs}ep"
+                  + (" distilled" if r.distilled else ""), axis=1)
     df.attrs["source"] = csv_path.name
     return df
 
 
 def recipe_string(r) -> str:
-    """Everything except d, width, data size and seed that defines how a run was trained."""
+    # everything except d, width, data size and seed
     bits = [r.schedule, f"peak {fmt_lr(r.lr)}", f"{r.epochs} ep", f"batch {r.batch}",
             f"ckpt {r['ckpt']}", f"{r.pipeline} pipeline", f"reset_after={r.reset_after}",
             "warmup 3 ep" if r.warmup else "no warmup", f"p={r.p:g}", f"{r.pool} pool"]
     if r.warm_start:
         bits.append("warm start")
+    if r.get("distilled", False):
+        bits.append("distilled")
     return ", ".join(bits)
 
 
 RECIPE_KEYS = ["schedule", "lr", "epochs", "batch", "ckpt", "pipeline", "reset_after",
-               "warmup", "warm_start", "p", "pool"]
+               "warmup", "warm_start", "distilled", "p", "pool"]
 
 
 def check_one_recipe(runs: pd.DataFrame, what: str) -> None:
-    """Refuse to fit a set of runs that mixes training recipes (the core data rule)."""
+    # refuse to fit runs that mix training recipes
     keys = runs[RECIPE_KEYS].drop_duplicates()
     if len(keys) > 1:
         raise ValueError(f"{what}: runs mix recipes:\n{keys.to_string()}")
 
 
 def select(df: pd.DataFrame, **kw) -> pd.DataFrame:
-    """Rows whose columns equal every keyword (floats compared with a tolerance)."""
+    # rows matching every keyword (floats with a tolerance)
     m = pd.Series(True, index=df.index)
     for k, v in kw.items():
         col = df[k]
@@ -251,14 +231,9 @@ def select(df: pd.DataFrame, **kw) -> pd.DataFrame:
 
 
 def load_pending(df: pd.DataFrame, extra_roots: list[Path] | None = None) -> pd.DataFrame:
-    """
-    Runs not yet scored on the evaluation block (figures/data/pending_runs.csv).
-
-    A validation p_L is taken from the CSV's val_p_L column, or, if empty, from the
-    lowest 'val_ler=' in a run.log found under the repo (or any extra root) by the row's
-    run_log_glob. A pending row is dropped once the all-runs CSV holds a scored run with
-    the same d, width, data size, peak LR, epochs and warmup.
-    """
+    # Runs not yet scored (figures/data/pending_runs.csv). Validation p_L from the CSV, else
+    # the lowest 'val_ler=' in the run.log matched by run_log_glob. Dropped once the
+    # all-runs CSV has a scored run with the same d, width, data, LR, epochs, warmup.
     pend = pd.read_csv(DATA_DIR / "pending_runs.csv")
     roots = [REPO] + list(extra_roots or [])
     out = []
@@ -283,7 +258,8 @@ def load_pending(df: pd.DataFrame, extra_roots: list[Path] | None = None) -> pd.
             csv_line=np.nan, status_raw=r.status, width=r.width, params=float(r.params),
             d=int(r.d), lr=float(r.peak_lr), data=r.train_shots, N=N, seed=0, p=0.004,
             batch=10000, epochs=int(r.epochs), schedule=r.schedule, ckpt="val p_L",
-            pipeline="new", pool="grace1", warmup=warm, warm_start=False, reset_after=False,
+            pipeline="new", pool="grace1", warmup=warm, warm_start=False, distilled=False,
+            reset_after=False,
             diagnostic=False, stability="killed" if r.status == "killed" else "stable",
             scored=False, val_only=pd.notna(val), p_L=val, mwpm=mwpm,
             n_shots=N_VAL, k=np.round(val * N_VAL) if pd.notna(val) else np.nan,
@@ -302,7 +278,7 @@ def min_val_ler(log: Path) -> float | None:
 
 
 def load_extra() -> pd.DataFrame:
-    """Train-slice, overfit-test and McNemar numbers not in the all-runs CSV."""
+    # train-slice, overfit-test and McNemar numbers not in the all-runs CSV
     e = pd.read_csv(DATA_DIR / "extra_scores.csv")
     e["k"] = np.round(e["p_L"] * e["shots"])
     return e
@@ -331,7 +307,7 @@ def load_all(csv_path=None, extra_roots=None) -> Data:
 # Statistics
 # --------------------------------------------------------------------------------------
 def wilson(k, n, z=1.959964):
-    """Wilson score interval for a binomial proportion; works on arrays, k may be 0."""
+    # Wilson score interval; array-safe, k may be 0
     k = np.asarray(k, float)
     n = np.asarray(n, float)
     ph = k / n
@@ -382,8 +358,7 @@ class Fit:
 
 def _fit_once(x, k, n):
     p = k / n
-    # Binomial standard error, floored at one error so an all-correct run cannot get
-    # infinite weight.
+    # binomial SE, floored at one error so no run gets infinite weight
     sig = np.sqrt(np.maximum(p * (1 - p), 1 / n) / n)
     E0 = 0.9 * p.min()
     beta0 = 0.7
@@ -395,15 +370,8 @@ def _fit_once(x, k, n):
 
 def fit_power(runs: pd.DataFrame, xcol: str, x_scale: float, name: str, figure: str,
               min_distinct=4) -> Fit | None:
-    """
-    Weighted least-squares fit of p_L = E + B (x/x_scale)^(-beta) to every run (seeds are
-    separate points, weighted by their binomial standard error).
-
-    Bootstrap (N_BOOT replicates): at each distinct x the runs (seeds) are resampled with
-    replacement, then each resampled run's error count is redrawn from Binomial(n, k/n).
-    Resampling whole x-points instead would leave many replicates with fewer than three
-    distinct x for a three-parameter fit, so seeds and shot noise are resampled instead.
-    """
+    # Weighted least squares p_L = E + B (x/x_scale)^(-beta), seeds as separate points.
+    # Bootstrap: resample seeds at each x, then redraw each run's errors from Binomial(n, k/n).
     runs = runs[runs.scored & runs.stability.eq("stable")]
     if runs[xcol].nunique() < min_distinct:
         return None
@@ -443,7 +411,6 @@ def mcnemar_stars(p) -> str:
 # --------------------------------------------------------------------------------------
 @dataclass
 class FigResult:
-    """What every figure function returns (the notebook displays these)."""
     key: str
     fig: plt.Figure
     title: str
@@ -463,12 +430,16 @@ class FigResult:
 
 
 def common_caption(data: Data, extra_sources: bool = False) -> str:
-    """Shared last sentence of every caption: evaluation block, error bars, data file."""
+    # shared last sentence of every caption
     src = data.source + (", figures/data/extra_scores.csv" if extra_sources else "")
     return f"Eval block: 1.8M shots per d, same MWPM for every run at a given d. Bars: Wilson 95%. Data: {src}."
 
 
 def setup_ratio_axis(ax, lo, hi, label="p_L / MWPM"):
+    # only lower the bottom, so already-plotted points stay visible
+    y0 = ax.dataLim.y0
+    if np.isfinite(y0) and 0 < y0 < lo / 0.9:
+        lo = y0 * 0.9
     ax.set_yscale("log")
     cands = [0.3, 0.5, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 100]
     ticks = [t for t in cands if lo <= t <= hi]
@@ -508,12 +479,8 @@ def annotate_ratio(ax, x, y, text=None, dx=5, dy=4, ha="left", **kw):
 def plot_runs(ax, runs: pd.DataFrame, xcol: str, color, marker, label=None, ls="-",
               yfun=lambda r: r.ratio, connect=True, jitter=0.035, annotate=(), ann_kw=None,
               z=3, ms=6.5, labels=None):
-    """
-    Draw one series. At each x: a single run is one marker with its Wilson bar; several
-    seeds are small markers (each with its Wilson bar, slightly offset in x) plus a larger
-    marker at their mean. Stable means are joined by a line. Diverged/unstable/killed runs
-    are an 'x'; validation-only runs are hollow markers. Returns the (x, y) of the line.
-    """
+    # One series: Wilson bar per run, seed mean as a larger marker, stable means joined.
+    # 'x' = diverged / unstable / killed; hollow = validation only. Returns the line's (x, y).
     handles_xy = []
     if runs.empty:
         return handles_xy
@@ -569,12 +536,8 @@ def plot_runs(ax, runs: pd.DataFrame, xcol: str, color, marker, label=None, ls="
 
 
 def place_labels(ax, items, fontsize=7.5, avoid_points=()):
-    """
-    Place text labels next to points without overlapping each other, the markers, or the
-    axes edge. items: list of (x, y, text) in data coordinates. For each label the first
-    candidate offset (right, left, above, below, then diagonals) that fits is kept. Call
-    after the axes limits and the figure layout are final, since it measures real extents.
-    """
+    # Label points without overlapping each other, markers or the axes edge.
+    # items: (x, y, text) in data coordinates. Call after limits and layout are final.
     fig = ax.figure
     r = fig.canvas.get_renderer()
     axbb = ax.get_window_extent(r)
@@ -607,11 +570,8 @@ def legend_handle(color, marker, ls="-", label="", hollow=False):
 
 
 def finish(fig, title: str, caption: str, below_axes_in=0.6):
-    """
-    One-line takeaway title on top, wrapped caption at the bottom. Returns the bottom
-    fraction to pass to subplots_adjust: caption height plus below_axes_in inches for the
-    lowest axes' tick labels and x label (use ~0.1 when the lowest axes is a table).
-    """
+    # Title on top, wrapped caption below. Returns the bottom fraction for subplots_adjust
+    # (below_axes_in ~0.1 when the lowest axes is a table).
     fig.suptitle(title, x=0.01, ha="left", fontsize=11, fontweight="bold")
     lines = textwrap.fill(caption, width=int(fig.get_figwidth() * 14.5))
     fig.text(0.01, 0.01, lines, ha="left", va="bottom", fontsize=8.5, color="#333333",
@@ -621,8 +581,32 @@ def finish(fig, title: str, caption: str, below_axes_in=0.6):
     return (caption_in + below_axes_in) / fig.get_figheight()
 
 
+def summary_md(r: "FigResult") -> str:
+    # notebook text for one figure: takeaway, then every run used, built from the same runs
+    lines = [r.title, "", "<details><summary>Runs</summary>", ""]
+    ru = r.runs_used
+    if ru is not None and len(ru) and "series" not in ru.columns:
+        # figure 4: one line per (run, checkpoint, block) from figures/data/extra_scores.csv
+        for x in ru.itertuples():
+            v = f"{x.ratio:.2f}x" if x.ratio == x.ratio else f"p_L {x.p_L:.4f}"
+            lines.append(f"- {x.run_id}, {x.checkpoint} ckpt, {x.block}: {v}")
+    elif ru is not None and len(ru):
+        for series, g in ru.groupby("series", sort=False):
+            items = []
+            for x in g.itertuples():
+                tag = f"{x.width} {x.train_shots} s{x.seed}"
+                if x.block == "val (pending)":
+                    items.append(f"{tag} pending (val {x.ratio:.2f}x)" if x.ratio == x.ratio else f"{tag} pending")
+                else:
+                    items.append(f"{tag} {x.ratio:.2f}x" + (" (x)" if x.stability != "stable" else "")
+                                 if x.ratio == x.ratio and x.ratio is not None else f"{tag} not scored")
+            lines.append(f"- {series}: " + ", ".join(items))
+    lines += ["", "</details>"]
+    return "\n".join(lines)
+
+
 def runs_used_table(key, groups: list[tuple[str, pd.DataFrame, str]]) -> pd.DataFrame:
-    """Flatten (series, runs, role) triples into one table for runs_used.csv."""
+    # flatten (series, runs, role) triples for runs_used.csv
     rows = []
     for series, g, role in groups:
         for r in g.itertuples():
@@ -660,7 +644,7 @@ def fmt_ci(v, lo, hi, nd=2):
 # Figure 1: data scaling
 # --------------------------------------------------------------------------------------
 def series_data_scaling(data: Data) -> list[dict]:
-    """The fixed-recipe series of Figure 1 (each one recipe, data size varies)."""
+    # fixed-recipe series of Figure 1 (data size varies)
     R, P = data.runs, data.pending
     S = []
     S.append(dict(name="d7 u280 cosine 3e-3, 80 ep", width="u280", d=7, ls="-", fit=True,
@@ -715,12 +699,11 @@ def fig1_data_scaling(data: Data) -> FigResult:
             if f:
                 fits.append(f)
                 role = "fit"
-                # Fit curve over the fitted data range only, extended to the right edge to
-                # show the approach to the asymptote.
+                # fit curve over the fitted range, extended to the right edge
                 xx = np.logspace(np.log10(runs.N.min() / 1.15), np.log10(x_hi), 150)
                 ax.plot(xx, power_law(xx / 1e6, f.E, f.B, f.beta) / f.mwpm, color=col, lw=0.9,
                         alpha=0.8, ls=(0, (1, 1.5)), zorder=2)
-                # Asymptote E with its 95% CI, drawn as a bracket at the right edge.
+                # asymptote E with its 95% CI, as a bracket at the right edge
                 xb = x_hi * 0.93
                 lo, hi = f.E_ci[0] / f.mwpm, f.E_ci[1] / f.mwpm
                 ax.plot([xb, xb], [max(lo, 0.81), hi], color=col, lw=5, alpha=0.35,
@@ -770,6 +753,14 @@ def fig1_data_scaling(data: Data) -> FigResult:
 # --------------------------------------------------------------------------------------
 # Figure 2: model-size scaling
 # --------------------------------------------------------------------------------------
+def _one_layer(runs: pd.DataFrame, single: bool) -> pd.DataFrame:
+    # one GRU layer (single=True) or stacked layers ('2xu280' etc.)
+    if runs.empty:
+        return runs
+    stacked = runs.width.astype(str).str.contains("x")
+    return runs[~stacked] if single else runs[stacked]
+
+
 def fig2_model_size(data: Data) -> FigResult:
     R, P = data.runs, data.pending
     S = [
@@ -777,9 +768,18 @@ def fig2_model_size(data: Data) -> FigResult:
             R, d=7, schedule="cosine", lr=0.003, epochs=80, N=1e8, p=0.004, warmup=False, scored=True)),
         dict(name="d7 cosine 3e-3, 80 ep, 200M", d=7, ls="-.", runs=select(
             R, d=7, schedule="cosine", lr=0.003, epochs=80, N=2e8, p=0.004, warmup=False, scored=True)),
-        dict(name="d7 cosine 1e-3 + warmup, 80 ep, 200M (C1, arm a, arm b)", d=7, ls=":", runs=pd.concat([
-            select(R, d=7, schedule="cosine", lr=0.001, epochs=80, N=2e8, warmup=True, scored=True),
-            select(P, d=7, lr=0.001, N=2e8) if len(P) else pd.DataFrame()])),
+        # single-layer and stacked GRUs are separate series, never fitted together
+        dict(name="d7 cosine 1e-3 + warmup, 80 ep, 200M, one GRU layer (C1, arm a)", d=7, ls=":",
+             runs=_one_layer(pd.concat([
+                 select(R, d=7, schedule="cosine", lr=0.001, epochs=80, N=2e8, warmup=True,
+                        scored=True, distilled=False),
+                 select(P, d=7, lr=0.001, N=2e8) if len(P) else pd.DataFrame()]), True)),
+        dict(name="d7 cosine 1e-3 + warmup, 80 ep, 200M, two stacked layers (S1, S2, arm b)", d=7,
+             ls=(0, (6, 2, 1, 2)),
+             runs=_one_layer(pd.concat([
+                 select(R, d=7, schedule="cosine", lr=0.001, epochs=80, N=2e8, warmup=True,
+                        scored=True, distilled=False),
+                 select(P, d=7, lr=0.001, N=2e8) if len(P) else pd.DataFrame()]), False)),
         dict(name="d9 cosine 3e-3, 80 ep, 100M", d=9, ls="-", runs=select(
             R, d=9, schedule="cosine", lr=0.003, epochs=80, N=1e8, warmup=False, scored=True)),
         dict(name="d7 constant 3e-3, 200 ep, 20M (val-p_L ckpt)", d=7, ls="--", runs=select(
@@ -805,8 +805,7 @@ def fig2_model_size(data: Data) -> FigResult:
         if runs.empty:
             continue
         runs = runs.copy()
-        # Small multiplicative x offset per series so markers at the same parameter count
-        # (e.g. d7 u280 in three series) do not sit on top of each other.
+        # small x offset per series so markers at the same parameter count do not overlap
         off = np.exp((i - 2.5) * 0.025)
         runs["x"] = runs["params"] * off
         f = fit_power(runs.assign(x=runs["params"]), "x", 1e5, s["name"], "fig2") if s["ls"] != "none" else None
@@ -814,8 +813,7 @@ def fig2_model_size(data: Data) -> FigResult:
             fits.append(f)
             xx = np.logspace(np.log10(runs.params.min() * 0.8), np.log10(runs.params.max() * 1.2), 100)
             ax.plot(xx, power_law(xx / 1e5, f.E, f.B, f.beta) / f.mwpm, color="#555555", lw=0.9)
-        # Points are coloured by width, so draw each width separately and join them with a
-        # neutral line in the series' line style.
+        # points coloured by width, joined by a neutral line
         stable = runs[(runs.scored | runs.val_only) & runs.stability.eq("stable")]
         means = stable.groupby("x").ratio.mean().sort_index()
         if s["ls"] != "none" and len(means) > 1:
@@ -856,10 +854,7 @@ def fig2_model_size(data: Data) -> FigResult:
 # Figure 3: error suppression vs distance
 # --------------------------------------------------------------------------------------
 def _lambda_boot(series_runs: dict, rng) -> np.ndarray:
-    """
-    Bootstrap distribution of p_L at each d: resample seeds, redraw each run's error count
-    from Binomial(n, k/n), average. Returns array (N_BOOT, n_d) aligned with sorted d.
-    """
+    # bootstrap p_L per d: resample seeds, redraw errors, average -> (N_BOOT, n_d)
     ds = sorted(series_runs)
     out = np.empty((N_BOOT, len(ds)))
     for j, d in enumerate(ds):
@@ -874,6 +869,9 @@ def _lambda_boot(series_runs: dict, rng) -> np.ndarray:
 def fig3_distance(data: Data) -> FigResult:
     R = data.runs
     base = R[R.scored & R.stability.eq("stable") & np.isclose(R.p, 0.004)]
+    # within the FPGA budget: at most the single u280 layer's parameters at that d
+    cap = R[R.width.eq("u280")].groupby("d").params.max()
+    base = base[base.params <= base.d.map(cap).fillna(np.inf)]
     lines = [
         dict(name="u140 constant 3e-3, 10M (older pipeline)", width="u140", ls="--",
              runs=select(base, width="u140", schedule="constant", lr=0.003, N=1e7, pipeline="old")),
@@ -899,7 +897,7 @@ def fig3_distance(data: Data) -> FigResult:
     mlo, mhi = wilson(np.round(mw * N_EVAL), N_EVAL)
     ax.errorbar(ds, mw, yerr=[mw - mlo, mhi - mw], color=MWPM_COLOR, lw=1.8, marker="D", ms=5,
                 label="MWPM", zorder=5)
-    # Best GRU per distance (any recipe; this is an envelope, not a fitted series).
+    # best GRU per distance (envelope, any recipe)
     blo, bhi = wilson(best.k, best.n_shots)
     ax.errorbar(best.d, best.p_L, yerr=[best.p_L - blo, bhi - best.p_L], color=NEUTRAL, lw=2.6,
                 alpha=0.55, zorder=3, label="best GRU per d (any recipe)")
@@ -927,7 +925,7 @@ def fig3_distance(data: Data) -> FigResult:
     ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
     ax.legend(loc="upper left", fontsize=7.5)
 
-    # Lambda table with bootstrap CIs.
+    # Lambda table with bootstrap CIs
     rows, lam_rows = [], []
 
     def add_lambda(name, per_d: dict):
@@ -965,12 +963,11 @@ def fig3_distance(data: Data) -> FigResult:
     title = (f"GRU \u039b < MWPM \u039b (5\u21927: {g57:.2f} vs {m57:.2f}; 7\u21929: {g79:.2f} vs {m79:.2f})"
              + ("; GRU \u039b < 1 from d7 to d9" if g79 < 1 else ""))
     best_desc = "; ".join(f"d{r.d}: {r.label}" + (" + warmup" if r.warmup else "") for r in best.itertuples())
-    cap = ("Lambda = p_L(d) / p_L(d+2), bootstrap 95% CI. Grey = best GRU at each d (any recipe); "
+    cap = ("Lambda = p_L(d) / p_L(d+2), bootstrap 95% CI. Grey = best GRU at each d (any recipe within the u280 parameter budget); "
            "coloured lines use one recipe at every d. " + common_caption(data))
     b = finish(fig, title, cap, below_axes_in=0.35)
     fig.subplots_adjust(left=0.11, right=0.98, top=0.94, bottom=b)
-    # Fixed offsets for the three best-GRU labels: below at d5 and d9, above at d7, where
-    # the plotted lines leave room.
+    # label offsets for the best-GRU points
     for x, y, t in best_labels:
         dy = 12 if x == 7 else -12
         ax.annotate(t, (x, y), xytext=(0, dy), textcoords="offset points", ha="center",
@@ -985,11 +982,8 @@ def fig3_distance(data: Data) -> FigResult:
 # Figure 4: training slice vs unseen shots
 # --------------------------------------------------------------------------------------
 def _dumbbell(ax, E, rows, xticks, xlim):
-    """
-    One row per (label, run_id, train checkpoint, other block, other checkpoint): a grey
-    marker for the training slice, a coloured marker for the other block, joined by a bar.
-    Each marker carries its ratio and the McNemar stars vs MWPM on the same shots.
-    """
+    # One row per (label, run, checkpoint, block): grey = training slice, coloured = other
+    # block, with ratio and McNemar stars vs MWPM on the same shots.
     n = len(rows)
     for i, (label, run, ck_tr, blk, ck_ot) in enumerate(rows):
         y = n - 1 - i
@@ -1003,7 +997,7 @@ def _dumbbell(ax, E, rows, xticks, xlim):
             lo, hi = wilson(row.k, row.shots)
             lo, hi = lo / row.mwpm_p_L, hi / row.mwpm_p_L
             if row.ratio == 0:
-                # Zero errors: draw the Wilson upper bound as a bar with a leftward arrow.
+                # zero errors: Wilson upper bound with a leftward arrow
                 ax.annotate("", xy=(hi / 4, y), xytext=(hi, y), arrowprops=dict(arrowstyle="->", color=c, lw=1.2))
                 ax.plot(hi, y, marker="|", color=c, ms=10, mew=1.8)
                 txt, xv, side = f"0 errors in 2M shots (< {hi:.1g}x)", hi, "right"
@@ -1043,9 +1037,13 @@ def fig4_generalization(data: Data) -> FigResult:
     fig = plt.figure(figsize=(7.2, 7.6))
     gs = fig.add_gridspec(2, 1, height_ratios=[3, 4], hspace=0.62)
     a1, a2 = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
-    names = ["L1 d7 u280 100M", "R01 d7 u280 200M", "9-1 d9 u280 100M"]
+    # runs scored on both their training shots and the eval block (order of extra_scores.csv)
+    both = E[(E.checkpoint == "best") & ~E.run_id.str.startswith("overfit")]
+    names = [n for n in dict.fromkeys(both.run_id)
+             if {"train", "eval"} <= set(both[both.run_id == n].block)]
+    lo_ratio = both[both.run_id.isin(names)].ratio.min()
     _dumbbell(a1, E, [(n, n, "best", "eval", "best") for n in names],
-              [0.7, 0.8, 1, 1.25, 1.5, 2, 3], (0.42, 5.0))
+              [0.5, 0.7, 0.8, 1, 1.25, 1.5, 2, 3], (min(0.42, lo_ratio * 0.6), 5.0))
     a1.set_title("a  Best checkpoint: own training shots vs unseen eval block", loc="left", fontsize=9.5)
     d7o, d9o = "overfit d7 u280 2M 300ep", "overfit d9 u280 2M 300ep"
     _dumbbell(a2, E, [("d7 best (val-chosen)", d7o, "best", "eval", "best"),
@@ -1066,7 +1064,8 @@ def fig4_generalization(data: Data) -> FigResult:
     gaps = {n: ev[ev.run_id == n].p_L.iloc[0] / tr[tr.run_id == n].p_L.iloc[0] - 1 for n in names}
     title = (f"Unseen p_L is {min(gaps.values()) * 100:.0f}-{max(gaps.values()) * 100:.0f}% above "
              f"own-training-shot p_L; 300 epochs on 2M shots memorizes")
-    cap = ("(a) Best checkpoint on its own training shots vs the eval block; stars = McNemar vs MWPM "
+    cap = ("(a) Best checkpoint on its own training shots vs the eval block; * = above the u280 FPGA "
+           "parameter budget (diagnostic); stars = McNemar vs MWPM "
            "(*** p<1e-3). (b) Diagnostic: trained 300 ep on 2M shots only. " + common_caption(data, extra_sources=True))
     b = finish(fig, title, cap, below_axes_in=0.9)
     fig.subplots_adjust(left=0.2, right=0.97, top=0.89, bottom=b)
@@ -1084,7 +1083,7 @@ def fig5_comparisons(data: Data) -> FigResult:
     groups = []
     col = WIDTH_COLOR["u280"]
 
-    # (a) Peak LR.
+    # (a) peak LR
     ax = axs[0, 0]
     a7 = select(R, d=7, width="u280", schedule="cosine", epochs=80, N=5e7, p=0.004, warmup=False)
     a9 = select(R, d=9, width="u280", schedule="cosine", epochs=160, N=1e8, warmup=True, warm_start=False)
@@ -1104,7 +1103,7 @@ def fig5_comparisons(data: Data) -> FigResult:
     ax.set_title("a  Peak learning rate", loc="left", fontsize=9.5)
     groups += [("a: d7 u280 50M", a7, "plotted"), ("a: d9 u280 100M 160ep", a9, "plotted")]
 
-    # (b) Physical error rate p.
+    # (b) physical error rate p
     ax = axs[0, 1]
     b = select(R, d=7, width="u280", schedule="cosine", lr=0.003, epochs=80, N=1e8, warmup=False, scored=True)
     b = b.sort_values("p")
@@ -1130,7 +1129,7 @@ def fig5_comparisons(data: Data) -> FigResult:
     ax.set_title("b  Noise level (d7 u280 100M)", loc="left", fontsize=9.5)
     groups.append(("b: noise sweep", b, "plotted"))
 
-    # (c) reset_after True vs False, matched seed and recipe.
+    # (c) reset_after True vs False, matched seed and recipe
     ax = axs[1, 0]
     base = R[R.scored & R.pipeline.eq("new") & R.ckpt.eq("val p_L") & R.schedule.eq("constant")
              & np.isclose(R.lr, 0.003) & R.width.eq("u140")]
@@ -1161,7 +1160,7 @@ def fig5_comparisons(data: Data) -> FigResult:
     mwpm_line(ax)
     ax.set_title("c  GRU reset_after False vs True", loc="left", fontsize=9.5)
 
-    # (d) Schedule length / data at u280 d7.
+    # (d) schedule length / data at u280 d7
     ax = axs[1, 1]
     dd = pd.concat([
         select(R, d=7, width="u280", schedule="cosine", lr=0.003, epochs=80, N=1e8, p=0.004, warmup=False),
@@ -1228,7 +1227,7 @@ def fig6_seed_noise(data: Data) -> FigResult:
         groups.append((f"d{key[0]} {key[1]} {fmt_shots(key[2])}", g, "seed group"))
     T = pd.DataFrame(rows)
     fig, ax = plt.subplots(figsize=(7.2, 5.4))
-    # Expected CV from eval-block shot noise alone: sd(p_hat)/p = 1/sqrt(n p).
+    # expected CV from shot noise alone: 1/sqrt(n p)
     xx = np.logspace(np.log10(0.7), np.log10(30), 100)
     for d in sorted(T.d.unique()):
         cvb = 100 / np.sqrt(N_EVAL * xx * data.mwpm[d])
