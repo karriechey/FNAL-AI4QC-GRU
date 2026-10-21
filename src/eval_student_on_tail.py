@@ -1,42 +1,28 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint; the sealed block is scored only with --score-sealed, logged in configs/sealed_access.tsv, once per weights file unless --score-sealed-again; an existing CSV with an older header is left as it is and the row goes to <name>.v2.csv). 2026-10-05: --units takes several values for stacked GRU layers. 2026-10-06: pool rows read by range (pool_rows), so only the scored block is loaded; a block that a decoder already read (partitions spent_blocks) is flagged. Earlier 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
-"""Score a saved student on a fixed partition and run the paired McNemar test vs MWPM.
+# Last modified: 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint; the sealed block is scored only with --score-sealed, logged in configs/sealed_access.tsv, once per weights file unless --score-sealed-again; an existing CSV with an older header is left as it is and the row goes to <name>.v2.csv).
+# 2026-10-05: --units takes several values for stacked GRU layers.
+# 2026-10-06: pool rows read by range (pool_rows), so only the scored block is loaded; a block that a decoder already read (partitions spent_blocks) is flagged.
+# Earlier 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
 
-Why a separate script from eval_on_tail.py
-eval_on_tail.py reconstructs a FullRCNNModel, takes [det_bits, det_evts] as two inputs,
-and thresholds a sigmoid at 0.5. A student is a different architecture, takes one
-assembled feature array, and emits a LOGIT (threshold 0). Rather than branch that file on
-architecture -- which would put two decision conventions in one place, the exact thing the
-repo has been bitten by -- this reuses its statistics helpers and supplies the student's
-own build and decision path.
+"""Score a saved student on one block and run the paired McNemar test against MWPM.
 
-What it answers
-The r=5 hard-label GRU reaches p_L = 0.08145 against MWPM 0.084215 on the validation
-partition. That is a comparison of means over 3 seeds. The claim "the student beats MWPM"
-needs the PAIRED test on the same shots: how often does the student decode a shot right
-where MWPM gets it wrong, and vice versa. Those discordant counts are the scientific
-content -- they show how the win is made, not just that the means differ.
+MWPM is decoded on the same shots, never read from mwpm_baseline.csv.
 
-MWPM is decoded here, on these exact shots, never read from mwpm_baseline.csv. That file
-describes whichever tail it was built on and is not portable across partitions.
-
-  python eval_student_on_tail.py \
-      --weights ~/rcnn_threshold/out_student_r5_hard/r5hard_gru_ntr10000000_seed0_lr0.003.weights.h5 \
-      --student gru --units 140 --d 5 --p 0.010 --rounds 5 \
-      --pool ~/rcnn_threshold/pools_r5/data_d5_p0.010_r5_FORMAL.npz \
-      --eval-start 20000000 --n-test 200000 \
-      --out-csv ~/rcnn_threshold/student_mcnemar_r5.csv
+python eval_student_on_tail.py \
+    --weights ~/rcnn_threshold/out_student_r5_hard/r5hard_gru_ntr10000000_seed0_lr0.003.weights.h5 \
+    --student gru --units 140 --d 5 --p 0.010 --rounds 5 \
+    --pool ~/rcnn_threshold/pools_r5/data_d5_p0.010_r5_FORMAL.npz \
+    --eval-start 20000000 --n-test 200000 \
+    --out-csv ~/rcnn_threshold/student_mcnemar_r5.csv
 """
 import argparse
 import csv
 import os
 import numpy as np
 
-# Reuse the statistics and circuit construction, so there is exactly one implementation of
-# the 2x2 and one definition of the noise model. circuit_generators (stim) is imported where
-# MWPM is decoded, so the checks below can be imported and tested without stim.
+# stim is imported only where MWPM is decoded, so the checks below are testable without it
 from helpers import mcnemar_from_correct
 
 LOG = '[student-eval]'
@@ -58,16 +44,9 @@ def sha256_of(path):
 
 
 def check_eval_block(args, hidden):
-    """Checks before anything is loaded: pool and weights exist, the pool's d/p/rounds
-    match the arguments, the block fits in the pool, and the sealed block is not touched.
-
-    The sealed block (configs/partitions.yaml, see partitions.sealed_block) is scored only
-    with --score-sealed. Each such scoring is appended to configs/sealed_access.tsv with
-    the sha256 of the weights file, d/p/rounds, the architecture, the block and the UTC
-    time, before any shot is read. A weights file whose sha256 is already in the log is
-    refused unless --score-sealed-again is also given; that row is marked repeat=1.
-    Returns the (start, stop) block.
-    """
+    # Checks before loading: files exist, pool d/p/rounds match, block fits, sealed block
+    # untouched. The sealed block needs --score-sealed and is logged in
+    # configs/sealed_access.tsv; a weights file already in the log also needs --score-sealed-again.
     import partitions as P
     if args.score_sealed_again and not args.score_sealed:
         raise SystemExit(f"{LOG} --score-sealed-again needs --score-sealed. STOP.")
@@ -75,7 +54,6 @@ def check_eval_block(args, hidden):
         raise SystemExit(f"{LOG} MISSING pool {args.pool}")
     if not os.path.exists(args.weights):
         raise SystemExit(f"{LOG} MISSING weights {args.weights}")
-    # The pool's d, p, rounds (fingerprint, else file name) must be the ones given here.
     try:
         src = P.check_pool_geometry(args.pool, args.d, args.p, args.rounds)
     except ValueError as e:
@@ -129,13 +107,7 @@ def check_eval_block(args, hidden):
 
 
 def append_eval_row(out_csv, row):
-    """Append one row with the CSV_COLS header; returns the path written.
-
-    A file that already exists with a different header (written by an earlier version of
-    this script) is left as it is: the row goes to <name>.v2.csv with the full header
-    instead, so no column is lost or shifted. A .v2.csv with a different header again
-    stops the script.
-    """
+    # A file with an older header is left alone; the row goes to <name>.v2.csv instead.
     path = out_csv
     if os.path.exists(path):
         with open(path, newline='') as f:
@@ -200,8 +172,7 @@ def run():
                     help='cap this process to N MiB of GPU memory')
     args = ap.parse_args()
 
-    # --hidden: same defaults as train_student.py (resolve_hidden). Checks on the pool, the
-    # weights and the block run before TensorFlow is imported.
+    # --hidden defaults as in train_student.py; checks run before TensorFlow is imported
     from train_student import resolve_hidden
     hidden = resolve_hidden(args.student, args.hidden)
     lo, hi = check_eval_block(args, hidden)
@@ -243,8 +214,7 @@ def run():
     det_evts_te = e_te            # kept for the MWPM decode below
     del m_te, b_te
 
-    # Rebuild the SAME architecture the weights were trained with, then load. A mismatch
-    # in units/hidden raises on load rather than silently producing a wrong score.
+    # same architecture as training; a units/hidden mismatch raises on load
     if args.student == 'gru':
         units = args.units[0] if len(args.units) == 1 else tuple(args.units)
         model = build_gru_student(d=d, rounds=r, inputs=args.inputs, units=units,
@@ -257,17 +227,14 @@ def run():
     model.load_weights(args.weights)
     print(f"[student-eval] {args.student} params={model.count_params():,}", flush=True)
 
-    # Host-memory uint8 + tf.data (host_data.py), so the eval block never has to fit on
-    # the GPU in one piece. Shot order is preserved.
+    # host-memory uint8 + tf.data (host_data.py), shot order preserved
     logits = model.predict(make_dataset(tf, to_host_uint8(x_te), None, args.batch_size),
                            verbose=0)
     s_pred, s_correct = student_pred_and_correct(logits, truth)
     pL = float((~s_correct).mean())
     base_rate = float(truth.mean())
 
-    # MWPM decoded on THESE shots. Never from the stored baseline: that file belongs to
-    # whichever tail it was computed on, and mixing the two has already caused one real
-    # bug in this repo.
+    # MWPM decoded on these shots
     import pymatching
     from circuit_generators import build_circuit
     circ = build_circuit(d, p, r)
@@ -279,7 +246,7 @@ def run():
     mwpm_pL = float((~m_correct).mean())
 
     mc = mcnemar_from_correct(s_correct, m_correct)
-    # mcnemar_from_correct names its cells for the RCNN; here b = student-only-correct.
+    # b = student-only-correct
     print(f"[student-eval] student p_L={pL:.6f}  MWPM p_L={mwpm_pL:.6f}  "
           f"ratio={pL / mwpm_pL:.4f}x  base_rate={base_rate:.5f}", flush=True)
     print(f"[mcnemar] 2x2 on {args.n_test:,} shared shots:", flush=True)

@@ -1,20 +1,13 @@
 # Created: 2026-10-13
 # Last modified: 2026-10-13
-"""Set up a new run folder to continue a probe arm that pause_probe.sh stopped.
 
-Same steps as prepare_resume in experiments/mwpm_fixes_d9_2026-10/driver.py, for any seed
-folder (the replicate f3280s1 writes to seed1):
-  - .best.keras, .best.weights.h5 and .best.json of the paused run go to <out>/seed<S>/ckpt, so
-    the resumed run keeps the best checkpoint so far and replaces it only with a better one;
-  - .lastepoch.weights.h5 (model + optimizer state; the optimizer's update count sets where the
-    LR schedule continues) goes to <out>/resume_from;
-  - the history of epochs 1..N is rebuilt from the Keras epoch lines of run.log (the lines with
-    "ms/step") into <out>/resume_from/<tag>.history.json, so the final history covers the run.
+"""Set up a new run folder to continue a probe arm stopped by pause_probe.sh.
 
-Prints the resume settings for gh200_run_student_scaling.sh as KEY=value lines. Standard
-library only (runs with the host python3 on grace1).
+Copies the best checkpoint files to <out>/seed<S>/ckpt and .lastepoch.weights.h5 (model and
+optimizer state) to <out>/resume_from, and rebuilds the history of the finished epochs from
+run.log. Prints KEY=value resume settings for gh200_run_student_scaling.sh. Standard library only.
 
-    python3 prepare_resume.py <paused run folder> <new run folder> <seed>
+python3 prepare_resume.py <paused run folder> <new run folder> <seed>
 """
 import glob
 import json

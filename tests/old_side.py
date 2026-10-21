@@ -1,21 +1,14 @@
 # Created: 2026-09-25
 # Last modified: 2026-09-25
-"""Old-code half of the A5 equivalence tests. Runs in its own Python process.
 
-The old repo (FNAL-QCDecoding-FPGA @ d5ee86f) and this repo have modules with the same
-names (StudentModels, circuit_generators, generate_pools, ...). Importing both into one
-process would make one silently shadow the other, so a5_equivalence.py runs this script
-as a subprocess with the old repo first on sys.path, and compares its output files with
-what the new code produces.
+"""Old-code half of the A5 equivalence tests, run as its own process by a5_equivalence.py.
 
-This script only reads the old repo; it writes nothing there.
+The old and new repos share module names, so they cannot be imported into one process.
+Reads the old repo only. --slice is a small .npz of eval-block rows written by a5_equivalence.py.
 
-    python old_side.py --old-repo ~/FNAL-QCDecoding-FPGA --task circuits --out old.json
-    python old_side.py --old-repo ... --task scatter --slice S.npz --d D --out old.npz
-    python old_side.py --old-repo ... --task logits  --slice S.npz --d D --weights W --out old.npz
-
---slice is a small .npz holding `det` (the eval-block rows under test), written by
-a5_equivalence.py, so this process never has to load a whole 19M-shot pool.
+python old_side.py --old-repo ~/FNAL-QCDecoding-FPGA --task circuits --out old.json
+python old_side.py --old-repo ... --task scatter --slice S.npz --d D --out old.npz
+python old_side.py --old-repo ... --task logits  --slice S.npz --d D --weights W --out old.npz
 """
 import argparse
 import hashlib
@@ -45,10 +38,8 @@ def main():
     os.chdir(old)            # old modules resolve relative paths from their own folder
 
     if a.task == 'circuits':
-        # Every place the old repo built the training/eval circuit that the GRU pipeline
-        # uses: eval_on_tail.build_circuit (MWPM, pool generation, eval) and
-        # generate_pools.build_circuit (sampling helper). StudentModels builds the same
-        # circuit inline for the detector layout; that path is covered by the scatter test.
+        # every old circuit builder the GRU pipeline uses (StudentModels' inline circuit is
+        # covered by the scatter test)
         import eval_on_tail
         import generate_pools
         out = {}

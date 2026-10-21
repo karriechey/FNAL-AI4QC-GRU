@@ -1,13 +1,12 @@
 # Created: 2026-09-27
 # Last modified: 2026-09-28 (training loss on a log axis so the cosine runs stay in view; clipped fraction as markers; shorter panel title)
+
 """Training curves of the cosine-schedule queue, with the constant-LR run M2 for reference.
 
-    python3 plot_curves.py        (from experiments/cosine_2026-09-27)
+Panels: training loss, validation loss, validation LER, LR and fraction of clipped updates.
+Writes loss_curves.png/.pdf and curves_summary.json.
 
-Four panels against training epoch: training loss, validation loss, validation LER, and
-learning rate / fraction of clipped updates. Writes loss_curves.png/.pdf and
-curves_summary.json (per run: epochs, best-LER epoch, training loss at its minimum and at
-the last epoch, and the rise from minimum to last epoch, which answers question (a)).
+python3 plot_curves.py        (from experiments/cosine_2026-09-27)
 """
 import glob
 import json

@@ -2,23 +2,9 @@
 # Last modified: 2026-10-06
 """Read rows [start, stop) of one array in a pool .npz without loading the rest.
 
-np.load(pool)['measurements'] reads the whole array, even for a slice or just its shape, so
-every script that touched a FORMAL pool also read the sealed rows [17M, 19M) into memory.
-These functions read only the requested rows:
-
-  n_rows(path, key)               row count, from the array header alone
-  rows(path, key, start, stop)    rows [start, stop) as a new array
-  scalar(path, key)               a 0-d array (e.g. n_det of a compact pool)
-
-Pools written with np.savez are uncompressed (ZIP_STORED): the reader finds the array's
-byte offset in the file and seeks straight to row `start`, so no byte of any other row is
-read. A compressed member (np.savez_compressed) is read as a stream from its start up to row
-`stop` and never beyond it.
-
-trace: optional list; every read appends (key, first_byte, last_byte_exclusive) in the
-array's own data coordinates (byte 0 = row 0). With the environment variable POOL_ROWS_TRACE
-set to a file path, every rows() call also appends "<pool> <key> <start> <stop>" to that
-file, so a whole training or scoring run can be checked (tests/pool_rows_test.py).
+np.load reads the whole array, so the sealed rows of a FORMAL pool were read too.
+Uncompressed members are read by seeking to row `start`; compressed ones are streamed up to `stop`.
+POOL_ROWS_TRACE=<file> logs every rows() call (tests/pool_rows_test.py).
 """
 import os
 import struct
@@ -30,7 +16,7 @@ _MEMBER_HEADER = struct.Struct('<4s2B4HL2L2H')     # zip local file header (30 b
 
 
 def _open_member(path, key):
-    """(file object positioned at the .npy start, is_stored, zip handle or None)."""
+    # (file positioned at the .npy start, is_stored, zip handle or None)
     zf = zipfile.ZipFile(path)
     info = zf.getinfo(key + '.npy')
     if info.compress_type == zipfile.ZIP_STORED:

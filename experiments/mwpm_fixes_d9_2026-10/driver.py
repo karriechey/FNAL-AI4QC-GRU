@@ -1,40 +1,26 @@
 #!/usr/bin/env python3
 # Created: 2026-10-03
-# Last modified: 2026-10-06 (a HOLD file in this folder stops new launches; its text is logged). Earlier 2026-10-05 (rows run concurrently when host memory allows; GPU-sharing wait removed: the GPU is not shared. Earlier the same day: run_job resumes a paused run). Earlier 2026-10-03 (amended before launch: kill rules replaced; 9-8 removed)
+# Last modified: 2026-10-06 (a HOLD file in this folder stops new launches; its text is logged).
+# Earlier 2026-10-05 (rows run concurrently when host memory allows; GPU-sharing wait removed: the GPU is not shared. Earlier the same day: run_job resumes a paused run).
+# Earlier 2026-10-03 (amended before launch: kill rules replaced; 9-8 removed)
+
 """Queue driver for the d=9 MWPM-fix runs (prereg/mwpm_fixes_d9_2026-10.md).
 
-One run on the GPU at a time, in the order of jobs.tsv, with the rules fixed in the
-pre-registration:
+Rules fixed in the pre-registration:
+launch   rows run concurrently when host memory allows, no queue run is still loading its data,
+         and swap has not grown by more than 2 GB in ~10 minutes
+budget   MAX_PARAMS = single-layer u280 at d=9 (303,521)
+kill     NaN loss (DIVERGED); val p_L above 1.5x its own best for 5 epochs, or above 2x the
+         baseline R02 at epoch 60 (KILLED)
+win      p_L / MWPM < 1 on the evaluation block with McNemar p_exact < 0.01
+promote  the best of 9-1, 9-2, 9-3 sets LR, warmup and clipnorm of every STAB row
+9-6      only if the promoted run's best epoch is in its last 10% of epochs
+9-10     the best config so far, seed 1
+A HOLD file in this folder stops new launches. Every run gets one row in results.tsv.
 
-  launch    (2026-10-05) rows run concurrently, each in its own thread: the next row starts
-            when it can be resolved, host memory available >= its need_host_gb, no queue run
-            is still loading its data, and swap in use has not grown by more than 2 GB over
-            the last ~10 minutes. The GPU is not shared with other users, so the earlier
-            wait for other users' GPU processes is gone (gpu_free_for_us is kept, unused).
-  host      host memory available >= the job's need_host_gb
-  budget    MAX_PARAMS = the single-layer u280 count at d=9 (303,521); the launcher and
-            train_student.py refuse a model over it
-  kill      training loss nan -> stopped (DIVERGED). Validation p_L above 1.5 x the run's
-            own best so far for 5 consecutive epochs -> stopped (KILLED). Validation p_L at
-            epoch 60 above 2 x the baseline run's (R02) validation p_L at epoch 60 -> stopped
-            (KILLED). All recorded with the epoch.
-  win       p_L / MWPM on the evaluation block < 1 with McNemar p_exact < 0.01
-  promote   after 9-1, 9-2, 9-3 finish, the one with the lowest p_L / MWPM sets the peak LR,
-            warmup and clipnorm of every later row marked STAB (stability.json). If all
-            three were stopped, the driver stops here.
-  9-6       only if the promoted run's best epoch is in the last 10% of its epochs;
-            otherwise skipped, with the reason logged
-  9-10      the best config so far (lowest ratio among the finished runs), seed 1. If a run
-            wins, 9-10 runs next instead of last.
-
-Every finished, stopped or skipped run gets one row in results.tsv with the columns of
-GRU_all_runs_2026-10-01.csv. Runs from the launcher gh200_run_student_scaling.sh in the
-qdec:tf215 container, from the checkout this file sits in. The sealed block is never read
-(the launcher scores the evaluation block [15.2M, 17M) only).
-
-    setsid nohup ~/tfenv/bin/python driver.py --baseline-history <R02 history.json> \\
-        > /dev/null 2>&1 < /dev/null &
-    python3 driver.py --dry-run --baseline-history <...>   # print the plan, launch nothing
+setsid nohup ~/tfenv/bin/python driver.py --baseline-history <R02 history.json> \
+    > /dev/null 2>&1 < /dev/null &
+python3 driver.py --dry-run --baseline-history <...>   # print the plan, launch nothing
 """
 import argparse
 import csv
@@ -108,7 +94,6 @@ def sh(cmd):
 
 
 def read_jobs():
-    """jobs.tsv rows as dicts, '#' lines skipped."""
     rows = []
     with open(JOBS) as fh:
         lines = [l for l in fh if l.strip() and not l.startswith('#')]
@@ -123,7 +108,7 @@ def run_dir(name):
 
 
 def status(name):
-    """'' (not started), running, done, killed, diverged, failed, skipped."""
+    # '' (not started), running, done, killed, diverged, failed, skipped
     out = run_dir(name)
     if out is None:
         return ''
@@ -138,7 +123,7 @@ def status(name):
 
 
 def eval_row(out):
-    """The evaluation-block row of a finished run (eval_best_ckpt.csv), or None."""
+    # evaluation-block row of a finished run (eval_best_ckpt.csv), or None
     f = glob.glob(os.path.join(out, 'seed*', 'eval_best_ckpt.csv'))
     if not f:
         return None
@@ -156,7 +141,7 @@ def wins(r):
 
 
 def epoch_val_ler(out):
-    """{epoch: val_ler} from the run log ('[gru] epoch N: val_loss=... val_ler=...')."""
+    # {epoch: val_ler} from the run log
     f = glob.glob(os.path.join(out, 'seed*', 'run.log'))
     if not f:
         return {}
@@ -165,8 +150,7 @@ def epoch_val_ler(out):
 
 
 def streak_reason(vl):
-    """(epoch, reason) when validation p_L has been above STREAK_FACTOR x the run's own best
-    so far for STREAK_EPOCHS consecutive epochs, else None."""
+    # (epoch, reason) when val p_L stayed above STREAK_FACTOR x its own best for STREAK_EPOCHS
     best, run = None, 0
     for e in sorted(vl):
         v = vl[e]
@@ -180,7 +164,7 @@ def streak_reason(vl):
 
 
 def other_gpu_processes():
-    """Compute processes on the GPU as (pid, MiB, user). Called only when none of ours runs."""
+    # other compute processes on the GPU as (pid, MiB, user)
     out = sh('nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader,nounits')
     procs = []
     for l in out.splitlines():
@@ -193,8 +177,7 @@ def other_gpu_processes():
 
 
 def gpu_free_for_us():
-    """(ok, note). ok when no other compute process, or when the others hold < 10 GB in total
-    and GPU utilization stays near 0% over a 5-minute check."""
+    # (ok, note): no other process, or others hold < 10 GB and utilization stays near 0% for 5 min
     procs = other_gpu_processes()
     if not procs:
         return True, 'no other GPU process'
@@ -223,7 +206,7 @@ def swap_used_gb():
 
 
 def queue_run_loading(jobs):
-    """Name of a queue run whose container runs but whose log has no epoch line yet."""
+    # a queue run whose container is up but whose log has no epoch line yet
     up = sh("podman ps --format '{{.Names}}'").split()
     for j in jobs:
         if PREFIX + j['name'] in up:
@@ -248,7 +231,7 @@ def host_avail_gb():
 
 
 def resolve(job, stab, best_so_far):
-    """Concrete settings of a row: STAB fields from stability.json, 9-10 from the best run."""
+    # concrete settings: STAB fields from stability.json, 9-10 from the best run
     j = dict(job)
     if j['cond'] == 'replicate':
         if best_so_far is None:
@@ -335,11 +318,9 @@ def write_result(j, out, done):
 
 
 def prepare_resume(src, out):
-    """Set up `out` to continue the paused run in `src` (as resume_paused.sh did for the
-    earlier pauses): .best.* into out/seed0/ckpt, the last-epoch weights (model + optimizer
-    state, which carries the update count and so the LR-schedule step) and the history of
-    epochs 1..N rebuilt from run.log into out/resume_from. Returns (resume env, N, earlier
-    val p_L by epoch)."""
+    # Set up `out` to continue the paused run in `src`: .best.* into out/seed0/ckpt, last-epoch
+    # weights (model + optimizer) and the rebuilt history into out/resume_from.
+    # Returns (resume env, N, earlier val p_L by epoch).
     import shutil
     sd = os.path.join(src, 'seed0')
     txt = open(os.path.join(sd, 'run.log'), errors='replace').read()
@@ -470,7 +451,7 @@ def main():
         jobs = read_jobs()
         by = {j['name']: j for j in jobs}
         stab = json.load(open(STAB)) if os.path.exists(STAB) else dry_stab
-        # Promotion after Tier A.
+        # promotion after Tier A
         tier_a = [j for j in jobs if j['tier'] == 'A']
         if stab is None and all(status(j['name']) in ('done', 'killed', 'diverged', 'failed')
                                 for j in tier_a):
@@ -486,7 +467,7 @@ def main():
             json.dump(stab, open(STAB, 'w'), indent=1)
             log(f"PROMOTE {w['name']} (ratio {ratio}): peak_lr={w['peak_lr']} warmup={w['warmup']} "
                 f"clip={w['clip']}; best epoch {b['best_epoch']} of {w['epochs']}")
-        # Best finished config so far (for 9-10), and whether anything won.
+        # best finished config so far (for 9-10), and whether anything won
         fin_all = [(float(eval_row(run_dir(j['name']))['ratio']), j) for j in jobs
                    if j['cond'] != 'replicate' and status(j['name']) == 'done']
         best_so_far = min(fin_all, key=lambda t: t[0])[1] if fin_all else None
@@ -505,8 +486,7 @@ def main():
         j = order[0]
         if j['cond'] == 'replicate' and len(pending) > 1 and not any_win:
             j = [x for x in pending if x['cond'] != 'replicate'][0]
-        # 9-10 replicates the best of all the other rows, so (unless a run won) it waits until
-        # none of them is still running.
+        # 9-10 waits until no other row is running, unless a run won
         if (j['cond'] == 'replicate' and not any_win and not a.dry_run
                 and any(status(x['name']) == 'running' for x in jobs if x['cond'] != 'replicate')):
             msg = f"WAIT  {j['name']}: replicate waits until every other row has finished"
@@ -544,7 +524,7 @@ def main():
         if a.dry_run:
             run_job(rj, threshold, True)
             continue
-        # HOLD: no new launch while this file exists (runs already going are not touched).
+        # HOLD: no new launch while this file exists
         hold = os.path.join(DIR, 'HOLD')
         if os.path.exists(hold):
             msg = f"WAIT  {rj['name']}: HOLD ({open(hold).read().strip()[:200]})"
@@ -553,7 +533,7 @@ def main():
                 last_wait = msg
             time.sleep(POLL_S)
             continue
-        # Concurrent launch, when memory allows and no other queue run is loading.
+        # concurrent launch when memory allows and no other queue run is loading
         sw = swap_used_gb()
         swap_hist = (swap_hist + [sw])[-10:]
         need = int(rj['need_host_gb'])

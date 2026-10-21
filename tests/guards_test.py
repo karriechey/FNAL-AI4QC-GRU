@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 # Created: 2026-10-02
 # Last modified: 2026-10-06 (held-out files sealed whole; seed reuse caught)
-"""Unit tests for the run-time guards of train_student.py, eval_student_on_tail.py and
-partitions.py, including the sealed-block rule of eval_student_on_tail.py (--score-sealed,
-the sealed-access log) and its CSV writer. CPU only, no TensorFlow, no real pools: every pool is a small file written to
-a temporary directory (a FORMAL-named pool holds 19,000,000 zero flips, which compress to a
-few kB on disk).
 
-Each guard is tested twice: it raises on a bad configuration and passes on a good one. The
-guards in train_student.run() that run before TensorFlow is imported are also tested
-through the command line, so the test shows they are wired into the script.
+"""Unit tests for the run-time guards of train_student.py, eval_student_on_tail.py and partitions.py.
 
-    python3 tests/guards_test.py        (from the repo root)
+Includes the sealed-block rule, the sealed-access log and the CSV writer. CPU only, small fake
+pools. Each guard is tested on a bad and a good configuration.
+
+python3 tests/guards_test.py        (from the repo root)
 """
 import argparse
 import atexit
@@ -36,7 +32,7 @@ SEALED = (17_000_000, 19_000_000)
 
 
 def write_pool(path, n, fingerprint=None):
-    """A pool file with only `flips` (all the guards read), plus an optional fingerprint."""
+    # pool with only `flips`, plus an optional fingerprint
     np.savez_compressed(path, flips=np.zeros((n, 1), np.int8))
     if fingerprint is not None:
         with open(path.replace('.npz', '.fingerprint.json'), 'w') as fh:
@@ -45,7 +41,6 @@ def write_pool(path, n, fingerprint=None):
 
 
 class Pools:
-    """Fake pools shared by the tests (written once)."""
     tmp = tempfile.mkdtemp(prefix='guards_test_')
     atexit.register(shutil.rmtree, tmp, True)
     formal = write_pool(os.path.join(tmp, 'data_d5_p0.004_r5_FORMAL.npz'), N_FORMAL,
@@ -70,13 +65,13 @@ class Pools:
     for _w, _b in ((weights, b'weights one'), (weights_other, b'weights two')):
         with open(_w, 'wb') as _fh:
             _fh.write(_b)
-    # The sealed-access log of these tests; the real one is configs/sealed_access.tsv.
+    # test copy of the sealed-access log
     sealed_log = os.path.join(tmp, 'sealed_access.tsv')
     os.environ['SEALED_ACCESS_LOG'] = sealed_log
 
 
 def ns(**kw):
-    """train_student arguments used by check_pools_and_partitions; a valid launcher config."""
+    # valid train_student arguments for check_pools_and_partitions
     a = dict(d=5, p=0.004, rounds=5, pool=Pools.formal, test_pool=None,
              extra_train_pool=[], extra_train_n=[], n_train=15_000_000,
              val_start=15_000_000, val_n=200_000, eval_start=15_200_000, n_test=1_800_000)
@@ -188,7 +183,7 @@ class TestTrainPartitions(unittest.TestCase):
             check(eval_start=16_000_000, n_test=1_800_000)
 
     def test_default_tail_is_sealed_raises(self):
-        # eval_start None and no test pool: the last n_test shots = the sealed block.
+        # no eval_start and no test pool: the last n_test shots are the sealed block
         with self.assertRaises(SystemExit):
             check(eval_start=None)
 
@@ -203,11 +198,10 @@ class TestTrainPartitions(unittest.TestCase):
             check(extra_train_pool=[Pools.wrong_p_ext], extra_train_n=[1000])
 
     def test_test_pool_val_checked_against_its_own_scored_block(self):
-        # Validation and scoring both come from --test-pool. A validation block inside the
-        # primary pool's training range is fine there (different file)...
+        # with --test-pool, validation inside the primary training range is fine...
         check(test_pool=Pools.test_pool, val_start=0, val_n=100_000,
               eval_start=None, n_test=200_000)
-        # ...but overlapping the test pool's own scored block is not.
+        # ...but not overlapping the test pool's scored block
         with self.assertRaises(SystemExit):
             check(test_pool=Pools.test_pool, val_start=250_000, val_n=100_000,
                   eval_start=None, n_test=200_000)
@@ -330,7 +324,7 @@ class TestEvalCsv(unittest.TestCase):
 
 
 def run_train(*extra):
-    """train_student.py on the command line; returns (exit code, combined output)."""
+    # (exit code, output) of train_student.py on the command line
     base = ['--student', 'gru', '--inputs', 'evts', '--hidden', '--units', '16',
             '--d', '5', '--p', '0.004', '--rounds', '5', '--pool', Pools.formal,
             '--n-train', '1000', '--n-test', '1000', '--seed', '0', '--cpu']
@@ -340,7 +334,7 @@ def run_train(*extra):
 
 
 class TestTrainCommandLine(unittest.TestCase):
-    """Guards that run before TensorFlow is imported, through the real entry point."""
+    # guards before the TensorFlow import, through the real entry point
 
     def test_alpha_below_one_with_extension_refused(self):
         rc, out = run_train('--alpha', '0.5', '--teacher-cache', 'unused.npz',
@@ -365,8 +359,7 @@ class TestTrainCommandLine(unittest.TestCase):
         self.assertIn('fingerprint says d=5 p=0.004 r=5', out)
 
     def test_valid_config_passes_the_guards(self):
-        # Passes every guard and prints the block summary; what follows (TensorFlow) is
-        # not part of this test, so only the guard output is checked.
+        # passes every guard; only the guard output is checked
         rc, out = run_train('--alpha', '1.0', '--eval-start', '15200000',
                             '--val-start', '15000000', '--val-n', '1000')
         self.assertIn('blocks disjoint: training prefix [0, 1,000)', out)

@@ -2,29 +2,15 @@
 # from FNAL-QCDecoding-FPGA/pair_two_decoders.py @ d5ee86f
 # Created: 2026-08-06
 # Last modified: 2026-09-25 (mcnemar_from_correct from helpers)
+
 """Paired McNemar between any two decoders, from their per-shot dumps.
 
-Why this exists
-eval_on_tail.py and eval_student_on_tail.py each compare ONE model against MWPM. Two
-separate comparisons against a common third model do not give the comparison between the
-two: "0.933x MWPM" and "0.966x MWPM" are means over different runs and say nothing about
-how often one is right where the other is wrong. That is a paired question and needs the
-2x2 on shared shots.
+Dumps are aligned on absolute shot index, so they may cover different ranges. No decoding here.
 
-The specific claim it settles here: at n_train=20M the hard-label GRU (0.07854) beats the
-RCNN at the same n_train (0.08134) at matched capacity, 69,441 vs 69,485 parameters, with
-no teacher involved. That is an architecture result, independent of the distillation study,
-and it is the only entry in the r=5 table comfortably below MWPM.
-
-No decoding happens here. Both dumps already contain per-shot correctness, so this aligns
-them on absolute shot index and counts. Alignment is by index, never by position: the two
-dumps can cover different ranges, and assuming row i of one is row i of the other is
-exactly the silent-misalignment failure that would produce a plausible but meaningless 2x2.
-
-  python pair_two_decoders.py \
-      --a rcnn_20M_pershot.npz --a-name "RCNN @20M" \
-      --b gru_20M_pershot.npz  --b-name "GRU hard @20M" \
-      --out-csv ~/rcnn_threshold/paired_rcnn_vs_gru_r5.csv
+python pair_two_decoders.py \
+    --a rcnn_20M_pershot.npz --a-name "RCNN @20M" \
+    --b gru_20M_pershot.npz  --b-name "GRU hard @20M" \
+    --out-csv ~/rcnn_threshold/paired_rcnn_vs_gru_r5.csv
 """
 import argparse
 import csv
@@ -34,18 +20,13 @@ import numpy as np
 from helpers import mcnemar_from_correct   # one implementation of the 2x2
 
 
-# Each dump names its columns after the model that produced it, so there is no single
-# key to read. Try the known spellings and say plainly what was found.
+# correctness column names differ by producer; try the known ones
 IDX_KEYS = ('shot_idx', 'tail_idx')
 CORRECT_KEYS = ('rcnn_correct', 'student_correct', 'mwpm_correct')
 
 
 def load_dump(path, which=None):
-    """Return (shot_idx, correct, label) from a per-shot npz.
-
-    `which` picks the column when a dump holds more than one decoder (both eval scripts
-    also store mwpm_correct alongside their own model).
-    """
+    # (shot_idx, correct, label); `which` picks the column when a dump holds several decoders
     if not os.path.exists(path):
         raise SystemExit(f"[pair] MISSING {path}")
     z = np.load(path, allow_pickle=False)
@@ -61,7 +42,7 @@ def load_dump(path, which=None):
                              f"keys are {sorted(z.files)}")
         col = which
     else:
-        # Prefer the dump's own model over the mwpm_correct it also carries.
+        # prefer the dump's own model over its mwpm_correct
         found = [k for k in CORRECT_KEYS if k in z.files and k != 'mwpm_correct']
         if not found:
             found = [k for k in CORRECT_KEYS if k in z.files]
@@ -96,8 +77,7 @@ def run():
     print(f"[pair] B = {args.b_name:<18} {os.path.basename(args.b)}  column={colb}  "
           f"{len(ib):,} shots [{ib.min():,}, {ib.max() + 1:,})", flush=True)
 
-    # Intersect on absolute shot index. Positional alignment would silently compare
-    # different shots whenever the two dumps cover different ranges.
+    # intersect on absolute shot index
     shared, pa, pb = np.intersect1d(ia, ib, assume_unique=True, return_indices=True)
     if len(shared) == 0:
         raise SystemExit("[pair] the two dumps share no shots -- different partitions?")
@@ -107,8 +87,7 @@ def run():
 
     a_ok, b_ok = ca[pa], cb[pb]
 
-    # The truth labels come from the pool in both cases, so they must agree shot by shot.
-    # If they do not, one dump does not describe the shots its indices claim.
+    # labels come from the same pool, so they must agree shot by shot
     if ta is not None and tb is not None:
         if not np.array_equal(ta[pa], tb[pb]):
             raise SystemExit("[pair] truth labels disagree on the shared shots -- the two "
@@ -117,9 +96,7 @@ def run():
 
     n = len(shared)
     pL_a, pL_b = float((~a_ok).mean()), float((~b_ok).mean())
-    # mcnemar_from_correct is written as (rcnn, mwpm); here it is (B, A), so 'rcnn_only'
-    # reads as B-only-correct -- i.e. B's wins. Named explicitly on output to keep that
-    # straight.
+    # called as (B, A), so 'rcnn_only' = B-only-correct
     mc = mcnemar_from_correct(b_ok, a_ok)
 
     print(f"\n[pair] {args.a_name}: p_L = {pL_a:.6f}")

@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/train_gru_distillation_20m.py @ d5ee86f
 # Created: 2026-09-22
-# Last modified: 2026-10-19 (validation block read with pool_rows; det_main was undefined after the 2026-10-06 change). Earlier: 2026-10-18 (docstrings cut to comments), 2026-10-06 (pools read by row range with pool_rows: only the blocks used are loaded, never the sealed rows), 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml; best checkpoint chosen by val LER, saved as full .keras)
-# One GRU student distilled from the 20M-shot u140 d5 teacher (Run 11); one run = (units,
-# alpha, T, seed), grid in eaf_run_gru_distill_20m.sh. Each training pool has its own teacher
-# cache; the sealed block is never read.
+# Last modified: 2026-10-19 (validation block read with pool_rows; det_main was undefined after the 2026-10-06 change).
+# Earlier 2026-10-18 (docstrings cut to comments).
+# Earlier 2026-10-06 (pools read by row range with pool_rows: only the blocks used are loaded, never the sealed rows).
+# Earlier 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml; best checkpoint chosen by val LER, saved as full .keras)
+
+"""
+One GRU student distilled from the 20M-shot u140 d5 teacher (Run 11).
+
+One run = (units, alpha, T, seed); the grid is in eaf_run_gru_distill_20m.sh. Each training
+pool has its own teacher cache; the sealed block is never read.
+"""
 import argparse
 import csv
 import datetime
@@ -18,16 +25,13 @@ import numpy as np
 
 LOG = '[gru-kd20m]'
 
-# Key names the dump_teacher_probs.py cache must carry for this script to trust it. Older
-# caches without teacher_arch / units / fingerprints are refused; this study has no
-# legacy caches to support.
+# keys a teacher cache must carry; older caches are refused
 REQUIRED_CACHE_KEYS = ('p_teacher', 'logit_teacher', 'flips', 'shot_idx', 'teacher_arch',
                        'units', 'weights_sha256', 'pool_flips_sha256', 'pool_path')
 
 
 # ---------------------------------------------------------------------------------------
-# Identity and integrity helpers. Import-safe (numpy only), so the preflight script can use
-# them without importing TensorFlow.
+# Identity and integrity helpers (numpy only, used by the preflight without TensorFlow).
 # ---------------------------------------------------------------------------------------
 def sha256_of(path):
     from dump_teacher_probs import sha256_file
@@ -36,7 +40,7 @@ def sha256_of(path):
     return sha256_file(path)
 
 
-# The fingerprint is required: only it records the gen seed that makes the extension independent.
+# fingerprint required: it records the gen seed that makes the extension independent
 def read_pool(path, label, d, rounds, p):
     from dump_teacher_probs import pool_fingerprint
     if not os.path.exists(path):
@@ -65,7 +69,7 @@ def read_pool(path, label, d, rounds, p):
     return z, meta, flips_sha
 
 
-# A misaligned cache still gives a smooth loss curve, so every check here stops the run.
+# a misaligned cache still trains smoothly, so every check stops the run
 def load_teacher_block(cache_path, label, pool_flips_sha, pool_flips, lo, hi,
                        teacher_units):
     if not cache_path:
@@ -78,7 +82,7 @@ def load_teacher_block(cache_path, label, pool_flips_sha, pool_flips, lo, hi,
         raise SystemExit(f"{LOG} {label} cache {cache_path} lacks {missing}; re-dump it with "
                          "the current dump_teacher_probs.py. STOP.")
 
-    # Which teacher produced it.
+    # teacher
     if str(tc['teacher_arch']) != 'gru':
         raise SystemExit(f"{LOG} {label} cache teacher_arch={tc['teacher_arch']}, expected "
                          "'gru'. STOP.")
@@ -86,14 +90,13 @@ def load_teacher_block(cache_path, label, pool_flips_sha, pool_flips, lo, hi,
         raise SystemExit(f"{LOG} {label} cache was dumped from a units={int(tc['units'])} "
                          f"GRU, expected the u{teacher_units} teacher. STOP.")
 
-    # Which pool it describes. The flips SHA-256 is the identity; the stored path is
-    # printed only, because a pool may legitimately be read from a different mount.
+    # pool: identified by flips SHA-256; the stored path is printed only
     if str(tc['pool_flips_sha256']) != pool_flips_sha:
         raise SystemExit(f"{LOG} {label} cache was built from a pool with flips SHA "
                          f"{str(tc['pool_flips_sha256'])[:16]}, this pool is "
                          f"{pool_flips_sha[:16]}. Different shots. STOP.")
 
-    # Which shots. The cache must cover [lo, hi) contiguously.
+    # shots: must cover [lo, hi) contiguously
     idx = tc['shot_idx']
     n_cache = int(idx.shape[0])
     if n_cache == 0 or int(idx[-1]) - int(idx[0]) + 1 != n_cache:
@@ -109,15 +112,13 @@ def load_teacher_block(cache_path, label, pool_flips_sha, pool_flips, lo, hi,
         raise SystemExit(f"{LOG} {label} cache returned {logit.shape[0]:,} shots, "
                          f"expected {n:,}. STOP.")
 
-    # Shot-by-shot alignment: the cache's own copy of the labels must equal the pool's.
+    # cache labels must equal the pool's
     if not np.array_equal(flips_cache, np.asarray(pool_flips).astype(np.int8).reshape(-1)):
         n_bad = int((flips_cache != np.asarray(pool_flips).astype(np.int8).reshape(-1)).sum())
         raise SystemExit(f"{LOG} {label} cache flips disagree with the pool on {n_bad:,} of "
                          f"{n:,} shots. Cache is misaligned. STOP.")
 
-    # Genuine model output: finite, not constant, and not a zero fill. A trained GRU's
-    # float32 logit lands on exactly 0.0 essentially never, so more than 0.1% exact zeros
-    # means a placeholder, not a model.
+    # real model output: finite, not constant, under 0.1% exact zeros
     if not np.all(np.isfinite(logit)):
         raise SystemExit(f"{LOG} {label} cache has non-finite teacher logits. STOP.")
     frac_zero = float((logit == 0.0).mean())
@@ -168,7 +169,7 @@ def check_partitions(n_main_pool, main_n_train, val_start, val_n, eval_start, ev
           f"sealed [{sealed_start:,}, {n_main_pool:,}) not read -- disjoint", flush=True)
 
 
-# Chunked so the 20M-shot set never needs a second full float32 copy (~11.5 GB).
+# chunked so the 20M-shot set never needs a second full float32 copy (~11.5 GB)
 def fill_sequences(dst, dst_offset, det_evts, d, rounds, p, chunk=1_000_000):
     from StudentModels import assemble_features
     n = det_evts.shape[0]
@@ -188,7 +189,7 @@ def run():
     ap.add_argument('--main-pool', required=True,
                     help='primary pool npz; supplies training prefix, validation and '
                          'evaluation blocks')
-    # Partition defaults come from configs/partitions.yaml (the single source).
+    # partition defaults from configs/partitions.yaml
     from partitions import load as _load_partitions, block as _block
     _pc = _load_partitions()
     _tr, _va, _ev, _se = (_block(b, _pc) for b in ('train', 'val', 'eval', 'sealed'))
@@ -276,8 +277,7 @@ def run():
                          "cache; the extension shots would have no teacher logits. STOP.")
 
     # --- determinism, before TensorFlow is imported ----------------------------------
-    # The launcher exports both variables; this refuses to run if it did not, because
-    # setting them after `import tensorflow` has no effect.
+    # setting these after `import tensorflow` has no effect, so the launcher must export them
     from helpers import assert_deterministic_env
     assert_deterministic_env()
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
@@ -367,16 +367,14 @@ def run():
         z_tr = np.concatenate(z_parts).astype(np.float32)
         teacher_column = 'teacher_logits'
     else:
-        # Only reachable with alpha == 1 (checked above). The column is multiplied by
-        # (1 - alpha) = 0 in the loss, so it cannot influence training.
+        # alpha == 1 only: this column has zero loss weight
         z_tr = np.zeros(n_train, np.float32)
         teacher_column = 'unused_zeros_alpha1'
         print(f"{LOG} alpha=1 without teacher caches: teacher column unused.", flush=True)
 
     y_tr = np.stack([f_tr.astype(np.float32), z_tr], axis=1)
 
-    # Post-concatenation proof: re-read each segment out of the packed target and compare
-    # it with its source. Catches any off-by-one in the offsets above.
+    # re-read each segment of the packed target and compare with its source
     assert y_tr.shape == (n_train, 2)
     assert x_tr.shape[0] == n_train
     assert np.array_equal(y_tr[:n_main, 0].astype(np.int8), f_main)
@@ -459,15 +457,12 @@ def run():
         def on_epoch_end(self, epoch, logs=None):
             self.model.save_weights(last_path)
 
-    # Same order as train_student.py: the last-epoch saver runs first, so it records the
-    # true final weights even if EarlyStopping later restores the best ones.
+    # last-epoch saver first, so it sees the final weights before EarlyStopping restores
     callbacks = [_SaveLastEpoch()]
     if args.patience > 0:
         callbacks.append(tf.keras.callbacks.EarlyStopping(
             monitor='val_loss', patience=args.patience, restore_best_weights=True))
-    # Checkpoint rule: lowest LER on the validation block, tiebreak val_loss; writes
-    # <ck>.best.keras (full model), <ck>.best.weights.h5 (= best_path) and <ck>.best.json.
-    # First in the list so it scores the weights this epoch ended with.
+    # lowest validation LER, tiebreak val_loss; writes <ck>.best.keras, .best.weights.h5, .best.json
     from helpers import make_val_ler_checkpoint
     callbacks.insert(0, make_val_ler_checkpoint(tf, x_va, f_va, ck, args.batch_size, LOG))
 
@@ -492,8 +487,7 @@ def run():
           f"{best_val:.6f} at the selected epoch {best_epoch} (val LER {_best['val_ler']:.6f}, "
           f"{_best['val_errors']:,}/{_best['val_n']:,} errors)", flush=True)
 
-    # --- score the selected (min val LER) checkpoint once on the evaluation block ----
-    # First read of the evaluation block in this process.
+    # --- score the selected checkpoint on the evaluation block ----------------------
     if not os.path.exists(best_path):
         raise SystemExit(f"{LOG} best checkpoint {best_path} was not written. STOP.")
     model.load_weights(best_path)
@@ -507,7 +501,7 @@ def run():
     pL = float((~s_correct).mean())
     del x_te
 
-    # MWPM decoded on these exact shots, never read from a stored baseline.
+    # MWPM decoded on these shots
     import pymatching
     from circuit_generators import build_circuit
     from helpers import mcnemar_from_correct
@@ -540,8 +534,7 @@ def run():
         print(f"{LOG}   agreement with teacher: all={ag['agree_all']}  ambiguous="
               f"{ag['agree_ambiguous']} (n={ag['n_ambiguous']:,})", flush=True)
 
-    # Per-shot record. det_evts is left out (216 MB per run); shot_idx points back into
-    # the primary pool, which is where it lives.
+    # per-shot record; det_evts left out, shot_idx points into the primary pool
     np.savez_compressed(
         ck + '.per_shot_eval.npz',
         shot_idx=np.arange(e0, e1, dtype=np.int64), truth=truth,
@@ -594,7 +587,7 @@ def run():
         w.writeheader()
         w.writerow(row)
 
-    # COMPLETE last: every other artifact exists by now.
+    # COMPLETE written last
     for f in (ck + '.csv', ck + '.history.json', best_path, last_path,
               ck + '.per_shot_eval.npz', alignment_path):
         if not os.path.exists(f):

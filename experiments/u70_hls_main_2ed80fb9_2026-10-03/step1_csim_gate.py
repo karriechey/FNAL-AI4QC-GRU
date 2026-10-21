@@ -1,27 +1,13 @@
 # Created: 2026-10-03 | Last updated: 2026-10-03
-"""Step 1: C-simulation gate for the u70 GRU on hls4ml main 2ed80fb9, ap_fixed<32,16>.
 
-Converts the trained model (default Resource strategy, ReuseFactor 70 (--rf), static GRU, io_parallel,
-xcvu13p, 5 ns), compiles the C++ with g++ (hls_model.compile) and compares
-hls_model.predict with Keras on identical shots of the evaluation block.
+"""C-simulation gate for the u70 GRU on hls4ml main 2ed80fb9, ap_fixed<32,16>.
 
-Gate (from the plan): decision match must be 100% on the first 10,000 shots and the
-logical-error-rate shift must be within noise (exact McNemar p >= 0.05). The script exits
-with status 1 if either fails.
+Resource strategy, ReuseFactor --rf (default 70), static GRU, io_parallel, xcvu13p, 5 ns.
+Gate: 100% decision match on the first 10,000 eval-block shots and an LER shift within noise
+(McNemar p >= 0.05); exits 1 otherwise. Extra shots with --n run in worker processes.
+With RF 70 the C-sim stops on a kernel assert; see patch_recurrent_kernel_choice.py.
 
-With --n larger than 10,000 the extra shots are run in parallel worker processes as a
-higher-statistics check; the gate itself is always decided on the first 10,000.
-
-Usage (grace1):
-    ~/hls4ml_main_env/bin/python step1_csim_gate.py [--n 10000] [--workers 48]
-Writes: results/step1_csim_gate_<strategy>_rf<RF>_n<N>.json, results/step1_hls_logits_<...>.npy,
-        hls_step1_fixed32_16_<strategy>_rf<RF>/ (generated project, gitignored)
-
-Note (2026-10-03): with Resource and ReuseFactor 70, hls4ml main 2ed80fb9 generates the GRU
-recurrent multiply (70 x 210) with reuse_factor 70 but the kernel for RF > n_in
-(DenseResource_rf_gt_nin_rem0), because recurrent_templates.py chooses the kernel from the
-layer's input-multiply reuse factor (snapped to 72). The C simulation stops on that kernel's
-assert. See patch_recurrent_kernel_choice.py for the one-line local fix used for comparison.
+~/hls4ml_main_env/bin/python step1_csim_gate.py [--n 10000] [--workers 48]
 """
 import argparse
 import json
@@ -48,7 +34,7 @@ model = U.build_model()
 d = U.load_eval(args.n)
 x, truth = d['x'], d['truth']
 y_keras = model.predict(x, batch_size=10000, verbose=0).reshape(-1)
-# The rebuilt model must reproduce the logits the EAF run stored for the same shots.
+# the rebuilt model must reproduce the logits the EAF run stored for the same shots
 keras_vs_eaf = float(np.abs(y_keras - d['keras_logit_eaf']).max())
 assert ((y_keras > 0) == (d['keras_logit_eaf'] > 0)).all(), 'rebuilt Keras model disagrees with the stored EAF logits'
 

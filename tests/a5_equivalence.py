@@ -1,35 +1,18 @@
 # Created: 2026-09-25
 # Last modified: 2026-09-25
-"""A5 equivalence tests: does the new repo reproduce the old pipeline exactly?
 
-Run on grace1 from the repo root, with the old repo checked out at d5ee86f:
+"""A5: does this repo reproduce the old pipeline (FNAL-QCDecoding-FPGA @ d5ee86f) exactly?
 
-    TF_CPP_MIN_LOG_LEVEL=3 ~/tfenv/bin/python tests/a5_equivalence.py
+1 circuits      same circuit and DEM from old and new builders, d=5,7,9
+2 partitions    YAML ranges match the old literals; pool hashes and seeds match; first 1M shots
+                regenerate bit-for-bit; block hashes recorded (sealed block: flips hash only)
+3 disjointness  blocks disjoint and tiling [0, 19M); FORMAL and TRAINONLY seeds differ
+4 mwpm          same failure count, old vs new, on 100k eval-block shots at d=5
+5 scatter       same to_sequence tensors at d=5,7,9
+6 model         same logits for the d=5 u140 checkpoint
+Writes experiments/a5_equivalence/<UTC stamp>/report.json.
 
-Six checks, each printed as PASS or FAIL, plus a JSON report written to
-experiments/a5_equivalence/<UTC timestamp>/report.json:
-
-  1 circuits      old eval_on_tail.build_circuit and generate_pools.build_circuit vs the
-                  new circuit_generators.build_circuit and generate_pools.build_circuit:
-                  identical str(circuit) and detector error model at d=5,7,9, p=0.004, r=d.
-  2 partitions    (a) configs/partitions.yaml ranges equal the literals in the old launcher
-                  and old distillation trainer; (b) each FORMAL / TRAINONLY pool's flips
-                  SHA-256 and gen_seed match the yaml and the pool's fingerprint;
-                  (c) the new sampler with gen_seed 42 regenerates the first 1,000,000
-                  shots of each FORMAL pool bit-for-bit; (d) SHA-256 of the val and eval
-                  blocks (and of the sealed flips, as a hash only) are recorded.
-  3 disjointness  train/val/eval/sealed ranges disjoint and tiling [0, 19M); training
-                  defaults end at or before the val block; FORMAL and TRAINONLY seeds differ.
-                  Compared by seed and shot index, never by syndrome contents.
-  4 mwpm          old and new mwpm_on_block.py give the same failure count on 100,000
-                  eval-block shots at d=5.
-  5 scatter       old and new to_sequence give identical (r+1, d^2-1) tensors on 10,000
-                  eval-block shots at d=5,7,9, and every detector maps exactly once.
-  6 model         the d=5 u140 run-of-record checkpoint gives identical logits in the old
-                  and new code on 10,000 eval-block shots.
-
-The sealed block's contents are never decoded, scored or passed to a model. Test 2 only
-hashes its flips column, as the step allows.
+TF_CPP_MIN_LOG_LEVEL=3 ~/tfenv/bin/python tests/a5_equivalence.py
 """
 import datetime
 import hashlib
@@ -75,7 +58,7 @@ def sha_txt(t):
 
 
 def old_side(*args):
-    """Run tests/old_side.py against the old repo in a separate process."""
+    # tests/old_side.py in a separate process
     cmd = [PY, os.path.join(ROOT, 'tests', 'old_side.py'), '--old-repo', OLD, *map(str, args)]
     subprocess.run(cmd, check=True)
 
@@ -128,7 +111,7 @@ def test_circuits():
 
 # 2 partitions ----------------------------------------------------------------------------
 def old_literals():
-    """Partition literals as written in the old launcher and old distillation trainer."""
+    # partition literals in the old launcher and distillation trainer
     sh = open(os.path.join(OLD, 'gh200_run_student_scaling.sh')).read()
     py = open(os.path.join(OLD, 'train_gru_distillation_20m.py')).read()
     g = lambda pat, txt: int(re.search(pat, txt).group(1).replace('_', ''))
@@ -181,12 +164,12 @@ def test_partitions():
             if kind != 'formal':
                 continue
             det = z['det_evts']
-            # (c) regenerate the first chunk with the new sampler and the yaml seed.
+            # (c) regenerate the first chunk with the YAML seed
             m, e, f = sample_pool(build_circuit(d, P_PHYS, d), N_REGEN, formal['gen_seed'])
             regen = np.array_equal(e, det[:N_REGEN]) and np.array_equal(f, flips[:N_REGEN])
             record(f'2c_regenerate_first_{N_REGEN}_d{d}', regen)
             ok &= regen
-            # (d) block hashes under the yaml ranges (= old literals if 2a passed).
+            # (d) block hashes under the YAML ranges
             hashes[d] = dict(val_det=sha_arr(det[va[0]:va[1]]), val_flips=sha_arr(flips[va[0]:va[1]]),
                              eval_det=sha_arr(det[ev[0]:ev[1]]), eval_flips=sha_arr(flips[ev[0]:ev[1]]),
                              sealed_flips_hash_only=sha_arr(flips[se[0]:se[1]]))
@@ -229,7 +212,7 @@ def test_mwpm():
 
 
 def eval_slice(d):
-    """First N_SCATTER eval-block rows for distance d, plus a file copy for old_side.py."""
+    # first N_SCATTER eval-block rows for d, plus a file copy for old_side.py
     if d not in EVAL_SLICES:                     # test 2 normally fills this
         e0 = P.block('eval', cfg)[0]
         EVAL_SLICES[d] = np.array(np.load(P.pool_path(d, 'formal'))['det_evts'][e0:e0 + N_SCATTER])

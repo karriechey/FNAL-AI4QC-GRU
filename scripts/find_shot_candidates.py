@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
 # Created: 2026-10-12
 # Last updated: 2026-10-12
-"""Find shots in the FORMAL evaluation block where MWPM is wrong and a GRU checkpoint is right.
 
-Candidates for the animateQEC RealShot scene. Reads only the evaluation block of
-configs/partitions.yaml (never the sealed block), keeps shots with 4..max-events detection
-events, decodes them with MWPM, and runs the GRU on the MWPM failures plus a backup set of
-the fewest-event shots. Prints a table; writes nothing unless --out is given.
+"""Find evaluation-block shots where MWPM is wrong and a GRU checkpoint is right (animateQEC RealShot).
 
-Run on grace1 in ~/tfenv (CPU), with --src pointing at a code copy whose StudentModels.py
-builds stacked GRUs:
+Prints a table; writes a file only with --out.
 
-    ~/tfenv/bin/python find_shot_candidates.py --src ~/FNAL-AI4QC-GRU-fresh2/src \\
-        --weights <ckpt>/...best.weights.h5 --units 280 280 280
+~/tfenv/bin/python find_shot_candidates.py --src ~/FNAL-AI4QC-GRU-fresh2/src \
+    --weights <ckpt>/...best.weights.h5 --units 280 280 280
 """
 import argparse
 import os

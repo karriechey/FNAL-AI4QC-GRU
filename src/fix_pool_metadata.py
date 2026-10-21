@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 # Created: 2026-10-06
 # Last modified: 2026-10-06
-"""Correct the stale fields of the p = 0.004 FORMAL pool fingerprints and of their copies
-(pool_provenance.json in run folders).
 
-Those fingerprints were written by gen_pool_r5.py before the validation block was split:
-  partition_val [15M, 17M], n_val 2M, n_test 2M   -> validation [15.0M, 15.2M) and evaluation
-                                                     [15.2M, 17M) (configs/partitions.yaml)
-  mwpm_resid_errors_test, decoded by gen_pool_r5.py on [15M, 17M) (te = slice(VAL0, VAL1)),
-  not on the sealed test block                    -> renamed mwpm_resid_errors_15M_17M
-Every corrected file keeps the original values under "as_written_before_2026-10-06" and
-states the change under "corrections_2026-10-06". A file is changed only if it still has
-the stale layout; running the script twice changes nothing the second time.
+"""Fix stale fields in the p = 0.004 FORMAL pool fingerprints and their pool_provenance.json copies.
 
-    python fix_pool_metadata.py <json files...>        (prints what it changes)
+Written before the validation block was split:
+  partition_val [15M, 17M)  -> validation [15.0M, 15.2M) and evaluation [15.2M, 17M)
+  mwpm_resid_errors_test    -> mwpm_resid_errors_15M_17M (decoded on [15M, 17M), not the sealed block)
+Old values are kept under "as_written_before_2026-10-06". Running twice changes nothing.
+
+python fix_pool_metadata.py <json files...>
 """
 import json
 import sys

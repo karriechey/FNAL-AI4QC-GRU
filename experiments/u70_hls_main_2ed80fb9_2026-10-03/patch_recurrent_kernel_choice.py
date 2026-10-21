@@ -1,17 +1,14 @@
 # Created: 2026-10-03 | Last updated: 2026-10-03
-"""Copy hls4ml (main 2ed80fb9) to a separate folder and apply a one-line fix to the Vivado GRU
-config template, for comparison runs only.
 
-Bug on main 2ed80fb9, hls4ml/backends/vivado/passes/recurrent_templates.py (GRU, Resource):
-the recurrent multiply (n_in = units) is written with reuse_factor = recurrent_reuse_factor,
-but its dense kernel is chosen from mult_params2['reuse_factor'], which is the layer's
-input-multiply reuse factor. When the two are snapped to different values on opposite sides of
-n_in (u70, requested 70: input 72, recurrent 70), the RF > n_in kernel is generated with
-RF = n_in and its assert fails in C simulation. The fix chooses the kernel from the recurrent
-reuse factor that is actually written.
+"""Copy hls4ml main 2ed80fb9 to a separate folder and apply a one-line fix to the Vivado GRU template.
 
-Usage: ~/hls4ml_main_env/bin/python patch_recurrent_kernel_choice.py <dest folder>
-Then run with PYTHONPATH=<dest folder>. Results get the suffix _kernelfix.
+On 2ed80fb9 the recurrent multiply is written with recurrent_reuse_factor but its dense kernel is
+chosen from the input-multiply reuse factor. When the two snap to opposite sides of n_in (u70:
+input 72, recurrent 70) the RF > n_in kernel fails its assert in C-sim. The fix chooses the
+kernel from the recurrent reuse factor. Results get the suffix _kernelfix.
+
+~/hls4ml_main_env/bin/python patch_recurrent_kernel_choice.py <dest folder>
+then run with PYTHONPATH=<dest folder>
 """
 import os
 import shutil

@@ -1,7 +1,10 @@
 # Created: 2026-10-18
 # Last modified: 2026-10-18
-# Lowest selection-block p_L from --min-epoch, later epoch on a tie.
-# Not converged: slope of the ratio over the last 20 epochs negative with t < -2.
+
+"""Lowest selection-block p_L from --min-epoch, later epoch on a tie.
+
+Not converged: slope of the ratio over the last 20 epochs negative with t < -2.
+"""
 import argparse
 import csv
 import json

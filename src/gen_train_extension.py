@@ -1,32 +1,17 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/gen_train_extension.py @ d5ee86f
 # Created: 2026-08-21
-# Last modified: 2026-09-30 (--compact: detection events only, bit-packed; --formal: a primary pool with the FORMAL partitions, for new p values). Earlier 2026-09-25 (build_circuit from circuit_generators)
-"""Generate a training-only pool: every shot is training data, no reserved partitions.
+# Last modified: 2026-09-30 (--compact: detection events only, bit-packed; --formal: a primary pool with the FORMAL partitions, for new p values).
+# Earlier 2026-09-25 (build_circuit from circuit_generators)
 
-For augmenting a training set past what a primary pool's clean prefix holds. The primary
-pool keeps its validation, evaluation and sealed blocks; this file contributes training
-shots and nothing else, so there is no unused region to reason about and no MWPM baseline
-to mistake for one.
+"""Generate a training-only pool: every shot is training data, no reserved blocks.
 
-The generation seed must differ from the primary pool's. train_student.py refuses an
-extension whose fingerprint carries the same seed, because the same seed reproduces the
-same stim stream and the shots would not be independent.
+The seed must differ from the primary pool's; train_student.py refuses a matching seed.
+--compact stores the same shots as bit-packed detection events + flips (about 1/16 the size).
+--formal writes a primary FORMAL pool instead; --n must equal n_total (19,000,000).
+Writes <pool>.npz and <pool>.fingerprint.json.
 
-  python gen_train_extension.py --d 5 --p 0.004 --rounds 5 --n 5000000 \
-      --gen-seed 43 --out-dir ~/pools_d5_p004_19M
-
-Writes <pool>.npz and <pool>.fingerprint.json with purpose="training_only".
-
---compact (2026-09-30): the same shots (same seed, same sampling calls) stored as
-bit-packed detection events + flips, without the measurements (generate_pools.
-sample_pool_compact). train_student.py reads either format; the GRU uses detection events
-only. About 1/16 of the full size.
-
---formal (2026-09-30): write a primary pool instead (tag FORMAL, full format, purpose
-"formal", the train/val/eval/sealed ranges of configs/partitions.yaml recorded in the
-fingerprint). Used for p values that have no FORMAL pool yet; --n must equal the FORMAL
-n_total (19,000,000).
+python gen_train_extension.py --d 5 --p 0.004 --rounds 5 --n 5000000 --gen-seed 43 --out-dir ~/pools_d5_p004_19M
 """
 import argparse
 import hashlib

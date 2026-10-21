@@ -60,7 +60,7 @@ for b, i in centre.items():
     viz["meta"][f"detslice_{b}"] = i
 
 def assert_no_paths(obj, where="viz"):
-    """The JSON is published: refuse any string that looks like a file-system path."""
+    # output is published: refuse anything that looks like a file path
     if isinstance(obj, dict):
         for k, v in obj.items():
             assert_no_paths(v, f"{where}.{k}")

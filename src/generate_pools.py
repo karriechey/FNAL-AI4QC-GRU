@@ -1,24 +1,13 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/generate_pools.py @ d5ee86f
-# Last modified: 2026-09-30 (sample_pool_compact: same shots as sample_pool, detection events bit-packed, no measurements). Earlier 2026-09-25 (build_circuit delegates to circuit_generators.build_circuit)
-"""Generate the 8 CORE dataset pools for the across-threshold RCNN-vs-MWPM study,
-and compute the deterministic MWPM p_L baseline ONCE per (d,p) at generation time.
+# Last modified: 2026-09-30 (sample_pool_compact: same shots as sample_pool, detection events bit-packed, no measurements).
+# Earlier 2026-09-25 (build_circuit delegates to circuit_generators.build_circuit)
 
-  * rounds = d (threshold-figure convention; CHECKPOINT 0).
-  * 4-channel noise, all four Stim channels = p, and the DEM is decoded 4-channel too --
-    identical circuit for generate and decode, so nothing silently mis-baselines. This is
-    the same circuit generate_datasets.gen_one builds.
-  * One pool per (d,p): nested train prefixes tr=slice(0,ntr) come from the FRONT; the
-    fixed test tail te=slice(N-nte,N) is held out for every rung. They are disjoint:
-    assert ntr_max == N - nte  (ntr_max is the top of the ladder = train capacity).
-  * N_test sized from the measured MWPM p_L so the tail holds >=~500 residual errors.
+"""Generate the 8 core pools for the RCNN-vs-MWPM threshold study, and the MWPM baseline per (d, p).
 
-Outputs (to DATA_ROOT):
-  data_d{d}_p{p:.3f}_r{d}.npz   -- measurements, det_evts, flips (int8), as the trainer expects
-  mwpm_baseline.csv             -- one row per (d,p): the canonical MWPM p_L + diagnostics
-
-The trainer (benchmark_rcnn.py) reads the same filename pattern and the SAME 4-channel
-circuit, so its recomputed MWPM is deterministically identical to the value logged here.
+rounds = d, all four Stim noise channels = p, same circuit for sampling and decoding.
+Training prefixes come from the front; the test tail is the last N_test shots.
+Writes data_d{d}_p{p:.3f}_r{d}.npz and mwpm_baseline.csv to DATA_ROOT.
 """
 import csv
 import os
@@ -27,15 +16,13 @@ import numpy as np
 from circuit_generators import build_circuit as _build_circuit  # the single noise-model definition
 
 # --- CONFIG -----------------------------------------------------------------------------
-# DATA_ROOT: where the ~10 GB of pools land.
 DATA_ROOT = os.path.expanduser("~/rcnn_threshold/pools")
 GEN_SEED = 12345          # fixed; recorded per pool for provenance
 CHUNK = 1_000_000         # sample in chunks to cap peak RAM on the 10M pools
 OBS = "ZL"                # rotated_memory_z single logical observable
 
-# (d, p, N_total, N_test). N_total = train_capacity + N_test (see WorkLog Step-1 table).
-# train_capacity = top of the ladder: 10M for p<=0.005, 8M for p=0.007, 5M for p=0.010.
-# N_test from measured MWPM p_L (>=~500 residual errors at the tail).
+# (d, p, N_total, N_test); N_total = train capacity + N_test
+# train capacity: 10M for p<=0.005, 8M for p=0.007, 5M for p=0.010
 POOLS = [
     # d=3, rounds=3
     (3, 0.004, 10_050_000, 50_000),
@@ -51,13 +38,11 @@ POOLS = [
 # ----------------------------------------------------------------------------------------
 
 def build_circuit(d, p):
-    """The 4-channel rotated_memory_z circuit at rounds=d (identical to gen + decode)."""
     return _build_circuit(d, p, rounds=d)
 
 
 def sample_pool(circ, n_total, seed):
-    """Chunked sampling so peak RAM stays ~one chunk + the final arrays, not 2x.
-    Returns (measurements, det_evts, flips) as int8 arrays."""
+    # chunked so peak RAM is one chunk plus the output arrays
     m_sampler = circ.compile_sampler(seed=seed)
     converter = circ.compile_m2d_converter()
     # widths from a 2-shot probe so we can preallocate
@@ -82,17 +67,9 @@ def sample_pool(circ, n_total, seed):
 
 
 def sample_pool_compact(circ, n_total, seed):
-    """The shots of sample_pool(circ, n_total, seed), kept as detection events only.
-
-    Same sampler, same seed, same chunking and the same measurement-to-detector
-    conversion as sample_pool, so shot i here is shot i there. The measurements are not
-    kept, and the detection events are stored bit-packed along the detector axis
-    (np.packbits, big-endian bit order): 8 detectors per byte. The GRU reads detection
-    events only, so this is all its training needs, at about 1/16 of the full pool's size.
-
-    Returns (det_evts_packed uint8 [n, ceil(n_det/8)], n_det, flips int8 [n, n_obs]).
-    Unpack with np.unpackbits(det_evts_packed, axis=1, count=n_det).
-    """
+    # Same shots as sample_pool, kept as bit-packed detection events only (~1/16 the size).
+    # Returns (det_evts_packed uint8 [n, ceil(n_det/8)], n_det, flips int8 [n, n_obs]).
+    # Unpack with np.unpackbits(det_evts_packed, axis=1, count=n_det).
     m_sampler = circ.compile_sampler(seed=seed)
     converter = circ.compile_m2d_converter()
     probe = m_sampler.sample(2, bit_packed=False)
@@ -130,7 +107,7 @@ def main():
         t0 = time.time()
         fn = os.path.join(DATA_ROOT, f"data_d{d}_p{p:.3f}_r{d}.npz")
         train_cap = n_total - n_test
-        # DISJOINT-TAIL GUARANTEE: top of the ladder must not touch the test tail.
+        # top of the ladder must not reach the test tail
         assert train_cap == n_total - n_test, "train/test overlap"
         if os.path.exists(fn):
             print(f"[gen] skip (exists) {fn}")
@@ -139,7 +116,7 @@ def main():
         circ = build_circuit(d, p)
         measurements, det_evts, flips = sample_pool(circ, n_total, GEN_SEED)
 
-        # --- once-per-(d,p) deterministic MWPM baseline on the FIXED tail --------------
+        # MWPM baseline on the fixed tail
         dem = circ.detector_error_model(decompose_errors=True)
         pym = pymatching.Matching.from_detector_error_model(dem)
         te = slice(n_total - n_test, n_total)
@@ -158,7 +135,7 @@ def main():
                         mwpm_resid_errors_test=resid, base_rate_test=round(base_test, 5),
                         base_rate_pool=round(base_pool, 5), gen_seed=GEN_SEED))
         f.flush()
-        # FLAG if the tail is residual-error-starved (would make RCNN p_L noisy there).
+        # flag a tail with too few MWPM errors
         starved = " <-- FLAG: <300 residual errors, tail too small" if resid < 300 else ""
         print(f"[gen] d={d} p={p:.3f} r={d}  N={n_total:,} (train_cap {train_cap:,}, "
               f"tail {n_test:,})  MWPM p_L={mwpm_pL:.5f} ({resid} resid errs){starved}  "

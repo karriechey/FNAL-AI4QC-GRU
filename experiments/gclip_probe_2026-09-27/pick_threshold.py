@@ -1,13 +1,12 @@
 # Created: 2026-09-27
 # Last modified: 2026-09-27
+
 """Choose global_clipnorm from the probe's per-update gradient norms (rule fixed in advance).
 
-    python3 pick_threshold.py <grad_norms.npy> --out threshold.json
+threshold = 5 x median(norms of updates 100..500), rounded to 2 significant figures.
+Also draws grad_norms_probe.png.
 
-threshold = 5 x median(norms of updates 100..500, 1-indexed inclusive), rounded to 2
-significant figures. Also records the distribution of all 500 norms and of updates
-100..500, and the fraction of the probe's updates 100..500 that the threshold would have
-clipped. Draws grad_norms_probe.png (norm per update, with the median and the threshold).
+python3 pick_threshold.py <grad_norms.npy> --out threshold.json
 """
 import argparse
 import json

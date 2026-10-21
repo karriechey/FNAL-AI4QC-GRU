@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 # Created: 2026-10-03
 # Last modified: 2026-10-03
-"""Cheap CPU checks for the training settings added for the d=9 queue (warmup, EMA,
-warm-start, parameter cap). No GPU, small pools, a few epochs each.
 
-Two kinds of check:
-  defaults_off   the current train_student.py with none of the new flags gives the same
-                 parameter count and the same per-epoch loss / val_loss as the code at
-                 --base-ref (determinism flags on, CPU)
-  <knob>_on      the flag does what it says, read from the log and the outputs
+"""CPU checks for the d=9 queue settings: warmup, EMA, warm-start, parameter cap.
 
-Pools: any pool files data_d{d}_p0.004_r{d}*.npz with a fingerprint, at least 60,000 shots
-(blocks used: train [0, 40000), validation [40000, 50000), scored [50000, 60000)).
+defaults_off  with none of the new flags, same parameters and per-epoch losses as --base-ref
+<knob>_on     each flag does what it says
+Pools: data_d{d}_p0.004_r{d}*.npz with a fingerprint and at least 60,000 shots.
 
-    python3 tests/knob_checks.py --py <python with TF 2.15> --pool-dir <dir> \\
-        --base-ref 0372b35 --out <dir> [checks ...]
+python3 tests/knob_checks.py --py <python with TF 2.15> --pool-dir <dir> \
+    --base-ref 0372b35 --out <dir> [checks ...]
 """
 import argparse
 import glob
@@ -39,7 +34,7 @@ def common(pool, d, units=32, epochs=2):
 
 
 def train(py, src, out, args):
-    """Run train_student.py from `src` with outputs in `out`; return (log text, history)."""
+    # run train_student.py from `src`; returns (log text, history)
     os.makedirs(out, exist_ok=True)
     env = dict(os.environ, TF_DETERMINISTIC_OPS='1', TF_CUDNN_DETERMINISTIC='1',
                TF_CPP_MIN_LOG_LEVEL='2', CUDA_VISIBLE_DEVICES='')
@@ -103,8 +98,7 @@ class Checks:
         rc, log, h = self.run_new('warmup_on', ['--lr-warmup-epochs', '1'], epochs=3)
         m = dict((int(k.replace(',', '')), float(v))
                  for k, v in re.findall(r'lr\[([\d,]+)\]=([0-9.e+-]+)', log))
-        # 40 updates per epoch, warmup 40 updates: lr[0] = 3e-3/40, lr[39] = 3e-3,
-        # lr[40] = cosine start = 3e-3, then decreasing to 3e-5 at the last update.
+        # 40 updates per epoch, warmup 40: lr[0] = 3e-3/40, lr[39] = lr[40] = 3e-3, then cosine to 3e-5
         ok = (rc == 0 and abs(m.get(0, 0) - 3e-3 / 40) < 1e-9 and abs(m.get(39, 0) - 3e-3) < 1e-9
               and abs(m.get(40, 0) - 3e-3) < 1e-9 and m.get(41, 1) < 3e-3
               and abs(m.get(119, 0) - 3e-5) < 2e-6 and h.get('lr', [None])[0] is not None)
@@ -132,23 +126,20 @@ class Checks:
                            weights(f'{o}/runs/t.weights.h5')) if rc == 0 else ({}, {}, {})
         import csv
         row = next(csv.DictReader(open(f'{o}/runs/t.csv'))) if rc == 0 else {}
-        # EMA weights differ from the raw weights; when the best epoch is the last one, the
-        # saved best equals the end-of-fit weights (Keras copies the EMA into the model at
-        # the end of fit), so the checkpoint holds the EMA weights.
+        # best epoch == last epoch -> saved best equals the end-of-fit (EMA) weights
         ok = (rc == 0 and not equal(best, last) and not equal(end, last)
               and (best_ep != 2 or equal(best, end))
               and len(h.get('val_loss_ema', [])) == 2
               and h['val_loss_ema'] != h['val_loss']
               and row.get('scored_weights') == 'end_of_fit_ema')
-        # One epoch: the best epoch is necessarily the last, so the saved best must equal
-        # the end-of-fit (EMA) weights exactly and differ from the raw weights.
+        # one epoch: saved best must equal EMA weights and differ from raw weights
         rc1, _, _ = self.run_new('ema_on_1ep', ['--ema-decay', '0.9'], epochs=1)
         o1 = f'{self.a.out}/ema_on_1ep'
         b1, l1, e1 = ((weights(f'{o1}/ckpt/t.best.weights.h5'),
                        weights(f'{o1}/ckpt/t.lastepoch.weights.h5'),
                        weights(f'{o1}/runs/t.weights.h5')) if rc1 == 0 else ({}, {1: 1}, {}))
         ok = ok and rc1 == 0 and equal(b1, e1) and not equal(b1, l1)
-        # Training itself is unchanged by EMA: same raw val_loss as without it.
+        # EMA does not change training: same raw val_loss
         ok = ok and h.get('val_loss') == getattr(self, 'defaults_hist', h).get('val_loss')
         self.report('ema_on', ok,
                     f"[1 epoch: best==EMA end-of-fit {equal(b1, e1)}, best==raw {equal(b1, l1)}] "
@@ -167,11 +158,10 @@ class Checks:
                              if isinstance(v, h5py.Dataset) and 'optimizer' not in k and 'metrics' not in k else None)
             return out
 
-        # Source: d=7 (48 positions), saved with the warmup schedule in its optimizer.
+        # source: d=7 (48 positions), saved with the warmup schedule
         rs, _, _ = self.run_new('ws_source', ['--lr-warmup-epochs', '0.5'], d=7, epochs=1)
         src = f'{self.a.out}/ws_source/ckpt/t.best.keras'
-        # Target: d=9 (80 positions), learning rate ~0 so the loaded values survive the
-        # one epoch unchanged to within ~1e-9.
+        # target: d=9 (80 positions), lr ~0 so loaded values survive one epoch
         rc, log, _ = self.run_new('ws_target', ['--warm-start', src, '--lr', '1e-12',
                                                 '--lr-end', '1e-13'], d=9, epochs=1)
         loaded = re.findall(r'warm-start: loaded (\S+)', log)
@@ -188,7 +178,7 @@ class Checks:
                     f"source==target after 1 epoch at lr~0: {close}; shape differs: {diff_shape}")
 
     def max_params_on(self):
-        # u32 at d=5 has 5,505 parameters: a cap of 5,505 passes, 5,504 stops before training.
+        # u32 at d=5 has 5,505 params: cap 5,505 passes, 5,504 stops
         rc_ok, log_ok, _ = self.run_new('maxp_ok', ['--max-params', '5505'], epochs=1)
         rc_no, log_no, _ = self.run_new('maxp_no', ['--max-params', '5504'], epochs=1)
         ok = (rc_ok == 0 and rc_no != 0 and 'exceed --max-params 5,504' in log_no
@@ -196,8 +186,7 @@ class Checks:
         self.report('max_params_on', ok, f"cap 5505 exit {rc_ok}; cap 5504 exit {rc_no}")
 
     def stacked_on(self):
-        # Parameter counts at d=7: one u560 layer and two stacked u280 layers (the ceiling
-        # probe arms), and the u280 single layer, which must be unchanged (276,641).
+        # d=7 counts: u560, 2 x u280, and single u280 unchanged (276,641)
         code = ("import os; os.environ['CUDA_VISIBLE_DEVICES']=''\n"
                 "from StudentModels import build_student\n"
                 "for u in (280, (280,), 560, (280, 280)):\n"
@@ -206,7 +195,7 @@ class Checks:
         r = subprocess.run([self.a.py, '-c', code], cwd=self.new_src, capture_output=True,
                            text=True, env=dict(os.environ, TF_CPP_MIN_LOG_LEVEL='3'))
         counts = dict(re.findall(r'^(\S+(?: \S+)?) (\d+) ', r.stdout, re.M))
-        # Train two stacked layers for one epoch, then rebuild and score with the eval script.
+        # two stacked layers, one epoch, then score with the eval script
         rc, log, _ = self.run_new('stacked_train', ['--units', '16', '16'], epochs=1)
         w = glob.glob(f'{self.a.out}/stacked_train/ckpt/*.best.weights.h5')
         ev = subprocess.run([self.a.py, 'eval_student_on_tail.py', '--student', 'gru', '--hidden',
@@ -225,11 +214,8 @@ class Checks:
                     f"train 16x16 exit {rc}, eval exit {ev.returncode} {score}")
 
     def distill_on(self):
-        # Teacher: a d=5 u32 model trained for 2 epochs (the defaults_off run's best.keras).
-        # Student: u16, alpha 0 (soft targets only), primary prefix 40,000 + 30,000 extension
-        # shots. Every training shot must get a teacher logit (none exactly zero), and the
-        # validation and scored blocks too; the guard against extension pools with alpha < 1
-        # must not fire with --teacher-model.
+        # Teacher: d=5 u32 from defaults_off. Student: u16, alpha 0, with extension shots.
+        # Every shot needs a nonzero teacher logit; the extension guard must not fire.
         teacher = glob.glob(f'{self.a.out}/defaults_new/ckpt/*.best.keras')
         if not teacher:
             self.defaults_off()
@@ -246,7 +232,7 @@ class Checks:
               and 'agreement vs teacher on the scored block' in log
               and row.get('alpha') == '0.0' and row.get('teacher_cache', '').startswith('model:')
               and row.get('agree_all', '') != '')
-        # Same run without --teacher-model must still be refused (extension, alpha < 1).
+        # without --teacher-model it must still be refused
         rc2, log2, _ = self.run_new('distill_refused', ['--units', '16', '--alpha', '0',
                                                         '--teacher-cache', 'x.npz',
                                                         '--extra-train-pool', self.ext[0]], epochs=1)

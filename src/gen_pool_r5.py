@@ -2,33 +2,18 @@
 # from FNAL-QCDecoding-FPGA/gen_pool_r5.py @ d5ee86f
 # Created: 2026-08-03
 # Last modified: 2026-09-25 (build_circuit from circuit_generators)
-"""Generate the formal d=5, r=5 pool with three disjoint partitions.
 
-Partitions (Option A -- validation is its own block, not carved from training):
-  [0, n_train)                       training pool for every nested ladder rung
-  [n_train, n_train+n_val)           dedicated validation, for early stopping,
-                                     checkpoint selection and seed ranking
-  [n_train+n_val, +n_test)           sealed test, read once at reporting time
+"""Generate the formal d=5, r=5 pool with three disjoint blocks.
 
-This is stricter than the exploratory r=3 protocol, which used Keras
-validation_split=0.2 from inside the training prefix. The difference is deliberate and
-must be recorded, not presented as the same design.
+  [0, n_train)                  training
+  [n_train, n_train+n_val)      validation (early stopping, checkpoint selection)
+  [n_train+n_val, +n_test)      sealed test, not read here
 
-The existing pools/data_d5_p0.010_r5.npz holds 5.01M shots with a 10k tail: too coarse to
-resolve parity, and 5M training capacity does not reach the top of the ladder.
+MWPM is decoded on the validation block only. Writes the pool, a mwpm_baseline.csv row and
+<pool>.fingerprint.json.
 
-MWPM is decoded on the VALIDATION partition only. The sealed test partition is not read
-here -- its baseline is decoded at reporting time, so nothing in the build touches it.
-
-Writes, alongside the pool:
-  mwpm_baseline.csv row      MWPM on the validation partition
-  <pool>.fingerprint.json    partition indices, flips sha256, shapes, generation seed
-
-r=5 costs more than r=3 per shot: 145 measurement bits vs 97, 120 detectors vs 72, so
-~1.5x the bytes and the sampling time. At 20.2M shots expect roughly 5 GB.
-
-  python gen_pool_r5.py                # 20.0M train + 200k val + 200k test = 20.4M
-  python gen_pool_r5.py --dry-run      # sizes and timing estimate only
+python gen_pool_r5.py                # 20.0M train + 200k val + 200k test = 20.4M
+python gen_pool_r5.py --dry-run      # sizes and timing estimate only
 """
 import argparse
 import csv
@@ -92,7 +77,7 @@ def main():
     print(f"[gen-r5] sampled {args.n:,} shots in {(time.time() - t0) / 60:.1f} min  "
           f"meas{measurements.shape} det{det_evts.shape}", flush=True)
 
-    # MWPM on the VALIDATION partition. The sealed test block is deliberately not read.
+    # MWPM on the validation block only; the sealed test block is not read
     import pymatching
     te = slice(VAL0, VAL1)
     dem = circ.detector_error_model(decompose_errors=True)

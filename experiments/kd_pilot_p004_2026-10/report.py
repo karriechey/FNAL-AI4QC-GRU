@@ -1,7 +1,10 @@
 # Created: 2026-10-18
 # Last modified: 2026-10-18
-#   ~/tfenv/bin/python report.py --d 5     -> runs/report_d5.csv, .md
-# McNemar b = this run right, the other decoder wrong.
+
+"""Distillation pilot report; McNemar b = this run right, the other decoder wrong.
+
+~/tfenv/bin/python report.py --d 5     -> runs/report_d5.csv, .md
+"""
 import argparse
 import csv
 import glob

@@ -1,10 +1,13 @@
 # Created: 2026-10-14
 # Last modified: 2026-10-14
-# Do fresh training shots repeat the shots of FORMAL [0, 10M)? Hashes every shot (detection
-# events + logical flip) and counts how many shots of one fresh chunk also occur in the block.
-# The same count for 100k pool shots from outside the block, [10M, 10.1M), is the chance level
-# (frequent syndromes, e.g. no detection events, occur in any sample).
-#   python check_fresh_vs_formal.py --pool <FORMAL.npz> --d 9 --p 0.003 --seed-base 1000000000000
+
+"""Do fresh training shots repeat the shots of FORMAL [0, 10M)?
+
+Counts how many shots of one fresh chunk also occur in the block. The same count for 100k pool
+shots from [10M, 10.1M) is the chance level (frequent syndromes occur in any sample).
+
+python check_fresh_vs_formal.py --pool <FORMAL.npz> --d 9 --p 0.003 --seed-base 1000000000000
+"""
 import argparse
 import json
 import os

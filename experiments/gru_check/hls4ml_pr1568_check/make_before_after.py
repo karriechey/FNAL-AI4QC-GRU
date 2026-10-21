@@ -1,17 +1,11 @@
 # Created: 2026-09-27
 # Last modified: 2026-09-27
-"""Before/after summary of hls4ml PR #1568 (Vivado GRU reset_after=False).
 
-Reads two runs of check_pr1568.py made on the same 10,000 evaluation-block shots with the
-same trained checkpoints and conversion settings, differing only in the installed hls4ml:
-  before  upstream hls4ml 1.3.0            (image qdec:tf215)
-  after   hls4ml PR #1568 @ e1721b3        (image qdec:tf215-hlsfix)
-and writes, next to this script:
-  BEFORE_AFTER.md                       tables (main comparison: one model, default tables)
-  before_after_decision_agreement.png   bar plot, 200 dpi (+ .pdf)
-Every value is read from the two report.json files; none is typed in.
+"""Before/after summary of hls4ml PR #1568 from two check_pr1568.py runs (1.3.0 vs PR @ e1721b3).
 
-    python make_before_after.py <before_run_dir> <after_run_dir>
+Writes BEFORE_AFTER.md and before_after_decision_agreement.png/.pdf; every value is read from report.json.
+
+python make_before_after.py <before_run_dir> <after_run_dir>
 """
 import json
 import os

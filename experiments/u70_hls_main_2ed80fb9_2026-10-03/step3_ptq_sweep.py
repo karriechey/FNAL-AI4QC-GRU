@@ -1,37 +1,15 @@
 # Created: 2026-10-03 | Last updated: 2026-10-03
-"""Step 3: post-training quantization (PTQ) bit-width sweep of the u70 GRU on hls4ml main
-2ed80fb9, C simulation only (no synthesis).
 
-1. Profile. Ranges on the evaluation block (all 1,800,000 shots):
-   - hls4ml.model.profiling.weights_keras / activations_keras (layer weights and layer outputs);
-   - the GRU's internal quantities, which hls4ml profiling cannot see, from a float64 numpy replay
-     of the Keras recurrence (reset_after=False), every timestep: input product x.W + b,
-     recurrent products h.U + b_r and (r*h).U_h + b_r, gate pre-activations, gate outputs,
-     candidate, state h and r*h, Dense output.
-   The integer bits of each hls4ml type are the smallest I with 2^(I-1) > max |value| (signed
-   ap_fixed, one sign bit), at least 1. Saved to results/step3_profiled_ranges.json.
+"""Post-training quantization bit-width sweep of the u70 GRU on hls4ml main 2ed80fb9, C-sim only.
 
-2. Sweep total width W in (24, 18, 16, 12, 10, 8). Every type of every layer gets
-   ap_fixed<W, I_type>, I_type from step 1 (granularity='name'). If I_type >= W the type keeps
-   one fractional bit and its integer part is cut ("capped"): those values can overflow.
-   Two rounding / overflow modes, both reported:
-     trn_wrap  hls4ml default (truncate, wrap around on overflow)
-     rnd_sat   round to nearest, saturate on overflow
-   For each width and mode: C simulation on all 1,800,000 shots, logical error rate against
-   FP32 Keras on identical shots, exact McNemar test (b = Keras right and HLS wrong,
-   c = HLS right and Keras wrong), and a per-layer trace (hls4ml Trace, 10,000 shots) of the GRU
-   output and the logit against Keras.
+1 profile  ranges on all 1.8M eval-block shots, from hls4ml profiling and a float64 numpy replay
+           of the GRU internals; integer bits I = smallest with 2^(I-1) > max |value|
+2 sweep    W in (24, 18, 16, 12, 10, 8), every type ap_fixed<W, I_type>, trn_wrap and rnd_sat;
+           LER vs FP32 Keras with exact McNemar, plus a per-layer trace
+3 limit    at the largest failing width, restore one type group at a time to find the limiting one
+Resource, ReuseFactor 35 (logits do not depend on the reuse factor).
 
-3. "Which type limits first": at the largest width that fails (McNemar p < 0.05), each type
-   group is put back to ap_fixed<32,16> one at a time (10,000-shot trace + 200,000-shot decision
-   flips against Keras); the group whose restoration removes most of the error is the limiting one.
-
-Not synthesized. Strategy Resource, ReuseFactor 35 (the arithmetic does not depend on the reuse
-factor: Step 1 logits are bit-identical for RF 35, 140 and the kernel-fixed RF 70).
-
-Usage (grace1):  ~/hls4ml_main_env/bin/python step3_ptq_sweep.py [--workers 48]
-Writes: results/step3_profiled_ranges.json, results/step3_ptq_<mode>_w<W>.json,
-        results/step3_ptq_table.csv, results/step3_ptq_table.md, results/step3_ablation_*.json
+~/hls4ml_main_env/bin/python step3_ptq_sweep.py [--workers 48]
 """
 import argparse
 import csv
@@ -68,14 +46,14 @@ pk = y_keras > 0
 
 
 def int_bits(maxabs):
-    """Smallest signed integer width I (incl. sign bit) with 2^(I-1) > maxabs, at least 1."""
+    # smallest signed width I (incl. sign bit) with 2^(I-1) > maxabs, at least 1
     return max(1, math.floor(math.log2(maxabs)) + 2) if maxabs > 0 else 1
 
 
 # ---- 1. profile ---------------------------------------------------------------------------
 def gru_internal_ranges(model, x, chunk=100000):
-    """float64 replay of the Keras GRU (reset_after=False, gate order z, r, h) on every
-    timestep; returns max |value| of each quantity the hls4ml kernel stores."""
+    # float64 replay of the Keras GRU (reset_after=False, gates z, r, h); max |value| of each
+    # quantity the hls4ml kernel stores
     W, Uw, b = [w.astype(np.float64) for w in model.get_layer('gru').get_weights()]
     wd, bd = [w.astype(np.float64) for w in model.get_layer('logit').get_weights()]
     n = Uw.shape[0]
@@ -114,8 +92,7 @@ from hls4ml.model import profiling as P
 clean = lambda rows: [{k: (float(v) if isinstance(v, (int, float, np.floating)) else str(v)) for k, v in row.items()}
                       for row in rows]
 prof_hls4ml = {}
-# hls4ml main 2ed80fb9: weights_keras raises IndexError on a GRU layer (three weight arrays, its
-# label list has two entries); the error is recorded and the weight ranges come from the arrays.
+# weights_keras raises IndexError on a GRU layer on 2ed80fb9; weight ranges come from the arrays
 for key, fn in (('weights_keras', lambda: P.weights_keras(model, fmt='summary', plot='boxplot')),
                 ('activations_keras_first200000', lambda: P.activations_keras(model, x[:200000], fmt='summary', plot='boxplot'))):
     try:
@@ -211,8 +188,7 @@ def csim_all(hm, n):
     return y
 
 
-# Reference layer outputs from Keras sub-models. hls4ml's get_ymodel_keras cannot be used here:
-# on main 2ed80fb9 it tries to assign GRU.activation, a read-only property in Keras 2.15.
+# reference outputs from Keras sub-models (get_ymodel_keras fails on GRU in Keras 2.15)
 import tensorflow as tf
 keras_trace = {n: tf.keras.Model(model.input, model.get_layer(n).output).predict(x[:TRACE_N], batch_size=10000, verbose=0)
                for n in ('gru', 'logit')}

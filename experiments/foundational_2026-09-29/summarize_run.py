@@ -1,14 +1,12 @@
 # Created: 2026-09-29
-# Last modified: 2026-09-30 (clip_frac_cum and n_clipped when the run logged gradient norms). Earlier 2026-09-29 (GPU peak from the run's own process: first new GPU process after the run's start; resumed runs report the resumed segment's runtime)
+# Last modified: 2026-09-30 (clip_frac_cum and n_clipped when the run logged gradient norms).
+# Earlier 2026-09-29 (GPU peak from the run's own process: first new GPU process after the run's start; resumed runs report the resumed segment's runtime)
+
 """One-run summary for the foundational queue, printed as JSON.
 
-    python summarize_run.py <run folder> <resources.tsv> <container name> [<gpu pid>...]
+Memory peaks come from the driver's 30-second samples in resources.tsv, so they are lower bounds.
 
-Reads <run>/seed0: eval_best_ckpt.csv (GRU and MWPM logical error rates on the evaluation
-block), ckpt/*.best.json (chosen epoch), runs/*.history.json (losses per epoch), run.log
-(parameter count, start/end time). Peak host memory of the container and peak GPU memory
-of its process come from the driver's 30-second samples in resources.tsv, so they are
-lower bounds on the true peaks.
+python summarize_run.py <run folder> <resources.tsv> <container name> [<gpu pid>...]
 """
 import csv
 import datetime as dt
@@ -31,12 +29,8 @@ b = int(best['best_epoch']) - 1                       # 0-indexed row of the cho
 t = re.findall(r'^(\S+Z) (start|end)$', log, re.M)
 times = {k: dt.datetime.strptime(v, '%Y-%m-%dT%H:%M:%SZ') for v, k in t}
 
-# Peaks from the driver's samples. Host: the container's memory. GPU: the run's own
-# processes, taken in this order of preference:
-#   1. 'container_hpids' lines in resources.tsv (host process ids of the container, recorded
-#      by drivers from 2026-09-29 ~18:30Z on);
-#   2. process ids given on the command line (for runs sampled before that);
-#   3. otherwise none (peak_gpu_mib 0, gpu_pid_source 'unknown').
+# GPU peak from the run's own processes: 'container_hpids' lines in resources.tsv, else pids
+# from the command line, else none (gpu_pid_source 'unknown')
 start, end = t[0][0], t[-1][0]
 host = 0.0
 unit = {'kB': 1e-6, 'MB': 1e-3, 'GB': 1.0}
@@ -76,8 +70,7 @@ out = dict(
     start=start, end=end,
     runtime_h=round((times['end'] - times['start']).total_seconds() / 3600, 2),
     peak_host_gb=round(host, 1), peak_gpu_mib=gpu, gpu_pid=gpu_pid, gpu_pid_source=src)
-# Clipping, for runs with --global-clipnorm / --log-grad-norm: cumulative fraction of
-# updates clipped (history) and the counts (<tag>.grad_norms.json).
+# clipping stats, for runs with --global-clipnorm / --log-grad-norm
 if 'clip_frac_cum' in hist:
     out['clip_frac_cum'] = round(float(hist['clip_frac_cum'][-1]), 6)
 gj = glob.glob(os.path.join(sd, 'runs', '*.grad_norms.json'))

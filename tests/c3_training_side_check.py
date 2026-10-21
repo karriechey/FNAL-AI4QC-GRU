@@ -1,23 +1,14 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
-"""C3: training-side check of reset_after=True vs False on the GH200.
 
-Run inside the qdec:tf215 image with the launcher's determinism variables:
+"""C3: reset_after True vs False on the GH200.
 
-    podman run ... --device nvidia.com/gpu=all -e TF_DETERMINISTIC_OPS=1 \
-        -e TF_CUDNN_DETERMINISTIC=1 qdec:tf215 python3 tests/c3_training_side_check.py --out <dir>
+1 parameter counts (u140 at d=5/7/9, u280 at d=9)
+2 at d=7 u140: whether the cuDNN kernel runs, steps/s, bit-identical repeat runs
+3 QGRU with reset_after=True runs; the reset_after=False quantized path still runs
 
-Reports:
-  1 parameter counts for GRU(u) -> Dense(1) with reset_after True and False
-    (u140 at d=5/7/9, and u280 at d=9)
-  2 at d=7, batch 10,000, u140, for each reset_after setting:
-      - whether the cuDNN GRU kernel actually runs: a TensorFlow profiler trace of three
-        training steps is searched for the CudnnRNN op
-      - steps/s over two timed epochs of 50 steps (real d=7 training-block shots)
-      - whether two identical 20-step trainings (same seed) give bit-identical weights
-  3 QKeras QGRU with reset_after=True builds and runs a forward pass (8-bit weights),
-    and the existing reset_after=False quantized path (build_gru_student) still runs with
-    the repo's nest.is_sequence shim.
+podman run ... --device nvidia.com/gpu=all -e TF_DETERMINISTIC_OPS=1 \
+    -e TF_CUDNN_DETERMINISTIC=1 qdec:tf215 python3 tests/c3_training_side_check.py --out <dir>
 """
 import argparse
 import glob

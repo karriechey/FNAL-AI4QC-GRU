@@ -1,18 +1,13 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
-"""A6 environment check. Run once in each grace1 environment:
 
-    ~/tfenv/bin/python tests/a6_env_check.py --env tfenv            # CPU venv
-    podman run ... qdec:tf215 python3 tests/a6_env_check.py --env qdec-tf215   # GPU image
+"""A6: environment check for one grace1 environment.
 
-Reports CPU architecture and core count, GPU and memory, CUDA, and the installed versions
-of Python, numpy, stim, pymatching, sinter, tensorflow, qkeras, hls4ml and pyyaml. A
-package that is missing or fails to import is reported, not fatal: the point is to see
-what works on ARM. Then it checks that stim + pymatching decode a d=3, r=3, p=0.004
-rotated memory circuit (built with this repo's circuit builder) and that the logical error
-rate is sane, and whether TensorFlow sees the GPU.
+Reports CPU, GPU, CUDA and package versions, decodes a d=3 circuit with stim + pymatching, and
+checks TensorFlow sees the GPU. Writes experiments/a6_env/<UTC stamp>_<env>.json.
 
-Writes experiments/a6_env/<UTC stamp>_<env>.json and prints one line per item.
+~/tfenv/bin/python tests/a6_env_check.py --env tfenv
+podman run ... qdec:tf215 python3 tests/a6_env_check.py --env qdec-tf215
 """
 import argparse
 import datetime
@@ -64,7 +59,7 @@ def main():
         except Exception as exc:
             rep['packages'][dist] = f'{ver} IMPORT FAILED: {type(exc).__name__}: {exc}'
 
-    # stim + pymatching decode a d=3 circuit with the repo's builder.
+    # stim + pymatching on a d=3 circuit
     try:
         import numpy as np
         import pymatching

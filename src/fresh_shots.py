@@ -1,35 +1,10 @@
 # Created: 2026-10-09
 # Last modified: 2026-10-18 (check_seeds: base must be registered in partitions.yaml)
-"""Fresh training shots: a new Stim sample for every training batch, so no shot is seen twice.
+"""Fresh training shots: a new Stim sample for every batch.
 
-Why: at d9 the stacked GRUs fit their 100M training shots far better than new shots
-(9-S, 2 x u280: 0.78x MWPM on a slice of its own training shots, 1.62x on the evaluation
-block). With a new sample every epoch the model cannot memorise shots, and the amount of
-training data is limited only by the number of epochs.
-
-The shots come from the same circuit as every pool (circuit_generators.build_circuit:
-rotated memory-Z, rounds = d, all four noise channels = p). They are sampled with Stim's
-detector sampler, which gives the detection events and the logical flip of each shot
-directly; the pools went through measurements and the measurement-to-detector converter,
-which gives the same distribution (tests/fresh_shots_test.py compares the rates).
-
-Seeds. Shots are sampled in chunks of `chunk` shots; chunk c of epoch e uses the Stim seed
-    seed_base + e * SEED_EPOCH_STRIDE + c
-so every chunk of every epoch is a separate stream, and a run restarted at epoch e draws
-the same shots it would have drawn uninterrupted. seed_base defaults to 10**12, far above
-every pool seed in configs/partitions.yaml; check_seeds() refuses a run if any pool or
-held-out seed falls inside the range this run uses. Validation, evaluation and sealed
-blocks are still read from the FORMAL pool; fresh shots replace only the training array.
-
-Stim's output for a seed is fixed for one Stim version on one machine architecture (the
-pools are the same: stim-pools-not-arch-portable), so a run is reproducible on grace1.
-
-Workers are separate processes (multiprocessing 'spawn', so none inherits TensorFlow's
-state) that import only numpy and stim. Chunks come back in submission order, so the batch
-order is deterministic. At most `in_flight` chunks are requested ahead of the one being
-consumed: the workers sample several times faster than the GPU trains, and without that
-limit the sampled chunks pile up in host memory (first full run, 2026-10-09: about 40 GB
-within minutes, on the way to a whole 100M-shot epoch, 80 GB).
+Same circuit as the pools (circuit_generators.build_circuit). Chunk c of epoch e uses seed
+seed_base + e * SEED_EPOCH_STRIDE + c, so a resumed run draws the same shots. Validation and
+scored blocks come from the FORMAL pool.
 """
 import multiprocessing as mp
 
@@ -49,9 +24,7 @@ def _init(d, p, rounds, index_map):
 
 
 def _scatter(det, index_map):
-    """Flat detection events [n, n_det] -> [n, n_timesteps, n_positions] uint8, zero where a
-    position is not measured at that timestep. Same layout as StudentModels.to_sequence,
-    which returns float32; uint8 here because the values are 0/1 (tests check equality)."""
+    # [n, n_det] -> [n, n_timesteps, n_positions] uint8, same layout as StudentModels.to_sequence.
     n_t, n_pos = index_map.shape
     out = np.zeros((det.shape[0], n_t, n_pos), dtype=np.uint8)
     for t in range(n_t):
@@ -62,7 +35,7 @@ def _scatter(det, index_map):
 
 
 def _sample(task):
-    """One chunk: (seed, n) -> (x uint8 [n, T, P], flips float32 [n])."""
+    # (seed, n) -> (x uint8 [n, T, P], flips float32 [n]).
     seed, n = task
     sampler = _W['circ'].compile_detector_sampler(seed=int(seed))
     det, obs = sampler.sample(int(n), separate_observables=True)
@@ -74,13 +47,11 @@ def chunk_seed(epoch, chunk, seed_base=SEED_BASE):
 
 
 def seed_range(epochs, chunks_per_epoch, seed_base=SEED_BASE):
-    """[lo, hi) of every Stim seed a run of `epochs` epochs uses."""
     return seed_base, seed_base + (epochs - 1) * SEED_EPOCH_STRIDE + chunks_per_epoch
 
 
 def check_seeds(epochs, chunks_per_epoch, seed_base=SEED_BASE):
-    """Stop if any seed in configs/partitions.yaml (pools, held-out blocks, seeds used
-    elsewhere) lies in the range this run would sample from."""
+    # Refuse seeds that overlap configs/partitions.yaml or an unregistered seed base.
     import partitions as P
     if chunks_per_epoch >= SEED_EPOCH_STRIDE:
         raise ValueError(f'{chunks_per_epoch} chunks per epoch >= stride {SEED_EPOCH_STRIDE}')
@@ -99,12 +70,7 @@ def check_seeds(epochs, chunks_per_epoch, seed_base=SEED_BASE):
 
 
 class FreshShots:
-    """Batches of new shots, epoch by epoch.
-
-    batches(epoch) yields (x uint8 [batch, T, P], y float32 [batch, 2]) for
-    shots_per_epoch shots; y[:, 0] is the logical flip and y[:, 1] the teacher-logit column
-    of the training loss, zero (hard labels only, alpha = 1).
-    """
+    # y[:, 0] is the logical flip, y[:, 1] the teacher-logit column (zero here).
 
     def __init__(self, d, p, rounds, shots_per_epoch, batch_size, chunk=100_000,
                  workers=16, seed_base=SEED_BASE, in_flight=None):
@@ -142,9 +108,7 @@ class FreshShots:
                 yield x[a:a + self.batch_size], y[a:a + self.batch_size]
 
     def dataset(self, tf, first_epoch=0, to_gpu=True):
-        """tf.data over the batches. Keras opens one iterator per epoch, and each new
-        iterator samples the next epoch; first_epoch is the epoch the first iterator samples
-        (the --initial-epoch of a resumed run)."""
+        #first_epoch: the --initial-epoch of a resumed run.
         state = {'epoch': first_epoch}
         T, P = self.shape
 

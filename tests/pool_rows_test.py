@@ -1,27 +1,16 @@
 #!/usr/bin/env python3
 # Created: 2026-10-06
 # Last modified: 2026-10-06
-"""Row-range pool reading (src/pool_rows.py): same data as before, and nothing outside the
-requested blocks is read. CPU only, small pools.
 
-Pools (built by the caller in --pool-dir): a primary pool of 80,000 shots whose rows
-[60,000, 80,000) stand in for a sealed block; a full-format and a compact training-only
-pool of 30,000 shots each.
+"""Row-range pool reading (src/pool_rows.py): same results as before, and no row outside the requested blocks is read.
 
-Checks
-  1 pool_rows.rows / n_rows / scalar equal np.load slicing, for an uncompressed and a
-    compressed copy (no TensorFlow).
-  2 train_student.py, code before the change (--base-ref) vs now, same arguments:
-    train [0, 40,000) + 20,000 full-format + 20,000 compact extension shots, validation
-    [40,000, 50,000), scored [50,000, 60,000). Per-epoch loss, val_loss, val p_L (val_ler)
-    and the scored p_L must be identical (identical losses mean identical batches).
-  3 eval_student_on_tail.py and mwpm_on_block.py, before vs now, on [50,000, 60,000):
-    identical p_L, MWPM p_L and McNemar counts.
-  4 With POOL_ROWS_TRACE, every row range read by the new code in 2 and 3 lies inside
-    the requested blocks; in particular no row >= 60,000 of the primary pool is read.
+1 rows / n_rows / scalar match np.load slicing (stored and compressed)
+2 train_student.py before (--base-ref) and now: identical losses and scored p_L
+3 eval_student_on_tail.py and mwpm_on_block.py before and now: identical results
+4 with POOL_ROWS_TRACE, every read lies inside the requested blocks
 
-    python3 tests/pool_rows_test.py --py <python with TF 2.15> --pool-dir <dir> \\
-        --base-ref 90724d4 --out <dir>
+python3 tests/pool_rows_test.py --py <python with TF 2.15> --pool-dir <dir> \
+    --base-ref 90724d4 --out <dir>
 """
 import argparse
 import csv

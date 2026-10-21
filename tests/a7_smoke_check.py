@@ -1,20 +1,13 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
-"""A7 smoke-test checks on one finished seed directory from gh200_run_student_scaling.sh.
 
-    python tests/a7_smoke_check.py <OUT>/seed0
+"""A7: smoke checks on one finished seed directory from gh200_run_student_scaling.sh.
 
-Checks, each printed PASS/FAIL:
-  loss_decreases     training loss at the last epoch is below the first epoch
-  val_logged         val_loss, val_ler and val_errors are in the history for every epoch
-  best_json          <tag>.best.json exists and names the epoch with the fewest val errors
-                     (tiebreak lowest val_loss), recomputed here from the history
-  keras_reload       the full .best.keras model loads without the model-building code and
-                     gives identical logits to build_gru_student + .best.weights.h5, on
-                     10,000 validation-block shots
-  eval_report        eval_best_ckpt.csv has GRU LER, MWPM LER and McNemar b / c
+loss_decreases, val_logged, best_json (recomputed from the history), keras_reload
+(.best.keras gives the same logits as the rebuilt model + .best.weights.h5), eval_report.
+Validation-block shots only.
 
-Only validation-block shots are used here; the evaluation CSV is read, not recomputed.
+python tests/a7_smoke_check.py <OUT>/seed0
 """
 import csv
 import glob

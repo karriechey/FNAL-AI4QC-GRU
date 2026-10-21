@@ -1,36 +1,21 @@
 #!/usr/bin/env python3
 # Created: 2026-10-09
-# Last modified: 2026-10-18 (check 9). Earlier 2026-10-11 (checks 7 and 8: fresh-shot distillation)
-"""Checks of the fresh-shot training input (src/fresh_shots.py,
-train_student.py --fresh-shots-per-epoch). CPU only.
+# Last modified: 2026-10-18 (check 9).
+# Earlier 2026-10-11 (checks 7 and 8: fresh-shot distillation)
 
-  1 layout         fresh_shots._scatter equals StudentModels.to_sequence on the same
-                   detection events.
-  2 distribution   the detector sampler (fresh shots) and the pools' sampler
-                   (generate_pools.sample_pool: measurements, then the converter) give the
-                   same logical-flip rate and per-detector rates, d5 p 0.004, 1M shots each:
-                   largest |z| over the 120 detectors and the flip rate below 5.
-  3 seeds          the same epoch gives the same batches twice; two epochs share no chunk
-                   seed and give different batches; check_seeds refuses a range holding a
-                   pool seed.
-  4 keras epochs   model.fit over FreshShots.dataset samples epochs 0, 1, 2 in order, one per
-                   fit epoch; first_epoch=2 starts at epoch 2 with the same batches.
-  6 bounded        with a slow consumer, never more than in_flight chunks are requested
-                   ahead of the one consumed (an unbounded queue held ~40 GB in the first
-                   full run).
-  5 train_student  --fresh-shots-per-epoch runs end to end (2 epochs), twice with identical
-                   per-epoch losses, writes fresh_shots = shots x epochs in its CSV, and is
-                   refused with --n-train > 0 or with a teacher cache.
-  7 teacher step   a student whose training step fills the teacher column
-                   (train_student.attach_teacher_to_train_step) takes exactly the update of
-                   a copy trained on the same batch with the teacher's logits given
-                   explicitly; the student's weights do not include the teacher's.
-  8 distill run    train_student.py --fresh-shots-per-epoch --teacher-model (the model of
-                   check 5) --alpha 0 runs end to end and logs the per-batch teacher.
-  9 teacher weights rebuilt teacher matches .best.keras; --teacher-weights run with per-epoch
-                   saves; wrong --teacher-params and unregistered seed bases refused.
+"""Checks of the fresh-shot training input (src/fresh_shots.py, --fresh-shots-per-epoch). CPU only.
 
-    python3 tests/fresh_shots_test.py --py <python with TF 2.15> --pool-dir <dir> --out <dir>
+1 layout          _scatter matches StudentModels.to_sequence
+2 distribution    detector sampler vs pool sampler: flip and per-detector rates agree
+3 seeds           same epoch repeats, epochs differ, check_seeds refuses pool seeds
+4 keras epochs    fit samples epochs in order; first_epoch resumes correctly
+5 train_student   runs end to end twice with identical losses; bad flag combinations refused
+6 bounded         at most in_flight chunks requested ahead
+7 teacher step    teacher logits filled in the training step give the same update
+8 distill run     --fresh-shots-per-epoch --teacher-model --alpha 0 runs end to end
+9 teacher weights rebuilt teacher matches .best.keras; bad params and seed bases refused
+
+python3 tests/fresh_shots_test.py --py <python with TF 2.15> --pool-dir <dir> --out <dir>
 """
 import argparse
 import csv

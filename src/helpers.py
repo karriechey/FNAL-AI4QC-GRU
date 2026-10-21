@@ -1,27 +1,13 @@
 # Created: 2026-09-25
-# Last modified: 2026-10-03 (warmup_cosine_lr_schedule: linear warmup before the cosine; EMA: make_adam_logging_grad_norm passes Adam options through, make_val_ler_checkpoint scores and saves the EMA weights when given the optimizer). Earlier 2026-09-29 (make_val_ler_checkpoint: previous_best for resumed runs). Earlier 2026-09-27 (cosine_lr_schedule, make_adam_logging_grad_norm)
-"""Small shared helpers for the GRU pipeline.
+# Last modified: 2026-10-03 (warmup_cosine_lr_schedule: linear warmup before the cosine; EMA: make_adam_logging_grad_norm passes Adam options through, make_val_ler_checkpoint scores and saves the EMA weights when given the optimizer).
+# Earlier 2026-09-29 (make_val_ler_checkpoint: previous_best for resumed runs).
+# Earlier 2026-09-27 (cosine_lr_schedule, make_adam_logging_grad_norm)
 
-The first four functions are moved verbatim from the old repo's RCNN files so that no RCNN
-code has to come across with them:
+"""Shared helpers for the GRU pipeline.
 
-  set_seeds, learning_rate_scheduler (+ LR_FLOOR), lookup_mwpm
-      from FNAL-QCDecoding-FPGA/train_one.py @ d5ee86f
-  mcnemar_from_correct
-      from FNAL-QCDecoding-FPGA/eval_on_tail.py @ d5ee86f
-  assert_deterministic_env (+ REQUIRED_ENV)
-      from FNAL-QCDecoding-FPGA/slice_guard_r5.py @ d5ee86f (the rest of that file,
-      including its separate r5 partition layout, is not carried over)
-
-Their bodies are unchanged; tests/ proves they give the same results as the originals.
-(eval_on_tail.py has its own copy of lookup_mwpm with an identical body; the train_one.py
-copy is the one train_student.py used, so that is the one kept here.)
-
-make_val_ler_checkpoint is new. It implements the checkpoint rule for every training run:
-score the validation block once per epoch, log val LER next to val loss, and keep the
-epoch with the lowest val LER (fewest logical errors), breaking ties by the lower val loss.
-The kept model is saved both as a full .keras file (graph + weights, loads without the
-model-building code) and as .weights.h5 (what the existing eval scripts load).
+set_seeds, learning_rate_scheduler, lookup_mwpm, mcnemar_from_correct and
+assert_deterministic_env are copied unchanged from FNAL-QCDecoding-FPGA @ d5ee86f
+(source file noted above each); tests/ checks they give the same results.
 """
 import csv
 import json
@@ -45,8 +31,7 @@ def set_seeds(seed):
 
 
 def learning_rate_scheduler(epoch, lr):
-    """the reference architecture's schedule (surface_code_d5_r3_RCNN.ipynb): high at epoch 0 to move the
-    slow-start zero-init state correlator, then decay."""
+    # reference schedule (surface_code_d5_r3_RCNN.ipynb): high at epoch 0, then decay
     if epoch < 10:
         sched = 0.001 * (10 - epoch)
     elif epoch < 20:
@@ -59,31 +44,16 @@ def learning_rate_scheduler(epoch, lr):
 
 
 def cosine_lr_schedule(tf, lr_start, lr_end, total_steps):
-    """Cosine decay of the learning rate from lr_start to lr_end over total_steps optimizer
-    updates, no warmup, updated every step (not every epoch):
-
-        lr(step) = lr_end + (lr_start - lr_end) * 0.5 * (1 + cos(pi * step / total_steps))
-
-    Keras' CosineDecay computes exactly this when alpha = lr_end / lr_start (its alpha is
-    the final rate as a fraction of the initial one). Steps past total_steps stay at lr_end.
-    Added for the 50M runs, whose training loss rose late in training at a constant 3e-3.
-    """
+    # Per-step cosine decay lr_start -> lr_end over total_steps, no warmup.
+    # Keras CosineDecay with alpha = lr_end / lr_start; stays at lr_end after total_steps.
     return tf.keras.optimizers.schedules.CosineDecay(
         initial_learning_rate=lr_start, decay_steps=int(total_steps),
         alpha=lr_end / lr_start)
 
 
 def warmup_cosine_lr_schedule(tf, lr_start, lr_end, total_steps, warmup_steps):
-    """Linear warmup over the first warmup_steps updates, then the cosine of
-    cosine_lr_schedule from lr_start to lr_end over the remaining updates:
-
-        step <  W : lr = lr_start * (step + 1) / W
-        step >= W : lr = cosine(step - W), over total_steps - W updates
-
-    warmup_steps = 0 returns cosine_lr_schedule itself, so a run without warmup is the
-    same object as before. Registered as a Keras serializable, so a model saved with this
-    schedule in its optimizer (.best.keras) can be saved.
-    """
+    # Linear warmup over warmup_steps, then cosine_lr_schedule over the remaining steps.
+    # warmup_steps = 0 returns cosine_lr_schedule unchanged.
     if not warmup_steps:
         return cosine_lr_schedule(tf, lr_start, lr_end, total_steps)
     w = int(warmup_steps)
@@ -106,30 +76,17 @@ def warmup_cosine_lr_schedule(tf, lr_start, lr_end, total_steps, warmup_steps):
 
 
 def make_adam_logging_grad_norm(tf, learning_rate, global_clipnorm, n_steps_total, **adam_kw):
-    """Adam that records the global gradient norm of every update, before clipping.
-
-    The global norm is sqrt(sum over all weight tensors of sum(g**2)), the quantity Keras'
-    global_clipnorm compares with its threshold: if it exceeds global_clipnorm, every
-    gradient is scaled by global_clipnorm / norm (tf.clip_by_global_norm). With
-    global_clipnorm=None nothing is clipped and the norms are only recorded.
-
-    Returns (optimizer, stats). stats holds tf.Variables, kept outside the optimizer so they
-    are never saved with it:
-      norms      float32 (n_steps_total,)  norm of update i at index i (updates past
-                                          n_steps_total are counted but not stored)
-      n_updates  int64  updates so far
-      n_clipped  int64  updates whose norm exceeded global_clipnorm
-
-    adam_kw: further Adam arguments, e.g. use_ema=True, ema_momentum=0.999.
-    """
+    # Adam that records the global gradient norm of every update, before clipping.
+    # Returns (optimizer, stats); stats = norms (n_steps_total,), n_updates, n_clipped,
+    # kept outside the optimizer so they are not saved with it.
+    # adam_kw: extra Adam arguments, e.g. use_ema=True, ema_momentum=0.999.
     stats = dict(norms=tf.Variable(tf.zeros([int(n_steps_total)], tf.float32), trainable=False),
                  n_updates=tf.Variable(0, dtype=tf.int64, trainable=False),
                  n_clipped=tf.Variable(0, dtype=tf.int64, trainable=False))
     size = int(n_steps_total)
 
     class AdamLoggingGradNorm(tf.keras.optimizers.Adam):
-        # Keras 2.15 calls _clip_gradients(grads) once per update inside apply_gradients,
-        # before the Adam step; the norm is taken here on the unclipped gradients.
+        # Keras 2.15 calls this once per update, before the Adam step, on unclipped gradients
         def _clip_gradients(self, grads):
             norm = tf.linalg.global_norm([g for g in grads if g is not None])
             i = tf.cast(stats['n_updates'], tf.int32)
@@ -146,12 +103,8 @@ def make_adam_logging_grad_norm(tf, learning_rate, global_clipnorm, n_steps_tota
 
 
 def lookup_mwpm(data_dir, d, p, rounds):
-    """Read the canonical once-per-(d,p,rounds) MWPM p_L, so the result row carries the
-    target the RCNN is chasing. Returns None if unavailable.
-
-    NOTE: matches on rounds too. The same (d,p) can have multiple pools at different
-    rounds (e.g. d5/p0.010 exists at BOTH r5=0.0891 and r3~0.048); matching on (d,p)
-    alone silently attaches the wrong-rounds MWPM to a run."""
+    # MWPM p_L for (d, p, rounds), or None. Matches on rounds too: the same (d, p) can
+    # have pools at different rounds.
     path = os.path.join(data_dir, "mwpm_baseline.csv")
     if not os.path.exists(path):
         return None
@@ -166,9 +119,8 @@ def lookup_mwpm(data_dir, d, p, rounds):
 # from FNAL-QCDecoding-FPGA/eval_on_tail.py @ d5ee86f
 # ---------------------------------------------------------------------------------------
 def mcnemar_from_correct(rcnn_correct, mwpm_correct):
-    """Paired 2x2 + McNemar from per-shot boolean correctness arrays.
-    Returns dict with the four raw counts and the test stats. b = RCNN-only-correct
-    (RCNN wins the shot), c = MWPM-only-correct (MWPM wins)."""
+    # Paired 2x2 + McNemar from per-shot correctness.
+    # b = RCNN right / MWPM wrong, c = MWPM right / RCNN wrong.
     rc = np.asarray(rcnn_correct, dtype=bool)
     mc = np.asarray(mwpm_correct, dtype=bool)
     both_right = int((rc & mc).sum())
@@ -210,13 +162,8 @@ REQUIRED_ENV = {'TF_DETERMINISTIC_OPS': '1', 'TF_CUDNN_DETERMINISTIC': '1'}
 
 
 def assert_deterministic_env():
-    """Fail unless the launcher exported the determinism variables BEFORE this process.
-
-    Must be called before `import tensorflow`. TensorFlow reads both variables during its
-    own import, so a script that sets them afterwards gets no determinism and no warning.
-    This function refuses to set them itself for exactly that reason: if they are missing,
-    the process was started wrong and cannot be repaired in place.
-    """
+    # The launcher must export the determinism variables: TensorFlow reads them during its
+    # own import, so setting them here would be too late. Call before `import tensorflow`.
     if 'tensorflow' in sys.modules:
         raise AssertionError(
             "assert_deterministic_env() was called after TensorFlow was already imported. "
@@ -236,39 +183,16 @@ def assert_deterministic_env():
 
 
 # ---------------------------------------------------------------------------------------
-# New: checkpoint selection by validation LER
+# checkpoint selection by validation LER
 # ---------------------------------------------------------------------------------------
 def make_val_ler_checkpoint(tf, x_val, flips_val, ckpt_prefix, batch_size, log_prefix='',
                             previous_best=None, ema_optimizer=None):
-    """Build a Keras callback that selects the checkpoint by validation LER.
-
-    Every epoch it predicts the whole validation block, counts logical errors with the
-    student decision rule (logit > 0 means "flip", the same threshold as
-    StudentModels.student_pred_and_correct), and adds `val_ler` and `val_errors` to the
-    epoch logs, so they land in the Keras history next to `val_loss`.
-
-    Selection: fewest validation errors wins (errors are integers, so there is no
-    floating-point tie ambiguity); on an exact tie the lower val_loss wins. When an epoch
-    becomes the new best it writes
-
-        <ckpt_prefix>.best.keras        full model (graph + weights)
-        <ckpt_prefix>.best.weights.h5   weights only, for the existing eval scripts
-        <ckpt_prefix>.best.json         chosen epoch, val LER, error count, val size, val loss
-
-    previous_best: the .best.json of the run being resumed. The callback then starts from
-    that best (errors, val_loss, epoch), so a resumed epoch replaces the saved checkpoint
-    only if it is better, exactly as in an uninterrupted run.
-
-    The callback must be given the validation block only. It never sees the evaluation
-    block or the sealed partition; the caller chooses the arrays.
-
-    ema_optimizer: an Adam built with use_ema=True. The callback then copies the moving
-    average of every trainable weight into the model, scores and (when best) saves those
-    weights, and puts the raw weights back before the next epoch, so the checkpoint, the
-    selection and the reported val_ler are all the EMA weights'. Keras' own val_loss is from
-    the raw weights; the EMA weights' loss is computed here from their logits (hard-label
-    binary cross-entropy, so alpha = 1 only) as val_loss_ema and used for the tiebreak.
-    """
+    # Keras callback: each epoch, score the validation block (logit > 0 = flip), add val_ler
+    # and val_errors to the logs, and keep the epoch with the fewest errors (tiebreak val_loss).
+    # Saves <ckpt_prefix>.best.keras, .best.weights.h5, .best.json.
+    # previous_best: .best.json of a resumed run, so selection continues from it.
+    # ema_optimizer: Adam with use_ema=True; the EMA weights are scored and saved, and their
+    # loss (hard-label BCE, alpha = 1 only) is used as val_loss_ema for the tiebreak.
     flips_val = np.asarray(flips_val).reshape(-1).astype(np.int8)
     n_val = int(flips_val.shape[0])
 
@@ -302,13 +226,12 @@ def make_val_ler_checkpoint(tf, x_val, flips_val, ckpt_prefix, batch_size, log_p
             n_err = int((pred != flips_val).sum())
             ler = n_err / n_val
             if ema_optimizer is not None:
-                # binary cross-entropy on logits: softplus(z) - y z, averaged
+                # BCE on logits: softplus(z) - y z
                 val_loss = float(np.mean(np.logaddexp(0.0, z) - flips_val * z))
                 logs['val_loss_ema'] = val_loss
             else:
                 val_loss = float(logs.get('val_loss', float('nan')))
-            # Written into logs so Keras' History (which runs after user callbacks)
-            # records them per epoch alongside loss and val_loss.
+            # in logs so Keras' History records them per epoch
             logs['val_ler'] = ler
             logs['val_errors'] = n_err
 

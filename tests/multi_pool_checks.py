@@ -1,18 +1,14 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
-"""Checks for several --extra-train-pool files in train_student.py (the d=7 50M run).
 
-    python tests/multi_pool_checks.py order --out <dir>
-    python tests/multi_pool_checks.py dupe  --out <dir>
+"""Checks for several --extra-train-pool files in train_student.py. CPU only.
 
-order  Tiny d=7 run with FORMAL train [0, 20,000) + seed-43 [0, 5,000) + seed-44 [0, 3,000).
-       The training arrays handed to host_data.make_dataset are captured (then the run is
-       stopped) and compared row by row with the expected concatenation, built here straight
-       from the pools: labels (flips) and scattered inputs, in the order FORMAL, 43, 44.
-       Also checks the row count equals the sum of the counts.
-dupe   The same seed twice must be refused: (i) the seed-43 file listed twice; (ii) a
-       differently named link to the seed-43 file (same gen_seed, different path).
-Both run on the CPU (--cpu), so they need no GPU memory.
+order  FORMAL [0, 20k) + seed 43 [0, 5k) + seed 44 [0, 3k): the training arrays match the
+       expected concatenation row by row
+dupe   the same seed twice is refused (same file twice, or a link to it)
+
+python tests/multi_pool_checks.py order --out <dir>
+python tests/multi_pool_checks.py dupe  --out <dir>
 """
 import json
 import os
@@ -83,7 +79,7 @@ def order(out):
     n_ok = got['x'].shape[0] == sum(counts) == got['y'].shape[0]
     f_ok = np.array_equal(got['y'][:, 0].astype(np.int8), exp_f.astype(np.int8))
     x_ok = np.array_equal(got['x'], exp_x)
-    # Row boundaries: each segment must match its own pool, not just the whole.
+    # each segment must match its own pool
     b = np.cumsum((0,) + counts)
     seg_ok = all(np.array_equal(got['x'][b[i]:b[i + 1]], exp_x[b[i]:b[i + 1]]) for i in range(3))
     ok = n_ok and f_ok and x_ok and seg_ok

@@ -1,21 +1,14 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
-"""Stage 0: MWPM logical error rate vs physical error rate, for the threshold.
 
-Uses the repo's one circuit builder (circuit_generators.build_circuit: Stim rotated
-surface-code Z memory, all four noise channels = p, rounds = d), so the threshold is the
-threshold of exactly the noise model every GRU result is measured on. Each task hands
-sinter the same decomposed detector error model that mwpm_on_block.py / eval_student_on_tail.py
-build, so the decoder here is the same MWPM as the paired baselines.
+"""MWPM logical error rate vs physical error rate, for the threshold.
 
-Shots are fresh sinter samples (random seeds), independent of the FORMAL pools. Nothing
-here reads a pool, so the val, eval and sealed blocks are untouched.
+Same circuit and decoder as every paired MWPM baseline (circuit_generators.build_circuit).
+Fresh sinter samples; no pool is read. Stops per (d, p) at 1,000 errors or 10M shots, and
+can resume from the CSV.
 
-Stopping rule per (d, p): 1,000 logical errors or 10,000,000 shots, whichever comes first.
-Results stream to a CSV that sinter can resume from if the run is interrupted.
-
-    python threshold_sweep.py --out <dir>/stats.csv --workers 64
-    python threshold_sweep.py --out <dir>/timing.csv --max-shots 100000 --max-errors 1000000000  # timing run
+python threshold_sweep.py --out <dir>/stats.csv --workers 64
+python threshold_sweep.py --out <dir>/timing.csv --max-shots 100000 --max-errors 1000000000  # timing run
 """
 import argparse
 import os

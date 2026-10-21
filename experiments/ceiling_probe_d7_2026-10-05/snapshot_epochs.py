@@ -1,11 +1,14 @@
 # Created: 2026-10-14
 # Last modified: 2026-10-16
-# Keeps a copy of every epoch's .lastepoch.weights.h5 (from epoch FIRST on) for runs that are
-# already training, since train_student.py overwrites that file each epoch. The epoch is read
-# from the optimizer's update count in the file, not from the log.
-#   ~/tfenv/bin/python snapshot_epochs.py <run folder> [<run folder> ...]
-# Copies go to <run folder>/seed<S>/epochs/epoch<NNN>.weights.h5. Exits when no run's
-# container is up.
+
+"""Keep a copy of every epoch's .lastepoch.weights.h5 for runs already training.
+
+train_student.py overwrites that file each epoch. The epoch is read from the optimizer's update
+count in the file. Copies go to <run folder>/seed<S>/epochs/epoch<NNN>.weights.h5; exits when
+no run's container is up.
+
+~/tfenv/bin/python snapshot_epochs.py <run folder> [<run folder> ...]
+"""
 import glob
 import os
 import re

@@ -1,16 +1,13 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
-"""Stage 0 analysis: LER table with 95% intervals, LER-vs-p plot, and threshold crossings.
 
-    python threshold_analysis.py <sweep_dir>/stats.csv --out <sweep_dir>
+"""LER table with 95% Wilson intervals, LER-vs-p plot, and the d5/d7 and d7/d9 threshold crossings.
 
-Writes <out>/ler_table.csv, <out>/threshold.png, <out>/crossings.json and prints them.
+Crossings interpolate linearly in (log p, log LER). Per-round LER
+p_round = (1 - (1 - 2 LER)^(1/r)) / 2 is reported as a secondary number.
+Writes ler_table.csv, threshold.png, crossings.json to --out.
 
-LER is per shot (errors / shots over all r = d rounds), with a 95% Wilson interval.
-Crossings are found separately for d=5/7 and d=7/9: in the grid interval where
-LER(small d) - LER(large d) changes sign, both curves are interpolated linearly in
-(log p, log LER) and the intersection is solved for. The same is done with per-round LER,
-p_round = (1 - (1 - 2 LER)^(1/r)) / 2, as a secondary number.
+python threshold_analysis.py <sweep_dir>/stats.csv --out <sweep_dir>
 """
 import argparse
 import csv
@@ -39,8 +36,7 @@ def per_round(ler, r):
 
 
 def crossing(ps, a, b):
-    """First p where curve a (smaller d) goes from below b to above b, log-log interpolation.
-    Returns None if the curves do not cross inside the grid."""
+    # first p where a (smaller d) crosses above b; None if no crossing in the grid
     la, lb, lp = np.log(a), np.log(b), np.log(ps)
     diff = la - lb
     for i in range(len(ps) - 1):

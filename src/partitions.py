@@ -1,27 +1,17 @@
 # Created: 2026-09-25
-# Last modified: 2026-10-18 (fresh_seed_ranges). Earlier 2026-10-06 (used_seeds, held-out files sealed whole, spent_blocks, checks over the complete pool table). Earlier 2026-10-02 (sealed_block, check_disjoint, check_pool_geometry: run-time guards used by train_student.py and eval_student_on_tail.py; p in file names read in both the p0.004 and p004 styles; sealed-access log). Earlier 2026-09-25
-"""Read configs/partitions.yaml and configs/paths.yaml.
+# Last modified: 2026-10-18 (fresh_seed_ranges).
+# Earlier 2026-10-06 (used_seeds, held-out files sealed whole, spent_blocks, checks over the complete pool table).
+# Earlier 2026-10-02 (sealed_block, check_disjoint, check_pool_geometry: run-time guards used by train_student.py and eval_student_on_tail.py; p in file names read in both the p0.004 and p004 styles; sealed-access log).
+# Earlier 2026-09-25
 
-This is the only code that knows the partition ranges. Python scripts call the functions
-below; shell launchers call the command-line form, which prints shell assignments:
+"""Read configs/partitions.yaml and configs/paths.yaml;
+
+Shell launchers use the command-line form:
 
     eval "$(python partitions.py --shell --d 7)"
-    # -> TRAIN_START=0 TRAIN_STOP=15000000 VAL_START=15000000 VAL_N=200000
-    #    EVAL_START=15200000 EVAL_N=1800000 SEALED_START=17000000 SEALED_STOP=19000000
-    #    POOL=/home/.../data_d7_p0.004_r7_FORMAL.npz FORMAL_GEN_SEED=42 ...
+    # -> TRAIN_START=0 TRAIN_STOP=15000000 VAL_START=15000000 VAL_N=200000 ... POOL=... FORMAL_GEN_SEED=42
 
-Loading also checks that the four FORMAL ranges are disjoint and tile [0, n_total), so a
-bad edit to the YAML fails immediately instead of producing overlapping blocks.
-
-Run-time guards (2026-10-02), used by train_student.py and eval_student_on_tail.py:
-  sealed_block(pool, n)      the sealed block of one pool, from this YAML; the pool's
-                             .fingerprint.json partition_test_SEALED is a cross-check only
-  check_disjoint(blocks)     no two (pool, start, stop) blocks of the same pool overlap
-  check_pool_geometry(...)   the pool's d, p, rounds equal the ones a script was given
-  sealed_log_path(), sealed_accesses(sha), record_sealed_access(row)
-                             configs/sealed_access.tsv: one row per scoring of the sealed
-                             block (eval_student_on_tail.py --score-sealed)
-They raise ValueError; the scripts turn that into SystemExit with their own log prefix.
+Guards raise ValueError. Every scoring of a sealed block is logged in configs/sealed_access.tsv.
 """
 import argparse
 import json
@@ -40,15 +30,13 @@ def _load(name):
 
 
 def load():
-    """Return the parsed partitions.yaml after checking it."""
     cfg = _load('partitions.yaml')
     check(cfg)
     return cfg
 
 
 def check(cfg):
-    """Raise unless train/val/eval/sealed are disjoint and cover [0, n_total) in order,
-    and the TRAINONLY seed differs from the FORMAL seed."""
+    # train/val/eval/sealed disjoint and tiling [0, n_total); TRAINONLY seed != FORMAL seed
     f = cfg['formal']
     rng = [tuple(f['ranges'][b]) for b in BLOCKS]
     for (a0, a1), name in zip(rng, BLOCKS):
@@ -62,8 +50,7 @@ def check(cfg):
     if cfg['trainonly']['gen_seed'] == f['gen_seed']:
         raise ValueError("TRAINONLY gen_seed equals FORMAL gen_seed; the extension would "
                          "reproduce FORMAL shots")
-    # (2026-10-06) The complete pool table: within one (d, p) every pool has its own seed, and
-    # a held-out block's seed is used by nothing else at all.
+    # within one (d, p) every pool has its own seed; a held-out block's seed is used nowhere else
     seen = {}
     for e in cfg.get('pools', []):
         key = (int(e['d']), float(e['p']), int(e['gen_seed']))
@@ -90,7 +77,7 @@ def fresh_seed_ranges(cfg=None):
 
 
 def used_seeds(cfg=None):
-    """Every generation seed used for any pool or held-out block, or listed as used elsewhere."""
+    # every seed used by a pool or held-out block, or listed as used elsewhere
     cfg = cfg or load()
     return ({int(e['gen_seed']) for e in cfg.get('pools', [])}
             | {int(e['gen_seed']) for e in (cfg.get('held_out') or [])}
@@ -98,7 +85,7 @@ def used_seeds(cfg=None):
 
 
 def spent_blocks(pool, cfg=None):
-    """[(start, stop, note)] of blocks of this pool that a decoder has already read."""
+    # [(start, stop, note)] already read by a decoder
     cfg = cfg or load()
     ap = os.path.abspath(pool)
     return [(int(b['range'][0]), int(b['range'][1]), f"spent {b['spent']} by {b['by']}; {b['use']}")
@@ -107,20 +94,18 @@ def spent_blocks(pool, cfg=None):
 
 
 def block(name, cfg=None):
-    """(start, stop) half-open shot indices of a FORMAL block."""
+    # (start, stop) of a FORMAL block
     cfg = cfg or load()
     a, b = cfg['formal']['ranges'][name]
     return int(a), int(b)
 
 
 def pool_path(d, kind='formal'):
-    """Path of the FORMAL or TRAINONLY pool for distance d, from paths.yaml."""
     tmpl = _load('paths.yaml')['pools'][kind]
     return os.path.expanduser(tmpl.format(d=d))
 
 
 def read_fingerprint(pool):
-    """The pool's .fingerprint.json as a dict, or None when there is none."""
     fp = pool.replace('.npz', '.fingerprint.json')
     if not os.path.exists(fp):
         return None
@@ -129,24 +114,12 @@ def read_fingerprint(pool):
 
 
 def sealed_block(pool, n_pool, cfg=None):
-    """(start, stop) of the sealed block of `pool`, or None, plus a one-line reason.
-
-    configs/partitions.yaml is the source of truth. It defines the sealed block of every
-    FORMAL pool (formal.ranges.sealed). A pool is FORMAL when its name contains FORMAL, its
-    fingerprint says purpose 'formal', its fingerprint carries a partition_test_SEALED, or
-    its generation seed is the FORMAL seed of the YAML. For such a pool the shot count must
-    equal formal.n_total, and the fingerprint's partition_test_SEALED, when present, must
-    agree with the YAML; either disagreement raises, since then the YAML does not describe
-    this file. The fingerprint's other partition fields are not used (the p=0.004 FORMAL
-    fingerprints still carry the older merged validation block [15M, 17M)).
-
-    Training-only pools have no sealed block. Any other pool (no FORMAL marker) returns
-    None with a reason the caller prints as a warning.
-    """
+    # (start, stop) of the pool's sealed block or None, plus a reason. The YAML is the source
+    # of truth; a FORMAL pool's size and fingerprint sealed range must agree with it.
     cfg = cfg or load()
     fp = read_fingerprint(pool) or {}
     name = os.path.basename(pool)
-    # (2026-10-06) A held-out block is its own file and every shot of it is sealed.
+    # a held-out block is its own file, sealed whole
     ho = {os.path.abspath(os.path.expanduser(e['path'])) for e in (cfg.get('held_out') or [])}
     if fp.get('purpose') == 'held_out' or 'HELDOUT' in name or os.path.abspath(pool) in ho:
         return (0, int(n_pool)), 'held-out block: the whole file is sealed'
@@ -174,13 +147,7 @@ def sealed_block(pool, n_pool, cfg=None):
 
 
 def check_disjoint(blocks):
-    """Raise if two blocks of the same pool overlap.
-
-    blocks: (role, pool_path, start, stop), half-open shot indices. Pools are compared by
-    absolute path, so blocks of two different files never conflict (their shots come from
-    different generation seeds, which train_student.py checks separately). Empty blocks
-    are skipped.
-    """
+    # blocks: (role, pool_path, start, stop); only blocks of the same file are compared
     bl = [(role, os.path.abspath(pool), int(a), int(b)) for role, pool, a, b in blocks
           if int(b) > int(a)]
     for i in range(len(bl)):
@@ -197,18 +164,12 @@ _NAME_RE = re.compile(r'data_d(\d+)_p([0-9.]+)_r(\d+)')
 
 
 def p_from_name(text):
-    """p from the p part of a pool or folder name, in either style used in this repo:
-    'p0.004' (pool files, data_d7_p0.004_r7_...) or 'p004' (folders and run tags,
-    pools_d7_p004_19M), where the digits are thousandths."""
+    # 'p0.004' (pool files) or 'p004' (folders, run tags; thousandths)
     return float(text) if '.' in text else int(text) / 1000.0
 
 
 def check_pool_geometry(pool, d, p, rounds):
-    """Raise if the pool's d, p, rounds differ from the given ones; return a source note.
-
-    Reads the pool's .fingerprint.json; falls back to the data_d{d}_p{p}_r{r} pattern of
-    the file name. Returns None when neither exists, for the caller to warn.
-    """
+    # from .fingerprint.json, else the data_d{d}_p{p}_r{r} file name; None if neither
     fp = read_fingerprint(pool)
     name = os.path.basename(pool)
     if fp is not None and all(k in fp for k in ('d', 'p', 'rounds')):
@@ -230,13 +191,12 @@ SEALED_LOG_COLS = ['utc', 'weights_sha256', 'weights_path', 'student', 'units', 
 
 
 def sealed_log_path():
-    """configs/sealed_access.tsv, beside partitions.yaml. The environment variable
-    SEALED_ACCESS_LOG replaces the path (used by tests/guards_test.py only)."""
+    # SEALED_ACCESS_LOG overrides the path (tests only)
     return os.environ.get('SEALED_ACCESS_LOG') or os.path.join(CONFIG_DIR, 'sealed_access.tsv')
 
 
 def sealed_accesses(weights_sha256):
-    """Earlier rows of the sealed-access log for these weights (list of dicts)."""
+    # earlier sealed-access rows for these weights
     path = sealed_log_path()
     if not os.path.exists(path):
         return []
@@ -247,8 +207,7 @@ def sealed_accesses(weights_sha256):
 
 
 def record_sealed_access(row):
-    """Append one row (a dict with SEALED_LOG_COLS) to the sealed-access log; the header is
-    written when the file is new. Returns the log path."""
+    # header written when the file is new
     import csv
     path = sealed_log_path()
     new = not os.path.exists(path)

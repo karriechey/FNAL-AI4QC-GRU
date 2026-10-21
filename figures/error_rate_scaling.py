@@ -1,8 +1,12 @@
 # Created: 2026-10-18
 # Last modified: 2026-10-18 (standard wording on all labels)
-# Headline GRU vs MWPM at p = 0.003, 0.004, 0.005 for d = 5, 7, 9, on the eval block
-# FORMAL [15.2M, 17M) with the checkpoint chosen by protocol/selection_rule.md.
-#   python figures/error_rate_scaling.py [--csv GRU_all_runs_2026-10-01.csv]
+
+"""GRU vs MWPM at p = 0.003, 0.004, 0.005 for d = 5, 7, 9 on the evaluation block.
+
+Checkpoints chosen by protocol/selection_rule.md.
+
+python figures/error_rate_scaling.py [--csv GRU_all_runs_2026-10-01.csv]
+"""
 import argparse
 from pathlib import Path
 

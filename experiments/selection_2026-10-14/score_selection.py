@@ -1,10 +1,14 @@
 # Created: 2026-10-14
 # Last modified: 2026-10-14
-# Scores checkpoints on the selection block FORMAL [0, 10M) (protocol/selection_rule.md) and
-# appends one row per checkpoint to the scores CSV. MWPM is decoded once per pool and cached.
-# Epochs already in the CSV for this model are skipped, so it can be rerun as new epochs are saved.
-#   python score_selection.py --model f9w_p003 --d 9 --p 0.003 --units 280 280 280 \
-#       --pool <FORMAL.npz> --steps-per-epoch 10000 --out-csv selection_scores.csv <weights.h5> ...
+
+"""Score checkpoints on the selection block FORMAL [0, 10M) (protocol/selection_rule.md).
+
+Appends one row per checkpoint to the scores CSV; MWPM is decoded once per pool and cached.
+Epochs already in the CSV are skipped, so it can be rerun as new epochs are saved.
+
+python score_selection.py --model f9w_p003 --d 9 --p 0.003 --units 280 280 280 \
+    --pool <FORMAL.npz> --steps-per-epoch 10000 --out-csv selection_scores.csv <weights.h5> ...
+"""
 import argparse
 import csv
 import os

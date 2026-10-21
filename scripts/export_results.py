@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 # Created: 2026-10-12
 # Last updated: 2026-10-12
-"""Write the results table for animateQEC's Results scene from a runs CSV.
 
-One row per decoder: MWPM and each named GRU run, with p_L on the same block, the ratio to
-MWPM, and the McNemar counts from the run's notes. Error counts are taken only from an error
-count column; when the CSV has none, the counts and the Clopper-Pearson CIs are left empty
-(never back-derived from p_L or the ratio).
+"""Results table for animateQEC's Results scene: MWPM and each named GRU run on the same block.
 
-    python scripts/export_results.py --runs GRU_all_runs_2026-10-01.csv --probes f2280 f3280 \\
-        --block-label "preliminary · eval block, not the held-out test set" \\
-        --out ../animateQEC/examples/gru-decoder/data/results_eval_preliminary.csv
+Error counts come only from an error-count column, never back-derived from p_L or the ratio.
+
+python scripts/export_results.py --runs GRU_all_runs_2026-10-01.csv --probes f2280 f3280 \
+    --block-label "preliminary · eval block, not the held-out test set" \
+    --out ../animateQEC/examples/gru-decoder/data/results_eval_preliminary.csv
 """
 import argparse
 import csv

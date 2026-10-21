@@ -1,24 +1,15 @@
 #!/usr/bin/env python3
 # Created: 2026-10-06
 # Last modified: 2026-10-06
+
 """Generate a held-out block: a separate pool file used only as a final test set.
 
-Same circuit and noise as the FORMAL pools (generate_pools.build_circuit: rotated memory-Z,
-rounds = d, all four Stim noise channels = p) and the same sampler (generate_pools.sample_pool,
-chunked), from a generation seed never used for any pool. The seed is checked against every
-seed in configs/partitions.yaml (FORMAL, TRAINONLY, held-out, and the seeds listed as used
-elsewhere) and against the .fingerprint.json files in the output folder; any match stops.
+Same circuit and sampler as the FORMAL pools, from a seed checked against every seed in
+configs/partitions.yaml and the output folder's fingerprints.
+Writes data_d{d}_p{p:.3f}_r{d}_HELDOUT_seed{seed}.npz and .fingerprint.json, and prints the
+lines to add to configs/partitions.yaml.
 
-Nothing is scored here: no MWPM decode, no model. The whole file is a held-out block, so
-partitions.sealed_block treats every shot of it as sealed (eval_student_on_tail.py refuses
-it without --score-sealed, and logs any such scoring).
-
-Writes  <out-dir>/data_d{d}_p{p:.3f}_r{d}_HELDOUT_seed{seed}.npz   measurements, det_evts, flips
-        <out-dir>/data_d{d}_p{p:.3f}_r{d}_HELDOUT_seed{seed}.fingerprint.json
-and prints the lines to add to configs/partitions.yaml.
-
-    python gen_heldout_block.py --d 5 --p 0.004 --n 2000000 --seed 7001 \\
-        --out-dir ~/pools_d5_p004_19M
+python gen_heldout_block.py --d 5 --p 0.004 --n 2000000 --seed 7001 --out-dir ~/pools_d5_p004_19M
 """
 import argparse
 import datetime

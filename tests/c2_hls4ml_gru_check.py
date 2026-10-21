@@ -1,28 +1,14 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
-"""C2: does hls4ml's GRU reproduce Keras numerically, for reset_after=True and False?
 
-Earlier (hls4ml 1.3.0, Mac) a reset_after=False GRU converted without error, but the
-converter split the (3u,) bias as if it were the (2, 3u) reset_after=True bias, and the
-Vivado templates compute the reset_after=True update. C-sim could not be compiled on the
-Mac, so the effect on outputs was never measured. This measures it.
+"""C2: does hls4ml's GRU match Keras numerically, for reset_after True and False?
 
-For units 140 and 70, reset_after True and False (4 models, d=5, input (6, 24)):
-  - build GRU(units) -> Dense(1) with seeded random weights (FP32)
-  - convert with hls4ml, Vivado backend, io_parallel, every precision ap_fixed<32,16>
-  - hls_model.compile() (C simulation, g++)
-  - predict on 500 real inputs: the first 500 shots of the d=5 eval block, scattered to
-    (6, 24) with the repo's to_sequence
-  - report max |logit_hls - logit_keras| and the fraction of shots where sign(logit) agrees
+u140 and u70 at d=5 with seeded random weights; Vivado, io_parallel, ap_fixed<32,16>; C-sim on
+the first 500 d=5 eval-block shots. Reports max |logit_hls - logit_keras| and sign agreement.
+--table-size and --table-precision separate table error from wrong equations; --trained adds
+the d=5 u140 checkpoint.
 
-The activation look-up tables still limit accuracy for the reset_after=True model, so its
-difference sets the floor that a correct conversion reaches at this precision.
-hls4ml's default GRU tables are 1,024 entries at fixed<18,8>; --table-size and
---table-precision raise them so table error can be separated from wrong equations.
---trained adds the d=5 u140 run-of-record checkpoint (reset_after=False, trained weights,
-realistic logits) to the models checked.
-
-    ~/tfenv/bin/python tests/c2_hls4ml_gru_check.py --out experiments/gru_check/c2_<stamp>
+~/tfenv/bin/python tests/c2_hls4ml_gru_check.py --out experiments/gru_check/c2_<stamp>
 """
 import argparse
 import json

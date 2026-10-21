@@ -1,16 +1,12 @@
 # Created: 2026-09-27
 # Last modified: 2026-09-27
-"""Write the reproduction data for the synthesis package (repo-side; needs our pools).
 
-    python3 make_reproduce_data.py --package synthesis_package
+"""Write the reproduction data for the synthesis package into <package>/reproduce/.
 
-Writes into <package>/reproduce/:
-  eval_inputs_10000.npy                  first 10,000 shots of the d=5 evaluation block
-                                         [15,200,000, 15,210,000), scattered to (6, 24),
-                                         float32 0/1 - the same shots as the recorded checks
-  keras_logits_reset_after_False.npy     Keras FP32 CPU logits of models/..._False.keras
-  keras_logits_reset_after_True.npy      Keras FP32 CPU logits of models/..._True.keras
-Evaluation-block shots only; the sealed partition is not read.
+eval_inputs_10000.npy (first 10,000 d=5 eval-block shots, shape (6, 24)) and the Keras CPU
+logits of both packaged models.
+
+python3 make_reproduce_data.py --package synthesis_package
 """
 import argparse
 import json
@@ -40,8 +36,7 @@ def main():
     out = os.path.join(a.package, 'reproduce')
     os.makedirs(out, exist_ok=True)
     np.save(os.path.join(out, 'eval_inputs_10000.npy'), x)
-    # The recorded checks (report.json of the PR #1568 run) used these exact shots; compare
-    # the packaged models' logits with the Keras logits implied there as a consistency check.
+    # consistency check against the logits recorded in the PR #1568 run
     info = dict(shots=f'[{e0}, {e0 + N}) of the d=5 evaluation block', shape=list(x.shape))
     for ra in (False, True):
         m = tf.keras.models.load_model(

@@ -1,7 +1,8 @@
 # Created: 2026-10-18
 # Last modified: 2026-10-18
-# Scores the teacher on the eval block through the training-step path (fresh_shots layout,
-# teacher_logit_column) and compares shot by shot with the eval_student_on_tail.py dump.
+
+"""Score the teacher on the eval block through the training-step path and compare shot by shot
+with the eval_student_on_tail.py dump."""
 import argparse
 import hashlib
 import json

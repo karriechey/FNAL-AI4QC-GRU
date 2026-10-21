@@ -1,12 +1,11 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
+
 """C1: list every GRU best checkpoint under the results root, read from the weight files.
 
-    python tests/c1_list_checkpoints.py [results_root] > c1_checkpoints.txt
+Units, input width, reset_after (bias (3u,) = False, (2, 3u) = True), parameter count, seeds.
 
-For each run folder: GRU units and input width (from the kernel shape), reset_after (bias
-shape (3u,) means False, (2, 3u) means True), parameter count, and which seeds exist.
-The time axis is not stored in the weights; it follows from d (r + 1 = d + 1 timesteps).
+python tests/c1_list_checkpoints.py [results_root] > c1_checkpoints.txt
 """
 import collections
 import glob
@@ -23,9 +22,7 @@ for f in sorted(glob.glob(os.path.join(root, '**', '*gru*.best.weights.h5'), rec
     shapes = {}
     with h5py.File(f, 'r') as h:
         h.visititems(lambda n, o: shapes.__setitem__(n, o.shape) if hasattr(o, 'shape') else None)
-    # Two layouts: the .weights.h5 format (layers/<name>/cell/vars/0,1,2 = kernel,
-    # recurrent kernel, bias; also stores optimizer and metric state) and the legacy h5
-    # format (.../gru_cell/kernel:0, bias:0).
+    # .weights.h5 layout (layers/<name>/cell/vars/0,1,2) or legacy h5 (.../gru_cell/kernel:0)
     layer = {n: s for n, s in shapes.items() if n.startswith('layers/') or 'model_weights' in n
              or ':0' in n}
     kern = [s for n, s in layer.items()

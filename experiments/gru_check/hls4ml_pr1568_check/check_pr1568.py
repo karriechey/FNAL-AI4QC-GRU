@@ -1,27 +1,13 @@
 # Created: 2026-09-27
 # Last modified: 2026-09-27
-"""Check of hls4ml PR #1568 (Vivado GRU reset_after=False) on trained checkpoints.
 
-Run in the qdec:tf215-hlsfix image (hls4ml at the PR head commit, see ENV.md):
+"""Check hls4ml PR #1568 (Vivado GRU reset_after=False) on trained d=5 checkpoints.
 
-    python3 check_pr1568.py --out <dir>
+Each model is converted with the default table ranges and with the sigmoid/tanh tables widened
+to +-32 (edited in the generated project only), and compared with Keras CPU logits on the first
+10,000 d=5 eval-block shots.
 
-Models (trained; nothing is retrained):
-  - d=5 u140 reset_after=False, 10M run of record, seed 0
-  - d=5 u140 reset_after=False, 20M augmented, seed 0
-  - d=5 u70  reset_after=False, distillation-study hard-label seed 0 (reference copy)
-  - d=5 u140 reset_after=True (unroll=True), 20M augmented, seed 0 — regression check
-
-Each is converted twice (Vivado, io_parallel, every precision ap_fixed<32,16>, GRU tables
-65,536 entries of ap_fixed<32,16>):
-  default   the table input ranges hls4ml ships (sigmoid +-8, tanh +-4)
-  wide32    the generated project's sigmoid and tanh tables edited to cover +-32 before
-            compiling. hls4ml has no setting for these ranges (they are constants in
-            nnet_activation.h); the edit is applied to the generated copy only, never to
-            the installed package.
-Keras reference on the CPU (no TF32), first 10,000 shots of the d=5 evaluation block.
-Reported per model and variant: max and mean |logit_hls - logit_keras|, sign agreement
-(= decision agreement, since the decision is logit > 0), and decisions that differ.
+python3 check_pr1568.py --out <dir>      (qdec:tf215-hlsfix image)
 """
 import argparse
 import glob
@@ -41,11 +27,7 @@ N_SHOTS = 10_000
 
 
 def widen_tables(project_dir, new_range=32.0):
-    """Edit the generated nnet_activation.h so the sigmoid and tanh tables span +-new_range.
-
-    Three constants per function, kept consistent: the table's input range (init), and the
-    lookup's scale and offset. Only the sigmoid/tanh init and lookup functions are touched.
-    """
+    # widen the generated sigmoid/tanh tables to +-new_range (init range, lookup scale and offset)
     path = os.path.join(project_dir, 'firmware', 'nnet_utils', 'nnet_activation.h')
     s = open(path).read()
     R = int(new_range)

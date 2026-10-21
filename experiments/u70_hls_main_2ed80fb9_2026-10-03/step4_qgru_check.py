@@ -1,23 +1,12 @@
 # Created: 2026-10-03 | Last updated: 2026-10-03
-"""Step 4: does hls4ml main 2ed80fb9 parse a QKeras QGRU (reset_after=False), and does its
-C simulation match Keras? Small check, no training.
 
-Model: input (6, 24) -> QGRU(8 units, reset_after=False) -> QDense(1), random weights with a
-fixed seed, quantized_bits(8, 0, alpha=1) for kernel / recurrent kernel / bias and 8-bit
-activations. Two activation variants, because hls4ml rejects some QKeras activations in
-recurrent layers:
-    hard   quantized_tanh(8) / hard_sigmoid-style quantized_sigmoid(8)  (QKeras defaults)
-    real   quantized_tanh(8, use_real_tanh=True) / quantized_sigmoid(8, use_real_sigmoid=True)
-    float_act  tanh / sigmoid in float, weights still quantized (diagnostic)
-    float_act_wide  float_act with the non-quantizer types at ap_fixed<32,16> (diagnostic)
-    float_act_wide_prequant  float_act_wide with weights set to their quantized values first
-Each variant: convert (Vivado, Resource, ReuseFactor 1, static, io_parallel, xcvu13p, 5 ns,
-precision from the QKeras quantizers via config_from_keras_model), check the generated
-reset_after flag and bias sizes, compile, and compare hls_model.predict with Keras on the
-first 10,000 shots of the evaluation block.
+"""Does hls4ml main 2ed80fb9 parse a QKeras QGRU (reset_after=False), and does its C-sim match Keras?
 
-Usage (grace1): ~/hls4ml_main_env/bin/python step4_qgru_check.py
-Writes: results/step4_qgru_check.json
+QGRU(8) -> QDense(1) with random weights and 8-bit quantizers, in several activation variants
+(hard, real, float_act, float_act_wide, float_act_wide_prequant). Compared with Keras on the
+first 10,000 eval-block shots. Writes results/step4_qgru_check.json.
+
+~/hls4ml_main_env/bin/python step4_qgru_check.py
 """
 import json
 import os
@@ -28,8 +17,7 @@ import numpy as np
 
 import u70_common as U
 
-# QKeras 0.9 recurrent cells call tf nest.is_sequence, removed in TF 2.15; alias it to the
-# renamed is_nested (same function) before any QGRU is built.
+# QKeras 0.9 calls nest.is_sequence, removed in TF 2.15; alias it to is_nested
 from tensorflow.python.util import nest as _nest
 if not hasattr(_nest, 'is_sequence') and hasattr(_nest, 'is_nested'):
     _nest.is_sequence = _nest.is_nested
@@ -48,16 +36,11 @@ VARIANTS = {
     'real': (quantized_tanh(8, use_real_tanh=True), quantized_sigmoid(8, use_real_sigmoid=True)),
     # float activations, quantized weights: separates the weight quantizers from the activations
     'float_act': ('tanh', 'sigmoid'),
-    # same as float_act, with every type that no QKeras quantizer sets (input, accum, result,
-    # recurrent bias, activation table, Dense accum/result) widened to ap_fixed<32,16> and a
-    # 4096-entry table: if C sim then matches Keras closely, the weight quantizers are handled
-    # exactly and the remaining mismatch comes from those default types
+    # float_act with every type no QKeras quantizer sets widened to ap_fixed<32,16> and a
+    # 4096-entry table, to isolate the weight quantizers
     'float_act_wide': ('tanh', 'sigmoid'),
-    # float_act_wide with the QGRU kernel / recurrent kernel / bias replaced by their QKeras-quantized
-    # values before conversion. hls4ml main 2ed80fb9 does not apply the QGRU weight quantizers to the
-    # weight data (GRU.initialize in hls4ml/model/layers.py calls add_weights without the quantizer,
-    # unlike Dense), so the raw float weights are cast to ap_fixed<8,1> by truncation instead of
-    # QKeras rounding. Pre-quantized weights make that cast exact.
+    # float_act_wide with weights pre-quantized: 2ed80fb9 casts raw QGRU weights to ap_fixed<8,1>
+    # by truncation instead of applying the QKeras quantizer
     'float_act_wide_prequant': ('tanh', 'sigmoid'),
 }
 WIDE = 'ap_fixed<32,16>'
@@ -116,9 +99,7 @@ for name, (act, recr_act) in VARIANTS.items():
                            default=str), flush=True)
 
 # ---- control: plain Keras GRU with the same quantized weights, same wide conversion ----------
-# If QKeras and Keras agree in Keras and both hls4ml projects show the same error against
-# Keras, the QGRU path is as exact as the plain GRU path and the error is the fixed-point
-# activation tables, not the QKeras handling.
+# same error as the QGRU project means the error is the activation tables, not QKeras handling
 try:
     tf.keras.utils.set_random_seed(7)
     inp = tf.keras.Input(shape=(6, 24), name='syndrome_sequence')

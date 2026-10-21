@@ -1,47 +1,19 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/dump_teacher_probs.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-06 (pool arrays read by row range with pool_rows; pool_fingerprint takes a path and uses the pool's .fingerprint.json, so the sealed rows are never read). Earlier 2026-08-17
-"""Cache the FP32 teacher's per-shot output over a pool, for knowledge distillation.
+# Last modified: 2026-10-06 (pool arrays read by row range with pool_rows; pool_fingerprint takes a path and uses the pool's .fingerprint.json, so the sealed rows are never read).
+# Earlier 2026-08-17
 
-The teacher is frozen, so its output for a shot never changes across epochs, seeds or
-student architectures. Computing it once makes the student trainer a plain supervised fit
-and lets every student variant reuse one teacher pass.
+"""Cache the frozen teacher's per-shot output over a pool, for distillation.
 
-Writes an .npz containing, for the shots covered:
-  p_teacher      float32 [n]  teacher sigmoid output, P(logical flip) per shot
-  logit_teacher  float32 [n]  log(p/(1-p)), recovered in float64 before downcasting
-  flips          int8    [n]  truth label, so the trainer needs one file
-  shot_idx       int64   [n]  index back into the source pool
-plus metadata and fingerprints (see pool_fingerprint) that make a cache self-describing.
+Writes an .npz with p_teacher, logit_teacher, flips, shot_idx, plus metadata and fingerprints.
+--teacher-arch rcnn has a sigmoid head (logit recovered in float64); --teacher-arch gru has a
+linear head (output is the logit, p = sigmoid(logit)). No train/test split here.
 
-Both p and its logit are stored because the distillation temperature acts in logit space
-and inverting a float32 p later loses precision in the saturated tails, where a confident
-teacher lives.
-
-Dumps whatever shot range is asked for and applies no train/test split; that logic stays
-in the trainer so there is only one copy of the disjointness rule.
-
-  python dump_teacher_probs.py \
-      --weights ~/rcnn_threshold/out_t200k_w/rcnn_d5_p0.010_r3_seed0_ntr10000000.weights.h5 \
-      --d 5 --p 0.010 --rounds 3 --n-shots 1000000 \
-      --out ~/rcnn_threshold/teacher/teacher_seed0_first1M.npz
-
-Two teacher architectures
--------------------------
-`--teacher-arch rcnn` (default) rebuilds CNNModel.FullRCNNModel, whose head ends in a
-sigmoid: it emits a probability, and the stored logit is recovered by inverting that
-sigmoid in float64.
-
-`--teacher-arch gru` rebuilds StudentModels.build_gru_student -- the same GRU family the
-students come from, used as the teacher for the parameter-reduction study at d=5, r=5,
-p=0.004. That model's head is linear by design (see StudentModels' module docstring), so
-it emits the logit directly and the stored probability is sigmoid(logit). Running
-recover_logit() on a GRU output would be wrong in both directions: it would treat a logit
-as a probability, and every value outside (0, 1) would be clipped to the +/-16 rails.
-
-The output .npz layout, fingerprints and metadata are identical for both architectures, so
-train_student.py consumes either without knowing which produced it.
+python dump_teacher_probs.py \
+    --weights ~/rcnn_threshold/out_t200k_w/rcnn_d5_p0.010_r3_seed0_ntr10000000.weights.h5 \
+    --d 5 --p 0.010 --rounds 3 --n-shots 1000000 \
+    --out ~/rcnn_threshold/teacher/teacher_seed0_first1M.npz
 """
 import argparse
 import hashlib
@@ -50,9 +22,6 @@ import numpy as np
 
 
 def sha256_file(path, chunk=1 << 20):
-    """SHA-256 of a file. Fingerprints the teacher checkpoint, which alone determines
-    every soft target in the cache; a couple of hundred KB, so hashing it whole is free.
-    """
     h = hashlib.sha256()
     with open(path, 'rb') as f:
         for block in iter(lambda: f.read(chunk), b''):
@@ -61,17 +30,9 @@ def sha256_file(path, chunk=1 << 20):
 
 
 def pool_fingerprint(pool_npz):
-    """Identity fingerprint for a pool: (flips_sha256, measurements_shape_string).
-
-    Hashes `flips` (10 MB of int8, milliseconds) and records the `measurements` shape.
-    flips comes from the same generator draw as the measurements, so agreement on 10M
-    labels and on the shape means the same draw. The measurement arrays are left alone;
-    hashing them would be ~1.7 GB of IO per run for no extra assurance.
-    """
+    # (flips_sha256, measurements shape); flips and measurements come from one draw
     if isinstance(pool_npz, str):
-        # A path (2026-10-06): the flips SHA-256 and measurements shape recorded in the pool's
-        # .fingerprint.json at generation, so no row of the pool (sealed rows included) is
-        # read. Without a fingerprint the hash is computed by streaming the flips array.
+        # path: read from .fingerprint.json so no pool row is read; else stream flips
         import json
         import pool_rows as PR
         fp = pool_npz.replace('.npz', '.fingerprint.json')
@@ -90,12 +51,7 @@ def pool_fingerprint(pool_npz):
 
 
 def recover_logit(p):
-    """Invert the teacher's final sigmoid: z = log(p / (1-p)).
-
-    Float64, with p clipped off 0 and 1 so a saturated prediction gives a finite z. The
-    clip caps |z| near 16, beyond any value the student needs to match, so it affects only
-    degenerate shots.
-    """
+    # p clipped off 0 and 1, so |z| <= ~16
     p64 = np.asarray(p, dtype=np.float64).reshape(-1)
     eps = 1e-7
     p64 = np.clip(p64, eps, 1.0 - eps)
@@ -142,8 +98,7 @@ def run():
 
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
     import tensorflow as tf
-    # Keras 3 rebuilds CNNModel.py's custom layers through a different path and fails deep
-    # inside an initializer (list-vs-tuple shape compare), so fail here instead.
+    # Keras 3 fails deep inside CNNModel.py's custom layers; fail early instead
     assert tf.__version__.startswith('2.15'), (
         f'need TF 2.15.x (Keras 2); got TF {tf.__version__}. '
         f'Activate the uv venv: source .venv/bin/activate, or run with '
@@ -167,10 +122,8 @@ def run():
     z = fn                                         # a path; rows are read by range below
     N = PR.n_rows(fn, 'measurements')
 
-    # Identity fingerprints, computed once here and re-verified by train_student.py. These
-    # catch "same filename, different content" -- a re-generated pool or a re-trained
-    # teacher checkpoint -- which the runtime flips-agreement check cannot see because it
-    # only compares the shots the cache itself carries.
+    # fingerprints re-checked by train_student.py: catch a regenerated pool or retrained
+    # teacher under the same filename
     weights_sha = sha256_file(args.weights)
     pool_flips_sha, pool_meas_shape = pool_fingerprint(z)
     print(f"[teacher] weights sha256={weights_sha[:16]}...  "
@@ -181,17 +134,13 @@ def run():
         raise SystemExit(f"[teacher] requested shots [{lo}, {hi}) exceed pool size {N}")
     sl = slice(lo, hi)
 
-    # Slice before the measurement split so only the requested shots are materialised;
-    # the arrays are ~1 GB each at 10M.
+    # slice first so only the requested shots are loaded
     det_evts = PR.rows(fn, 'det_evts', lo, hi).astype(binary_t)
     flips = PR.rows(fn, 'flips', lo, hi).astype(binary_t)
 
     hidden = [args.hidden for _ in range(args.hidden_layers)]
     if args.teacher_arch == 'gru':
-        # The GRU teacher reads det_evts only, so the measurement array is never sliced --
-        # that is ~1.5 GB of IO and host memory avoided per dump at 10M shots. The scatter
-        # into [n_timesteps, n_positions] happens in numpy, exactly as in the trainer, so
-        # the teacher and the students it supervises share one input pipeline.
+        # GRU reads det_evts only; same scatter as the trainer
         from StudentModels import assemble_features, build_gru_student
         model = build_gru_student(d=d, rounds=r, inputs='evts', units=args.units,
                                   hidden=tuple(args.student_hidden), p=p)
@@ -201,7 +150,7 @@ def run():
               f"input{x.shape[1:]}", flush=True)
         model.load_weights(args.weights)
 
-        # Linear head: this is the logit. p follows from it, not the other way round.
+        # linear head: output is the logit
         pred = model.predict(x, batch_size=args.batch_size, verbose=0)
         logit_teacher = np.asarray(pred, dtype=np.float32).reshape(-1)
         p_teacher = (1.0 / (1.0 + np.exp(-logit_teacher.astype(np.float64)))).astype(np.float32)
@@ -224,7 +173,7 @@ def run():
         _ = model([det_bits[0:1], det_evts[0:1]])  # build so the checkpoint layout matches
         model.load_weights(args.weights)
 
-        # Sigmoid head: this is a probability, and the logit is recovered by inverting it.
+        # sigmoid head: output is p
         pred = model.predict([det_bits, det_evts], batch_size=args.batch_size, verbose=0)
         p_teacher = np.asarray(pred, dtype=np.float32).reshape(-1)
         logit_teacher = recover_logit(p_teacher).astype(np.float32)
@@ -232,9 +181,7 @@ def run():
 
     truth = np.asarray(flips, dtype=np.int8).reshape(-1)
 
-    # The teacher's p_L on the dumped shots. In-sample when --n-start covers the training
-    # prefix, so not a result; printed to catch a broken load (p_L at the base rate, or a
-    # constant output) before a student trains on it.
+    # sanity print only (in-sample when the range covers training): catches a broken load
     teacher_pred = (p_teacher > 0.5).astype(np.int8)
     pL_insample = float((teacher_pred != truth).mean())
     base_rate = float(truth.mean())
@@ -253,21 +200,16 @@ def run():
         logit_teacher=logit_teacher,
         flips=truth,
         shot_idx=np.arange(lo, hi, dtype=np.int64),
-        # metadata -- makes a cache file self-describing so it cannot be paired with the
-        # wrong pool or the wrong teacher checkpoint by accident
+        # metadata
         d=d, p=p, rounds=r, kernel=k, hidden=args.hidden,
         hidden_layers=args.hidden_layers, npol=args.npol,
-        # Which architecture produced these outputs, and its width. Recorded so a cache
-        # cannot be silently attributed to the wrong teacher family when both an RCNN and
-        # a GRU teacher exist for the same pool.
         teacher_arch=args.teacher_arch, units=args.units,
         student_hidden=np.asarray(args.student_hidden, dtype=np.int64),
         weight_bits=(-1 if args.weight_bits is None else args.weight_bits),
         n_start=lo, n_shots=args.n_shots,
         weights_path=os.path.abspath(args.weights),
         pool_path=os.path.abspath(fn),
-        # fingerprints -- see pool_fingerprint()/sha256_file() for why these two and not
-        # a full hash of the measurement arrays
+        # fingerprints
         weights_sha256=weights_sha,
         pool_flips_sha256=pool_flips_sha,
         pool_measurements_shape=pool_meas_shape,

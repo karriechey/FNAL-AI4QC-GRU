@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # Created: 2026-10-04
-# Last modified: 2026-10-06 (--need-host-gb). Earlier 2026-10-05 (--resume: continue a run paused by pause_run.sh)
-"""Run one row of jobs.tsv now, alongside the job the queue driver is running (amendment 5).
+# Last modified: 2026-10-06 (--need-host-gb).
+# Earlier 2026-10-05 (--resume: continue a run paused by pause_run.sh)
 
-Uses driver.run_job, so the run gets exactly the queue's launcher settings, kill rules (NaN,
-5 epochs above 1.5x its own best, epoch-60 above 2x R02), driver.log lines and results.tsv
-row. The GPU check of the driver is not applied (the other process on the GPU is the
-queue's own job); host memory must have the row's need_host_gb available. The queue driver
-sees this row's run folder and does not start it again.
+"""Run one row of jobs.tsv now, next to the job the queue driver is running.
 
-    setsid nohup ~/tfenv/bin/python run_one.py <name> --baseline-history <R02 history.json> &
+Uses driver.run_job, so the run gets the queue's launcher settings, kill rules, log lines and
+results.tsv row. Only host memory is checked. The driver sees the run folder and skips the row.
+
+setsid nohup ~/tfenv/bin/python run_one.py <name> --baseline-history <R02 history.json> &
 """
 import argparse
 import json
@@ -40,8 +39,7 @@ elif D.status(a.name):
 if any(v == 'STAB' for v in (job['peak_lr'], job['warmup'], job['clip'])):
     if not a.resume:
         sys.exit(f'{a.name} depends on the promotion; run it through the driver')
-    # A resumed run keeps the settings it started with: the promotion in force at its launch,
-    # read from its own command.txt, so a later re-promotion cannot change a run mid-way.
+    # a resumed run keeps the promotion in force at its launch (read from its command.txt)
     env = dict(kv.split('=', 1) for kv in open(os.path.join(src, 'command.txt')).read().split()
                if '=' in kv and kv.split('=', 1)[0] in ('LR', 'LR_WARMUP_EPOCHS', 'GLOBAL_CLIPNORM'))
     job, _ = D.resolve(job, dict(peak_lr=env['LR'], warmup=env['LR_WARMUP_EPOCHS'],

@@ -1,21 +1,14 @@
 # Created: 2026-09-29
 # Last modified: 2026-09-29
+
 """Overview figure of every GRU run so far (d5/d7, p = 0.004, r = d).
 
-    python3 plot_overview.py          (writes overview.png and overview.pdf next to this file)
+y axis: GRU / MWPM logical error rate on the evaluation block [15.2M, 17M). Hollow markers are runs
+still improving at their last epoch or unstable at constant LR 3e-3.
+Panels: (a) data scaling at d7, (b) width scaling at d7, (c) learning rate at d7 u140 20M,
+(d) reset_after False vs True.
 
-y axis everywhere: GRU logical error rate / MWPM logical error rate on the same 1.8M
-evaluation shots [15.2M, 17M) of the FORMAL pool (1 = MWPM parity, lower is better).
-Values are the best-validation-LER checkpoints listed in GRU_summary_updated_2026-09-29
-(two older d7 u140 20M runs were selected by validation loss). Hollow markers: runs that
-were still improving at their last epoch or became unstable at constant LR 3e-3, so their
-number is a limit of that budget, not a converged value.
-
-Panels
-  (a) data scaling at d7: training shots 20M / 50M / 100M, per width and LR schedule
-  (b) width scaling at d7: parameter count, at 20M and 50M
-  (c) learning rate at d7 u140 20M, constant LR
-  (d) GRU reset_after=False vs True
+python3 plot_overview.py          (writes overview.png and overview.pdf next to this file)
 """
 import os
 
@@ -43,7 +36,7 @@ def style(ax, title):
 
 
 def pts(ax, x, ys, color, marker, hollow=False, label=None):
-    """Each seed as its own marker; hollow = not converged or unstable."""
+    # each seed its own marker; hollow = not converged or unstable
     for i, y in enumerate(np.atleast_1d(ys)):
         ax.scatter([x], [y], s=46, marker=marker, zorder=3, linewidths=1.6,
                    facecolors='white' if hollow else color, edgecolors=color,

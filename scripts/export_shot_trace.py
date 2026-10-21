@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 # Created: 2026-10-12
 # Last updated: 2026-10-12 (no file paths in the output: checkpoint by file name, code copy by folder name; checked before writing)
-"""Trace chosen evaluation-block shots through a stacked-GRU checkpoint for animateQEC's RealShot.
 
-For each shot: detection events per round, every GRU layer's hidden state at every step,
-the z and r gates (recomputed from the weights and checked against Keras), P(flip), an
-integrated-gradients attribution per detector, and MWPM's prediction and matched edges.
-Plus a per-layer PCA to 2-D fitted on the hidden states of n-pca evaluation-block shots.
+"""Trace evaluation-block shots through a stacked-GRU checkpoint for animateQEC's RealShot.
 
-Reads only the FORMAL evaluation block; refuses shots outside it. Run on grace1 in ~/tfenv:
+Per shot: detection events, hidden states, z and r gates, P(flip), integrated gradients, and
+MWPM's prediction and edges; plus a per-layer 2-D PCA. Refuses shots outside the evaluation block.
 
-    ~/tfenv/bin/python export_shot_trace.py --src ~/FNAL-AI4QC-GRU-fresh/src \\
-        --weights <ckpt>/...best.weights.h5 --units 280 280 280 \\
-        --shots 16421787 16612857 --out ~/shot_trace.json
+~/tfenv/bin/python export_shot_trace.py --src ~/FNAL-AI4QC-GRU-fresh/src \
+    --weights <ckpt>/...best.weights.h5 --units 280 280 280 \
+    --shots 16421787 16612857 --out ~/shot_trace.json
 """
 import argparse
 import hashlib
@@ -66,8 +63,7 @@ model.load_weights(args.weights)
 grus = [l for l in model.layers if isinstance(l, KL.GRU)]
 assert len(grus) == len(args.units)
 
-# Sub-model with every layer's full output sequence. The last layer was built with
-# return_sequences=False: clone it with True and copy its weights.
+# every layer's output sequence; the last layer is cloned with return_sequences=True
 x_in = KL.Input(shape=model.input_shape[1:])
 h, seqs = x_in, []
 for i, g in enumerate(grus):
@@ -89,7 +85,7 @@ def run(x):
 
 
 def gates(layer, xs):
-    """Recompute z, r, h of a reset_after=False Keras GRU from its weights (numpy)."""
+    # z, r, h of a reset_after=False GRU recomputed in numpy
     assert not layer.reset_after
     W, U, bias = layer.get_weights()
     u = layer.units
@@ -170,7 +166,7 @@ for k, s in enumerate(args.shots):
           f"GRU P(flip) {p_model:.6f} (trace {p_trace:.6f}), gates max err "
           f"{max(g['max_abs_err_vs_keras'] for g in layer_gates):.2e}")
 
-# ---- PCA on n_pca evaluation-block shots (the first ones; the traced shots are not among them)
+# ---- PCA on the first n_pca evaluation-block shots (traced shots are not among them)
 det_c, flip_c = read(a, a + args.n_pca)
 assert not set(args.shots) & set(range(a, a + args.n_pca))
 hid_c, logit_c = run(to_sequence(det_c, d, r, p))
@@ -207,7 +203,7 @@ out = {
 }
 
 def assert_no_paths(obj, where="out"):
-    """The trace is published: refuse any string that looks like a file-system path."""
+    # output is published: refuse anything that looks like a file path
     if isinstance(obj, dict):
         for k, v in obj.items():
             assert_no_paths(v, f"{where}.{k}")

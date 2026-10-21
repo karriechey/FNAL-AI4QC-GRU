@@ -1,32 +1,14 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
-"""Diagnostic (temporary, not research code): which Keras GRU reset_after mode does the
-installed hls4ml reproduce numerically, and why?
 
-    python diag_hls4ml_gru_reset_after.py --out <dir> [--real]
+"""Which Keras GRU reset_after mode does the installed hls4ml reproduce, and why?
 
-Part 1, controlled test. Two otherwise identical models, input (6, 24) like the d=5
-decoder, GRU(units=4) -> Dense(1):
-    A: reset_after=False        B: reset_after=True
-each built twice: with Keras' default initialisation (all GRU biases zero) and with every
-GRU bias set to fixed random non-zero values. For each: model.get_config(), GRU weight
-names/shapes, TF inference, hls4ml conversion (the same path as the C2 check: Vivado
-backend, io_parallel, granularity 'name', every precision ap_fixed<32,16>, GRU tables
-65,536 entries of ap_fixed<32,16>), compile, hls4ml inference on 8 fixed random 0/1
-inputs, max |TF - HLS|. Any failure keeps its full traceback.
-For the reset_after=False models it also evaluates, in numpy, the reset_after=True
-equations with the same kernel / recurrent kernel and the same (3u,) bias used as both
-b and br. If hls4ml tracks that instead of Keras, the backend is running the
-reset_after=True equations.
-The generated firmware bias arrays (b<N>.h, br<N>.h) are read to report their lengths.
+part 1   GRU(4) -> Dense(1) with reset_after False and True, zero and random biases:
+         TF vs hls4ml C-sim, and the numpy reset_after=True equations on the same weights
+part 1b  the equation error alone (numpy), with the bias used correctly
+part 2   (--real) the same on trained d=5 checkpoints, 500 validation-block shots
 
-Part 1b, the equation error alone (numpy): each reset_after=False model's Keras output vs
-the reset_after=True equations on the same weights with the bias used correctly - what the
-Vivado kernel would compute if only the converter's bias split were fixed.
-
-Part 2 (--real): the same conversion of real trained checkpoints on 500 validation-block
-shots: the d=5 u140 reset_after=False run of record, the 20M-augmented reset_after=False
-seed 0, and the reset_after=True (unroll=True) d=5 seed 0 run. Nothing is retrained.
+python diag_hls4ml_gru_reset_after.py --out <dir> [--real]
 """
 import argparse
 import glob
@@ -68,7 +50,7 @@ def firmware_bias_lengths(outdir):
 
 
 def np_gru(x, W, U, b, br, reset_after, u):
-    """Keras GRU equations (gate order z, r, h) with bias b (input) and br (recurrent)."""
+    # Keras GRU equations (gate order z, r, h), input bias b, recurrent bias br
     sig = lambda v: 1 / (1 + np.exp(-v))
     h = np.zeros((x.shape[0], u))
     for t in range(x.shape[1]):
@@ -168,15 +150,8 @@ def part1(tf, hls4ml, out):
 
 
 def part1b(tf, hls4ml, out):
-    """Equation error alone, without the bias bug (numpy; hls4ml not involved).
-
-    For each reset_after=False model: Keras output vs the reset_after=True equations run on
-    the SAME weights with the bias used correctly (input bias = the (3u,) bias, recurrent
-    bias = 0). This is what the Vivado GRU kernel would compute if only the converter's
-    bias handling were fixed. (Repairing the bias inside hls4ml's in-memory model is not
-    possible without backend-specific attributes: the Vivado writer then fails with
-    "'WeightVariable' object has no attribute 'storage'".)
-    """
+    # reset_after=False Keras output vs reset_after=True equations on the same weights,
+    # input bias = the (3u,) bias, recurrent bias = 0
     KL = tf.keras.layers
     x4 = np.random.default_rng(0).integers(0, 2, size=(8, T, F)).astype(np.float32)
     cases = []

@@ -1,34 +1,16 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/gru_distill_20m_preflight.py @ d5ee86f
 # Created: 2026-09-22
-# Last modified: 2026-10-06 (pools read by row range with pool_rows). Earlier: 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml)
+# Last modified: 2026-10-06 (pools read by row range with pool_rows).
+# Earlier: 2026-09-25 (imports from helpers; partition defaults from configs/partitions.yaml)
+
 """Preflight and teacher gate for the 20M GRU distillation study (d=5, r=5, p=0.004).
 
-Run twice by eaf_run_gru_distill_20m.sh, before any student trains.
-
-  --stage inputs
-      Resolves and prints every input with its hash: primary pool, extension pool (both
-      fingerprints and recomputed flips SHA-256), teacher checkpoint SHA-256, the four
-      primary-pool blocks and their disjointness, and the measured parameter count of the
-      teacher and every student width. Optionally compares against expected hashes, so a
-      regenerated pool or a corrupted upload is caught before any compute.
-
-  --stage caches
-      After dump_teacher_probs.py has written the four teacher caches, verifies each one
-      against its pool with the same checks the training script applies (flips match,
-      contiguous coverage, same checkpoint behind all four, genuine non-constant output),
-      then runs the teacher gate:
-
-          teacher p_L on the evaluation block
-          MWPM p_L decoded on the same shots
-          ratio, and the paired McNemar test
-
-      Exit code 0 when the teacher's p_L is below MWPM's on this exact block, 3 when it is
-      not. The launcher stops on anything other than 0, so no student trains against a
-      teacher that does not beat MWPM on the shots this study reports.
-
-Writes (both stages) a JSON record into --out-json, which the launcher keeps in the
-experiment folder.
+Run by eaf_run_gru_distill_20m.sh before any student trains.
+--stage inputs  hashes and prints every input (pools, teacher, blocks, parameter counts)
+--stage caches  checks the four teacher caches, then teacher vs MWPM on the evaluation block
+                with McNemar; exit 0 if the teacher beats MWPM, 3 if not
+Writes a JSON record to --out-json.
 """
 import argparse
 import json
@@ -72,7 +54,7 @@ def stage_inputs(a, record):
     print(f"{LOG} teacher checkpoint {a.teacher_weights}", flush=True)
     print(f"{LOG}   sha256={w_sha or 'MISSING'}", flush=True)
 
-    # Measured parameter counts. build_gru_student imports TensorFlow; CPU is enough.
+    # parameter counts; CPU is enough
     os.environ.setdefault('CUDA_VISIBLE_DEVICES', '')
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
     from StudentModels import build_gru_student, detector_sequence_layout
@@ -86,7 +68,7 @@ def stage_inputs(a, record):
         print(f"{LOG}   {role:7s} GRU units={u:4d}  params={counts[u]:,}  "
               f"reset_after={m.get_layer('gru').reset_after}", flush=True)
     if w_sha:
-        # Prove the checkpoint loads into the architecture it is claimed to be.
+        # checkpoint must load into the claimed architecture
         t = build_gru_student(d=a.d, rounds=a.rounds, inputs='evts', units=a.teacher_units,
                               hidden=(), p=a.p)
         t.load_weights(a.teacher_weights)
@@ -140,7 +122,7 @@ def stage_caches(a, record):
     if problems:
         return problems
 
-    # --- teacher gate on the exact evaluation block -----------------------------------
+    # --- teacher gate on the evaluation block ---------------------------------------
     import pymatching
     from circuit_generators import build_circuit
     from helpers import mcnemar_from_correct
@@ -185,7 +167,7 @@ def main():
     ap.add_argument('--p', type=float, default=0.004)
     ap.add_argument('--main-pool', required=True)
     ap.add_argument('--extra-pool', required=True)
-    # Partition defaults come from configs/partitions.yaml (the single source).
+    # partition defaults from configs/partitions.yaml
     from partitions import load as _load_partitions, block as _block
     _pc = _load_partitions()
     _tr, _va, _ev, _se = (_block(b, _pc) for b in ('train', 'val', 'eval', 'sealed'))

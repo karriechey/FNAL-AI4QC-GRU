@@ -1,14 +1,11 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
+
 """Logits of one checkpoint on 10,000 validation-block shots, on whatever device is visible.
 
-Run twice, once in a container with the GPU and once without, then compare:
-
-    python tests/gpu_cpu_logits.py --weights W --d 5 --reset-after --unroll --out gpu.npz
-    python tests/gpu_cpu_logits.py --weights W --d 5 --reset-after --unroll --out cpu.npz
-    python tests/gpu_cpu_logits.py --compare gpu.npz cpu.npz
-
-Uses the repo's model builder, scatter and host-memory input pipeline; validation shots only.
+python tests/gpu_cpu_logits.py --weights W --d 5 --reset-after --unroll --out gpu.npz
+python tests/gpu_cpu_logits.py --weights W --d 5 --reset-after --unroll --out cpu.npz
+python tests/gpu_cpu_logits.py --compare gpu.npz cpu.npz
 """
 import argparse
 import os

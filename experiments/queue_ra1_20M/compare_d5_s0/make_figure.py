@@ -1,11 +1,9 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26 (three panels; panel (c) shows the best seed of each variant)
-"""Figure: d=5 GRU decoder, reset_after=False vs reset_after=True.
 
-Every number is read from the run records on grace1 (histories, best-checkpoint JSONs,
-evaluation CSVs, the MWPM validation-block JSON); nothing is typed in by hand.
+"""d=5 GRU decoder, reset_after=False vs reset_after=True; every number read from the run records.
 
-    ~/tfenv/bin/python make_figure.py      # writes d5_reset_after_comparison.{png,pdf} here
+~/tfenv/bin/python make_figure.py      # writes d5_reset_after_comparison.{png,pdf} here
 """
 import csv
 import glob
@@ -52,8 +50,7 @@ for s in (0, 1, 2):
                   tf32=ev.get('tf32'))
 
 mwpm_val = json.load(open(f'{HERE}/mwpm_val_block_d5.json'))['mwpm_p_L']
-# reset_after=False runs: validation LER was not logged per epoch; only the selected and the
-# final (epoch 200) checkpoints exist, scored afterwards on the same validation shots.
+# reset_after=False: val LER not logged per epoch; only the selected and final checkpoints were scored
 for r in csv.DictReader(open(f'{HERE}/old_val_ler/old_val_ler.csv')):
     s = int(r['weights'].split('_seed')[1].split('_')[0])
     old[s]['val_ler_best' if '.best.' in r['weights'] else 'val_ler_last'] = float(r['p_L'])
@@ -100,7 +97,6 @@ b.text(0.98, 0.97, 'dots: selected checkpoint\n'
        bbox=dict(boxstyle='round,pad=0.4', fc='white', ec='#d9d8d4'))
 
 # (c) validation LER, reset_after=True only
-# Best seed of each variant only (lowest validation LER at its selected checkpoint).
 nb = min(new, key=lambda s: new[s]['val_ler'][new[s]['best'] - 1])
 ob = min(old, key=lambda s: old[s]['val_ler_best'])
 rn, ro = new[nb], old[ob]

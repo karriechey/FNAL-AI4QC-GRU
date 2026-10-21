@@ -1,13 +1,9 @@
 # Created: 2026-09-30
 # Last modified: 2026-09-30
-"""One tab-separated results line for a finished run, in the column order of the
-experiment-plan table (plus clipping columns), printed to stdout.
 
-    python results_row.py <run folder>
+"""One tab-separated results line for a finished run, in the column order of the experiment-plan table.
 
-Columns: Done, width, params, d, r, LR schedule, peak LR, training shots, seed, p, batch,
-max epoch, best ckpt epoch, MWPM p_L, GRU p_L, GRU/MWPM, val loss at best ckpt,
-reset_after, checkpoint rule, global_clipnorm, fraction of updates clipped, warmup, run.
+python results_row.py <run folder>
 """
 import json
 import os

@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 # Created: 2026-10-12
 # Last updated: 2026-10-12
-"""Write a stacked-GRU checkpoint's architecture (model.summary() and per-layer config) to JSON.
 
-For animateQEC's architecture diagrams and parameter labels. Builds the model exactly as
-eval_student_on_tail.py does, loads the weights (so the config is proven to fit the
-checkpoint), and records each layer's class, units, activations, reset_after, shapes and
-parameter count. Also checks that logits_to_prob is the logistic sigmoid. No file paths are
-written. Run on grace1 in ~/tfenv:
+"""Write a stacked-GRU checkpoint's architecture (summary and per-layer config) to JSON for animateQEC.
 
-    ~/tfenv/bin/python export_model_config.py --src ~/FNAL-AI4QC-GRU-fresh/src --run f3280 \\
-        --weights <ckpt>/...best.weights.h5 --units 280 280 280 --out ~/model_f3280.json
+The weights are loaded to prove the config fits the checkpoint. No file paths are written.
+
+~/tfenv/bin/python export_model_config.py --src ~/FNAL-AI4QC-GRU-fresh/src --run f3280 \
+    --weights <ckpt>/...best.weights.h5 --units 280 280 280 --out ~/model_f3280.json
 """
 import argparse
 import hashlib
@@ -79,7 +76,7 @@ out = {
 
 
 def assert_no_paths(obj, where="out"):
-    """Published JSON: refuse any string that looks like a file-system path."""
+    # output is published: refuse anything that looks like a file path
     if isinstance(obj, dict):
         for k, v in obj.items():
             assert_no_paths(v, f"{where}.{k}")

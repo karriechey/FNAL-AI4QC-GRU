@@ -1,20 +1,14 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
+
 """C2 follow-up: why does the trained reset_after=False u140 diverge in hls4ml?
 
-    python tests/c2_followup.py --out <dir> --u70-weights <path to gkd20m_u70 .weights.h5>
+1 pre-activation ranges from a numpy GRU, against the ap_fixed<32,16> limit
+2 hls4ml vs Keras with the trained checkpoint
+3 the same with every GRU bias zeroed, to isolate the bias handling
+Default and 65,536-entry tables; first 500 shots of the d=5 eval block.
 
-For each trained reset_after=False checkpoint (the d=5 u140 run of record, and the u70
-hard-label distillation-study checkpoint if given):
-  1 bias and pre-activation ranges from a float numpy GRU (reset_after=False equations) on
-    the 500 eval-block inputs, to see whether anything approaches the ap_fixed<32,16>
-    limit of +-32768 (overflow check)
-  2 hls4ml vs Keras with the checkpoint as trained
-  3 the same checkpoint with every GRU bias set to zero (in Keras and so in hls4ml): if the
-    divergence comes from the bias arrays hls4ml writes as single values, it shrinks to the
-    size of the reset_after equation difference seen with the random-weight models
-Each hls4ml conversion runs with default tables and with 65,536-entry ap_fixed<32,16>
-tables. Inputs are the first 500 shots of the d=5 eval block, as in C2.
+python tests/c2_followup.py --out <dir> --u70-weights <path to gkd20m_u70 .weights.h5>
 """
 import argparse
 import json
@@ -33,7 +27,7 @@ def sigmoid(z):
 
 
 def float_gru_ranges(model, x):
-    """Numpy GRU, Keras reset_after=False equations; returns max |.| of every pre-activation."""
+    # numpy GRU (reset_after=False); max |.| of every pre-activation
     W, U, b = [np.asarray(v, np.float64) for v in model.get_layer('gru').get_weights()]
     u = U.shape[0]
     h = np.zeros((x.shape[0], u))

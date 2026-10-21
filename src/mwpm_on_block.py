@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/mwpm_on_block.py @ d5ee86f
 # Created: 2026-08-19
-# Last modified: 2026-10-06 (only the block's rows are read, via pool_rows; --flips-sha streams the whole flips array and refuses a pool with a sealed block). Earlier: 2026-09-25 (build_circuit from circuit_generators)
+# Last modified: 2026-10-06 (only the block's rows are read, via pool_rows; --flips-sha streams the whole flips array and refuses a pool with a sealed block).
+# Earlier: 2026-09-25 (build_circuit from circuit_generators)
+
 """Decode MWPM on one shot block of a pool and record the baseline.
 
-Gives the evaluation-block denominator before any model is trained. Baselines are
-block-specific, so the block decoded here is the block later results are scored on.
+Writes a JSON (p_L, residuals, standard error, block, pool flips SHA) and, optionally, per-shot
+correctness for paired McNemar tests. No TensorFlow; runs in ~/tfenv on grace1.
 
-Writes a JSON (p_L, residual count, binomial standard error, base rate, block indices,
-pool path and flips SHA, library versions) and an optional per-shot npz for later paired
-McNemar tests.
-
-Imports no TensorFlow; runs in the CPU environment (`~/tfenv` on grace1).
-
-  python mwpm_on_block.py --pool <pool.npz> --d 7 --p 0.004 --rounds 7 \
-      --start 15200000 --n 1800000 \
-      --out-json mwpm_eval_block_d7_r7_p004.json \
-      --dump-per-shot mwpm_eval_block_d7_r7_p004_per_shot.npz
+python mwpm_on_block.py --pool <pool.npz> --d 7 --p 0.004 --rounds 7 \
+    --start 15200000 --n 1800000 \
+    --out-json mwpm_eval_block_d7_r7_p004.json \
+    --dump-per-shot mwpm_eval_block_d7_r7_p004_per_shot.npz
 """
 import argparse
 import hashlib

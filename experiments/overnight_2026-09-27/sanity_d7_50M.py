@@ -1,27 +1,16 @@
 # Created: 2026-09-27
 # Last modified: 2026-09-27
+
 """Sanity check of the d=7 50M training set before training on it (CPU only).
 
-    python3 sanity_d7_50M.py --out <dir>
+The set is FORMAL [0, 15M) + TRAINONLY seed 43 [0, 5M) + seed 44 [0, 30M), in that order.
+1 the arrays train_student.py hands to make_dataset equal the pools' flips and to_sequence inputs
+2 per part: detection density, flip rate, and MWPM LER on 5M shots; pass if density and flip
+  rate are within 1% of the FORMAL part and MWPM within 3 standard errors
+3 20M vs 50M loss curves (informational), loss_curves_20M_vs_50M.png
+Writes sanity_result.json.
 
-The 50M set = FORMAL train [0, 15M) + TRAINONLY seed 43 [0, 5M) + TRAINONLY seed 44 [0, 30M),
-appended in that order by train_student.py's multi-pool loader.
-
-1 Loader vs direct read. train_student.py is run on the CPU up to the point where it hands
-  the training arrays to host_data.make_dataset; the arrays are captured there (training is
-  not run). For each part, the captured labels must equal the pool's flips exactly, and the
-  captured inputs must equal to_sequence() of the pool's detection events exactly (compared
-  in 1M-row chunks).
-2 Per-part statistics, read directly from each pool: detection-event density, logical-flip
-  rate (label mean), and the MWPM logical error rate on the first 5M shots of each part
-  (same decoder and detector error model as every baseline).
-  Pass: flip rate and density of each part within 1 % (relative) of the FORMAL part, and the
-  MWPM error rate within 3 combined binomial standard errors of the FORMAL part's.
-3 50M vs 20M loss curves (informational): training and validation loss of the finished d=7
-  reset_after=True runs with 20M and 50M shots (and the old reset_after=False 20M run),
-  plotted to loss_curves_20M_vs_50M.png.
-
-Writes sanity_result.json with "passed": true/false and every number used.
+python3 sanity_d7_50M.py --out <dir>
 """
 import argparse
 import glob

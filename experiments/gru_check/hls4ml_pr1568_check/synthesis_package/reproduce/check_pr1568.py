@@ -1,23 +1,14 @@
 # Created: 2026-09-27
 # Last modified: 2026-09-27
-"""Standalone check: does the installed hls4ml reproduce a Keras GRU model numerically?
 
-Converts a .keras model with whatever hls4ml is installed, compiles the C simulation, runs it
-on the given inputs and compares with the expected Keras logits:
+"""Does the installed hls4ml reproduce a Keras GRU model numerically?
 
-    python check_pr1568.py --model ../models/gru_u140_reset_after_False.keras \
-        --inputs eval_inputs_10000.npy --expected keras_logits_reset_after_False.npy
+Converts with Vivado, io_parallel, ap_fixed<32,16> and 65,536-entry GRU tables, runs C-sim, and
+prints max and mean |logit_hls - logit_keras|, decision agreement (logit > 0), and the
+reset_after value in firmware/parameters.h. Needs TF 2.15 / Keras 2 and a C++ compiler.
 
-Conversion settings (the same as for the recorded results): Vivado backend, io_parallel,
-every precision ap_fixed<32,16> (granularity 'name'), GRU activation tables of 65,536 entries
-of ap_fixed<32,16> with hls4ml's default input ranges.
-
-Prints the hls4ml version, max and mean |logit_hls - logit_keras|, decision agreement
-(decision = logit > 0) and the number of differing decisions, and the reset_after value in
-the generated firmware/parameters.h ("not set" if hls4ml writes none).
-
-Needs TensorFlow 2.15 / Keras 2 (the models were saved with tf_keras 2.15) and a C++
-compiler for hls4ml's C simulation.
+python check_pr1568.py --model ../models/gru_u140_reset_after_False.keras \
+    --inputs eval_inputs_10000.npy --expected keras_logits_reset_after_False.npy
 """
 import argparse
 import os

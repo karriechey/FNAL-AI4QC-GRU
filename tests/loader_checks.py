@@ -1,18 +1,13 @@
 # Created: 2026-09-26
 # Last modified: 2026-09-26
-"""Checks for the host-memory input pipeline (src/host_data.py), before relaunching training.
 
-    python tests/loader_checks.py coverage
-    python tests/loader_checks.py train --out <json> -- <train_student.py arguments>
+"""Checks for the host-memory input pipeline (src/host_data.py).
 
-coverage  (a) Builds the real training pipeline over a 123,457-row array whose target
-              column holds each row's own index, runs three epochs, and checks that every
-              epoch returns every index exactly once, that the x rows match the indexed
-              host rows, and that consecutive epochs are in different orders.
-train     Runs train_student.py in this process with the given arguments, then records
-          the peak GPU memory TensorFlow allocated (tf.config.experimental.get_memory_info)
-          and the run's history. Used for (b) determinism (two identical short runs,
-          compared by the caller) and (c) peak GPU memory at d=5 and d=7, batch 10,000.
+coverage  every epoch returns every index once, rows match, epochs differ in order
+train     runs train_student.py here and records peak GPU memory and the history
+
+python tests/loader_checks.py coverage
+python tests/loader_checks.py train --out <json> -- <train_student.py arguments>
 """
 import json
 import os
