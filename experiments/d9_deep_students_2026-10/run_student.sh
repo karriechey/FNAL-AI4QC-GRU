@@ -9,7 +9,9 @@ set -uo pipefail
 RUN=$1
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SRC="$(cd "$HERE/../../src" && pwd)"
-KD="$HERE/../kd_pilot_p004_2026-10"
+# the kd pilot artifacts (teacher copy, teacher check) live in its own deployment on grace1
+KD=${KD_DIR:-$HERE/../kd_pilot_p004_2026-10}
+[ -d "$KD/teachers" ] || KD=$HOME/FNAL-AI4QC-GRU-kd/experiments/kd_pilot_p004_2026-10
 DEPTH="$HERE/../depth_scaling_d7_2026-10"
 HOSTPY=${HOSTPY:-$HOME/tfenv/bin/python}
 STATUS="$HERE/status.log"
