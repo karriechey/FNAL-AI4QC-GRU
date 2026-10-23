@@ -171,3 +171,25 @@ Sweep LR: 1e-3 (L=10 at 1e-3 stable). The conditional L=10 run at 5e-4 was not n
 Order of events: Part B started 2026-10-21 16:55 UTC, after the 3-hour wait for this amendment
 ran out (access to the cluster lapsed between 10:23 and 19:00). This amendment was committed after
 Part B started; it records Part A only and changes no Part B rule.
+
+### 2026-10-23: reboot during Part B, six runs resumed
+
+grace1 rebooted 2026-10-22 21:19 UTC. L=1, L=3, L=4, u172 and u255 had finished and are
+unaffected. L=5 to L=10 were killed mid-epoch after 68, 62, 53, 50, 46 and 43 epochs and were
+resumed 2026-10-23 02:54 UTC from their last complete epoch snapshot, which holds the Adam
+state; `train_student.py --initial-epoch` asserts the restored update count and the fresh-shot
+stream continues at that epoch, so the shots are those of an uninterrupted run. The epoch
+budget, LR schedule, seeds and partitions are unchanged.
+
+Two consequences for the resumed runs, recorded because they are not in the original design:
+
+- A resumed epoch is not bit-identical to an uninterrupted one. The within-epoch shuffle of the
+  fresh shots restarts from the epoch seed, and the kill rule's running best restarts at the
+  resume epoch.
+- The per-epoch history of the finished epochs is rebuilt from run.log
+  (`history_from_log.py`), since train_student.py writes history.json only at the end of a run.
+  The merged history still carries all 80 epochs, so the convergence slope is unchanged.
+
+The GPU resource check was relaxed for these runs only (`FOREIGN_MAX_MIB=70000`): another user
+holds 57 GB of the 98 GB card at 0% utilization, leaving room for the six runs at about 4.7 GB
+each. The 5-minute idle check before each start is unchanged.

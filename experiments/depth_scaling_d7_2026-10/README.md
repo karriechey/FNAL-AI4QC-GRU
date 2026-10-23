@@ -59,3 +59,30 @@ Times UTC.
 - 2026-10-21 08:55 L=1 at 1e-3, 2e-3 and 3e-3 finished 20 epochs.
 - 2026-10-21 10:21 `lrscan_d7_L10_lr5e-3` killed at epoch 9: best val p_L 0.0160 (epoch 2),
   epochs 5-9 at 0.027-0.088 with training loss up from 0.044 to 0.180. Classified diverged.
+- 2026-10-21 13:48-19:00 no access to grace1 (Kerberos ticket expired). Part A ended 13:54 with
+  sweep LR 1e-3; Part B started on its own at 16:55 after the 3-hour GO wait; the amendment was
+  committed at 19:10, after Part B started.
+- 2026-10-21 19:05 Part B, 11 runs at once (L=2 reused): epoch 1 took 731 s (L=1) to 2,565 s
+  (L=10), u172 876 s, u255 921 s; GPU 29 GB at 100%, host 146 GB, /home 6.0 GB free. L=10 at 80
+  epochs: about 55 h at this rate, less as the shorter runs finish.
+- 2026-10-22 03:40-13:00 no access to grace1 from the workstation (network); runs unaffected.
+  Scoring after training takes about 12 min per run (42 selection checkpoints, then eval).
+- 2026-10-22 21:19 grace1 rebooted (uptime since 21:19Z, no notice in the run logs). L=1, L=3,
+  L=4, u172 and u255 were already done. The other six died mid-epoch: L=5 after 68 epochs,
+  L=6 after 62, L=7 after 53, L=8 after 50, L=9 after 46, L=10 after 43.
+- 2026-10-23 02:54 resumed those six in their own folders from `epochs/epoch<N>.weights.h5`,
+  which carries the Adam slots (`optimizer/vars` in the h5). `--initial-epoch N` restores the
+  update count (L=10: 430,000 = 10,000 x 43, asserted by train_student.py) and the fresh-shot
+  stream continues at epoch N, so the shots match an uninterrupted run. New files:
+  `launch_resume_after_reboot.sh`, `history_from_log.py`; `run_depth.sh` gains `RESUME_OUT`
+  and `FOREIGN_MAX_MIB`.
+  - `.lastepoch.weights.h5` was a partial write for L=9, as was its `epoch047.weights.h5`
+    (h5 "truncated file"), so the resume point is the last complete epoch line in run.log.
+  - The launcher truncates run.log, so the earlier log is kept as `run_part1.log` and
+    `history_from_log.py` rebuilds the finished epochs as `--resume-history`, which keeps
+    history.json at 80 epochs for the COMPLETE check and the last-20-epoch slope.
+  - The kill rule now sees only the resumed epochs, so its "best so far" restarts at epoch N+1.
+- 2026-10-23 02:54 another user's `llama-server` holds 57 GB on the card at 0% utilization,
+  above the 10 GB limit in the resource check. Raised to `FOREIGN_MAX_MIB=70000` for the
+  resumed runs: 40 GB free covers six runs at about 4.7 GB each, and the 5-minute idle check
+  (mean 0%) still gates each start.

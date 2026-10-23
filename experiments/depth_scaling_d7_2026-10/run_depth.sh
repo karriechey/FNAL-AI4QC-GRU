@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Created: 2026-10-21
-# Last modified: 2026-10-21
+# Last modified: 2026-10-23 (RESUME_OUT: continue a run the 2026-10-22 reboot killed)
 # One run of prereg/depth_scaling_d7_2026-10.md by name. Waits for GPU, host memory and disk
 # before starting, applies the kill rule while training, then (depth sweep) scores the
 # selection block, selects the checkpoint and scores it on the eval block.
 #   bash run_depth.sh lrscan_d7_L10_lr1e-3
 #   bash run_depth.sh depth_d7_L04_u70        (needs depth_sweep/sweep_lr.txt)
 #   SMOKE=1 bash run_depth.sh depth_d7_L10_u70   (2 epochs of 10M shots, for timing)
+#   RESUME_OUT=<run folder> bash run_depth.sh depth_d7_L10_u70   (continue into that folder)
 set -uo pipefail
 RUN=$1
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -24,6 +25,8 @@ GPU_MEM_MIB=${GPU_MEM_MIB:-6000}
 NEED_HOST_GB=${NEED_HOST_GB:-30}
 MAX_CONCURRENT=${MAX_CONCURRENT:-12}
 MIN_FREE_GB=${MIN_FREE_GB:-3}
+# memory other users may hold on the card before this run waits for them
+FOREIGN_MAX_MIB=${FOREIGN_MAX_MIB:-10240}
 
 status () { echo "$(date -u +%FT%TZ) $RUN $*" >> "$STATUS"; }
 stop_all () {    # protocol stop: reason goes to the top of status.log
@@ -99,7 +102,7 @@ while true; do
   [ -n "$why" ] || [ "$avail_gb" -ge "$NEED_HOST_GB" ] || why="host MemAvailable ${avail_gb} GB < $NEED_HOST_GB"
   [ -n "$why" ] || [ "$ours" -lt "$MAX_CONCURRENT" ] || why="$ours runs up (max $MAX_CONCURRENT)"
   [ -n "$why" ] || [ "${gpu_free:-0}" -ge $((GPU_MEM_MIB + 2048)) ] || why="GPU free ${gpu_free} MiB < $((GPU_MEM_MIB + 2048))"
-  [ -n "$why" ] || [ "$foreign_mib" -lt 10240 ] || why="other users on the GPU:$foreign"
+  [ -n "$why" ] || [ "$foreign_mib" -lt "$FOREIGN_MAX_MIB" ] || why="other users on the GPU:$foreign"
   if [ -z "$why" ] && [ -n "$foreign" ] && [ "$ours" = 0 ]; then
     # as experiments/mwpm_fixes_d9_2026-10/driver.py: 5 minutes near 0% before sharing
     u=(); for _ in $(seq 30); do u+=($(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits | head -1)); sleep 10; done
@@ -113,7 +116,28 @@ while true; do
   sleep 300
 done
 
-S=$(date -u +%Y%m%dT%H%M%SZ); OUT="$BASE/${RUN}_$S"; mkdir -p "$OUT"
+if [ -n "${RESUME_OUT:-}" ]; then
+  OUT="$RESUME_OUT"; S=${OUT##*_}
+  [ -d "$OUT/seed0/epochs" ] || { echo "no $OUT/seed0/epochs to resume from"; exit 1; }
+  [ -f "$OUT/seed0/COMPLETE" ] && { echo "$OUT already COMPLETE"; exit 1; }
+  # the epoch snapshots carry the Adam slots too, and one of them pairs with the last
+  # complete epoch line in run.log; .lastepoch can be a partial write from the reboot
+  DONE_EP=$(grep -cE '^[0-9]+/[0-9]+ - [0-9]+s - loss' "$OUT/seed0/run.log")
+  LAST_W=$(printf '%s/seed0/epochs/epoch%03d.weights.h5' "$OUT" "$DONE_EP")
+  BEST_J=$(ls "$OUT"/seed0/ckpt/*.best.json 2>/dev/null | head -1)
+  [ -s "$LAST_W" ] || { echo "no epoch $DONE_EP snapshot at $LAST_W"; exit 1; }
+  CUDA_VISIBLE_DEVICES= "$HOSTPY" -c "
+import h5py, sys
+with h5py.File(sys.argv[1]) as h:
+    assert 'optimizer' in h, 'no optimizer state'
+" "$LAST_W" || { echo "$LAST_W unreadable or without Adam state"; exit 1; }
+  # the launcher truncates run.log, and train_student needs the finished epochs as history
+  [ -f "$OUT/seed0/run_part1.log" ] || cp "$OUT/seed0/run.log" "$OUT/seed0/run_part1.log"
+  "$HOSTPY" "$HERE/history_from_log.py" --log "$OUT/seed0/run_part1.log" --epochs "$DONE_EP" \
+    --out "$OUT/seed0/resume_history.json" || exit 1
+else
+  S=$(date -u +%Y%m%dT%H%M%SZ); OUT="$BASE/${RUN}_$S"; mkdir -p "$OUT"
+fi
 ENVX=(D=7 ROUNDS=7 SEEDS=0 UNITS="$UNITS" P=0.004 POOL=$POOL
       NTRAIN=0 FRESH_SHOTS=$FRESH FRESH_WORKERS=8 FRESH_SEED_BASE=$FSB
       BATCH=10000 EPOCHS=$EPOCHS LR=$LRV LR_SCHEDULE=cosine LR_END=3e-5 LR_WARMUP_EPOCHS=$WU GLOBAL_CLIPNORM=0.64
@@ -123,10 +147,12 @@ ENVX=(D=7 ROUNDS=7 SEEDS=0 UNITS="$UNITS" P=0.004 POOL=$POOL
 # no MAX_PARAMS: capacity study above the d7 deployment budget (prereg)
 [ -n "$STOPS" ] && ENVX+=(STOP_AFTER_STEPS=$STOPS)
 [ -n "$SAVE_FROM" ] && ENVX+=(SAVE_EPOCHS_FROM=$SAVE_FROM)
+[ -n "${RESUME_OUT:-}" ] && ENVX+=(RESUME_WEIGHTS="$LAST_W" INITIAL_EPOCH=$DONE_EP
+      RESUME_BEST_JSON="$BEST_J" RESUME_HISTORY="$OUT/seed0/resume_history.json")
 { echo "code $(cat "$HERE/../../CODE_COMMIT.txt" 2>/dev/null | head -1)"
   echo "run $RUN part $PART L=$L width $W params $GOT peak_lr $LRV tf32_train $TF32"
   printf '%s\n' "${ENVX[@]}"; } > "$OUT/env.txt"
-status "started L=$L u$W lr=$LRV params=$GOT -> $(basename "$OUT")"
+status "started L=$L u$W lr=$LRV params=$GOT${RESUME_OUT:+ resumed from epoch $DONE_EP} -> $(basename "$OUT")"
 
 pod () {   # container name, command...
   local name=$1; shift
