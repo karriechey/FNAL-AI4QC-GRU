@@ -86,3 +86,6 @@ Times UTC.
   above the 10 GB limit in the resource check. Raised to `FOREIGN_MAX_MIB=70000` for the
   resumed runs: 40 GB free covers six runs at about 4.7 GB each, and the 5-minute idle check
   (mean 0%) still gates each start.
+- 2026-10-23 17:00 all 11 runs done, report.py exit 0. Resumed runs took 1,100-1,900 s per
+  epoch with six on the card. Results: `GRU_depth_scaling_runs_2026-10-23.csv` at the repo
+  root, `depth_sweep_report.md` here, figures in `figures/output/`.
