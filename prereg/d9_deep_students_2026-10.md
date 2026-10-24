@@ -99,3 +99,37 @@ checked at launch and every 12 h; once a run is scored, its epoch weights other 
 selected one and the last are deleted and the deletion is logged.
 
 ## Amendments
+
+### 2026-10-24: kd9_taper4 added, the u70 stacks paused
+
+The three u70-stack runs were paused at an epoch boundary after epoch 52-61 of 160, by
+decision and not by any rule in this document. At matched epochs on the validation block they
+sat near 5x MWPM while kd9_3x140 was at 1.5x, so the question this experiment asks, whether
+depth at width 70 recovers the d=9 result, was already answered for practical purposes: it
+does not. Their weights, Adam state and per-epoch history are kept, and they can be resumed
+exactly (`resume_student.sh`); nothing about their recipe or budget changes.
+
+One run is added, launched after this amendment is committed:
+
+| run | student | parameters | alpha | teacher |
+|---|---|---|---|---|
+| kd9_taper4 | GRU 160-110-90-70 | 293,261 | 0 | f3280e240 |
+
+The tapered stack spends the d=9 budget on a wide first layer, which reads the 80 detector
+inputs per round, and narrows with depth. It is the shape between kd9_3x140 (329,001
+parameters, 1.0461x, over the budget) and the uniform u70 stacks (under the budget, near 5x
+mid-training). The parameter count is asserted with `count_params()` before training and is
+under the d=9 cap of 303,521.
+
+Everything else follows kd9_3x140 and the sections above: teacher f3280e240 with alpha 0 and
+temperature 1, initialisation seed 0, batch 10,000, Adam with global clipnorm 0.64, peak LR
+5e-4, warmup 3 epochs, cosine to 3e-5 over 160 epochs, 100M fresh shots per epoch, seed base
+5 x 10^12, TF32 on in training and off in scoring, every epoch saved from 40, the same
+selection rule, the same kill rule and the same convergence test.
+
+Progress reporting: every 10 epochs the validation p_L of kd9_taper4 and of kd9_3x140 at that
+same epoch are appended to `status.log`, so the two trajectories can be compared while the run
+is going. These are monitoring lines; no decision is taken on them.
+
+McNemar on the eval block for kd9_taper4: against MWPM on the same shots, against the teacher
+f3280e240, and against kd9_3x140.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-10-23
-# Last modified: 2026-10-24 (RESUME_OUT, used by resume_student.sh)
+# Last modified: 2026-10-24 (RESUME_OUT; kd9_taper4; 10-epoch pairing against kd9_3x140)
 # One run of prereg/d9_deep_students_2026-10.md by name. Parameter assertion, resource wait,
 # training with the kill rule, then selection-block scoring, selection and the eval block.
 #   bash run_student.sh kd9_10x70
@@ -37,6 +37,7 @@ case "$RUN" in
   kd9_10x70) UNITS=$(printf '70 %.0s' $(seq 10)); WANT=298271 ;;
   kd9_8x70)  UNITS=$(printf '70 %.0s' $(seq 8));  WANT=239051 ;;
   hl9_10x70) UNITS=$(printf '70 %.0s' $(seq 10)); WANT=298271; ALPHA=1.0 ;;
+  kd9_taper4) UNITS="160 110 90 70"; WANT=293261 ;;
   *) echo "unknown run $RUN (README.md lists the runs)"; exit 1 ;;
 esac
 UNITS=${UNITS% }
@@ -127,7 +128,7 @@ pod () {   # container name, command...
 CN="d9_$RUN"
 pod "$CN" -w "$SRC" qdec:tf215 env "${ENVX[@]}" bash gh200_run_student_scaling.sh > "$OUT/podman.log" 2>&1 &
 PODPID=$!
-last=0; disk_checked=$(date +%s)
+last=0; paired=0; disk_checked=$(date +%s)
 while kill -0 $PODPID 2>/dev/null; do
   sleep 60
   "$HOSTPY" "$DEPTH/classify_lr_scan.py" --kill-check "$OUT" > "$OUT/kill_check.txt" 2>&1
@@ -136,6 +137,10 @@ while kill -0 $PODPID 2>/dev/null; do
   if [ "${ep:-0}" -gt "$last" ]; then
     status "epoch $ep $(grep -E '^[0-9]+/[0-9]+ - [0-9]+s - loss' "$OUT/seed0/run.log" | tail -1 | grep -oE '(val_)?(loss|ler): [0-9.e+-]*' | tr '\n' ' ')"
     last=$ep
+  fi
+  if [ "${ep:-0}" -gt 0 ] && [ $((ep % 10)) = 0 ] && [ "$ep" != "$paired" ]; then
+    paired=$ep
+    "$HOSTPY" "$HERE/pair_epoch.py" --run "$RUN" --out "$OUT" --epoch "$ep" >> "$STATUS" 2>&1
   fi
   if [ $rc = 3 ]; then
     podman stop -t 30 "$CN" > /dev/null 2>&1

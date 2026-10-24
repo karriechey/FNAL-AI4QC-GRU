@@ -48,3 +48,15 @@ Times UTC.
   the three runs are live: bash reads a script as it executes, so overwriting the running copy
   can break it. On a crash the runs are already dead, so the deploy happens then, before
   `resume_student.sh` is used. A run killed before epoch 40 has no snapshot and restarts.
+- 2026-10-24 17:40 Paused kd9_10x70, hl9_10x70 and kd9_8x70 at the next epoch boundary, by
+  decision, not by a pre-registered rule: at epoch 52-61 the u70 stacks were near 5x MWPM on
+  the validation block against 1.5x for kd9_3x140 at the same epoch. `pause_runs.sh` waits for
+  the epoch's checkpoints to be written, stops the wrapper before the container so no
+  half-trained checkpoint is scored, rebuilds the finished epochs as `resume_history.json` and
+  writes PAUSED. `resume_student.sh` continues them exactly.
+- 2026-10-24 17:45 Added kd9_taper4 (GRU 160-110-90-70, 293,261 parameters) as a dated prereg
+  amendment, committed before launch. Shapes under the 303,521 cap spend one budget: 2 layers
+  at width 170, 3 at 134, 4 at 114, 5 at 101, 6 at 92. The taper puts the width where the 80
+  detector inputs arrive and narrows with depth.
+- 2026-10-24 17:45 `pair_epoch.py` writes one status.log line every 10 epochs with this run's
+  validation p_L and kd9_3x140's at the same epoch, from the kd pilot history.json.
