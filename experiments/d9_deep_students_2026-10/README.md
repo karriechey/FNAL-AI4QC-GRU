@@ -60,3 +60,7 @@ Times UTC.
   detector inputs arrive and narrows with depth.
 - 2026-10-24 17:45 `pair_epoch.py` writes one status.log line every 10 epochs with this run's
   validation p_L and kd9_3x140's at the same epoch, from the kd pilot history.json.
+- 2026-10-24 18:30 Smoke `kd9_taper4` (2 epochs of 10M shots, GPU free of our runs): 72 s then
+  62 s per epoch, about 620 s per 100M-shot epoch alone, against 1,500 s for kd9_10x70. Four
+  layers instead of ten is the difference; the parameter counts are within 2%. Trained, scored,
+  selected and eval-scored end to end. 160 epochs projects about 28 h.
