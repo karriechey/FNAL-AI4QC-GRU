@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-10-23
-# Last modified: 2026-10-23
+# Last modified: 2026-10-24 (RESUME_OUT, used by resume_student.sh)
 # One run of prereg/d9_deep_students_2026-10.md by name. Parameter assertion, resource wait,
 # training with the kill rule, then selection-block scoring, selection and the eval block.
 #   bash run_student.sh kd9_10x70
@@ -98,19 +98,25 @@ while true; do
   sleep 300
 done
 
-S=$(date -u +%Y%m%dT%H%M%SZ); OUT="$BASE/${RUN}_$S"; mkdir -p "$OUT"
+if [ -n "${RESUME_OUT:-}" ]; then      # set by resume_student.sh after a crash
+  OUT="$RESUME_OUT"; S=${OUT##*_}
+else
+  S=$(date -u +%Y%m%dT%H%M%SZ); OUT="$BASE/${RUN}_$S"; mkdir -p "$OUT"
+fi
 KDENV=(); [ "$ALPHA" = 0.0 ] && KDENV=(TEACHER_WEIGHTS="$T_COPY" TEACHER_UNITS="$T_UNITS" TEACHER_PARAMS="$T_PARAMS")
 ENVX=(D=9 ROUNDS=9 SEEDS=0 UNITS="$UNITS" P=0.004 POOL=$POOL
       NTRAIN=0 FRESH_SHOTS=$FRESH FRESH_WORKERS=8 FRESH_SEED_BASE=$T_FSB
       BATCH=10000 EPOCHS=$EPOCHS LR=5e-4 LR_SCHEDULE=cosine LR_END=3e-5 LR_WARMUP_EPOCHS=$WU GLOBAL_CLIPNORM=0.64
       EARLY_STOP=0 RESET_AFTER=0 UNROLL=0 EVAL_NO_TF32=1 TRAIN_NO_TF32=$([ "$TF32" = on ] && echo 0 || echo 1)
       GPU_MEM_MIB=$GPU_MEM_MIB MIN_FREE_MIB=$GPU_MEM_MIB OUT="$OUT" STAMP="$S" MALLOC_ARENA_MAX=2
-      MAX_PARAMS=$MAX_PARAMS SAVE_EPOCHS_FROM=$SAVE_FROM ALPHA=$ALPHA TEMPERATURE=1.0 SKIP_TAIL_EVAL=1 "${KDENV[@]}")
+      MAX_PARAMS=$MAX_PARAMS SAVE_EPOCHS_FROM=$SAVE_FROM ALPHA=$ALPHA TEMPERATURE=1.0 SKIP_TAIL_EVAL=1 "${KDENV[@]}" "${KDENV[@]}")
+[ -n "${RESUME_OUT:-}" ] && ENVX+=(RESUME_WEIGHTS="$RESUME_WEIGHTS" INITIAL_EPOCH=$INITIAL_EPOCH
+      RESUME_BEST_JSON="${RESUME_BEST_JSON:-}" RESUME_HISTORY="$RESUME_HISTORY")
 { echo "code $(cat "$HERE/../../CODE_COMMIT.txt" 2>/dev/null | head -1)"
   echo "run $RUN d=9 units ($UNITS) params $GOT alpha $ALPHA epochs $EPOCHS tf32_train $TF32"
   [ "$ALPHA" = 0.0 ] && echo "teacher $T_NAME sha256 $(sha256sum < "$T_COPY" | cut -c1-16)"
   printf '%s\n' "${ENVX[@]}"; } > "$OUT/env.txt"
-status "started units ($UNITS) params=$GOT alpha=$ALPHA epochs=$EPOCHS -> $(basename "$OUT")"
+status "started units ($UNITS) params=$GOT alpha=$ALPHA epochs=$EPOCHS${RESUME_OUT:+ resumed from epoch $INITIAL_EPOCH} -> $(basename "$OUT")"
 
 pod () {   # container name, command...
   local name=$1; shift

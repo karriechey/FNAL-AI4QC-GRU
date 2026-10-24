@@ -39,3 +39,12 @@ Times UTC.
   2,200-2,600 s per epoch: 240 epochs is 147-173 h, past the 120 h limit, and even the most
   optimistic 1,800 s per epoch lands exactly on it. 160 epochs projects 98-116 h. It also
   matches the budget of kd9_3x140, kd9_3x70 and kd9_1x140, so the comparisons share a schedule.
+- 2026-10-24 07:44 12 h in: kd9_10x70 and hl9_10x70 at epoch 29, kd9_8x70 at 34, so 1,490 s and
+  1,270 s per epoch, as projected. /home 3.9 GB free, nothing saved yet (epochs start at 40).
+- 2026-10-24 08:00 Added `resume_student.sh` and a `RESUME_OUT` branch in `run_student.sh`,
+  after the 2026-10-22 reboot killed six depth-sweep runs mid-epoch. A resumed run continues in
+  its own folder from the last complete epoch snapshot, which carries the Adam state, so the
+  shot stream and the schedule are those of an uninterrupted run. Not deployed to grace1 while
+  the three runs are live: bash reads a script as it executes, so overwriting the running copy
+  can break it. On a crash the runs are already dead, so the deploy happens then, before
+  `resume_student.sh` is used. A run killed before epoch 40 has no snapshot and restarts.
