@@ -117,3 +117,10 @@ Times UTC.
   Trained, scored, selected and eval-scored end to end. 240 epochs projects about 31 h, inside
   the 120 h limit, so the budget stays 240. Epoch weights from epoch 40 are about 0.72 GB against
   4 GB free on /home, checked again every 12 h.
+- 2026-10-25 20:24 kd9_3x134 stopped before training: "240 epochs from base 5000000000000 exceed
+  its registered max_epochs 160", the seed-range guard in `src/fresh_shots.py` against two runs
+  drawing overlapping fresh-shot seeds. The 240 in the amendment came from a wrong reading of
+  kd9_3x140, which trained 160 epochs; 240 is the teacher's budget, on seed base 1 x 10^12. Fixed
+  by running kd9_3x134 for 160 epochs, which also matches kd9_3x140's schedule and shot stream
+  exactly, rather than by extending the reservation. Prereg corrected before the relaunch. The
+  stopped run folder is kept with no weights.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-10-23
-# Last modified: 2026-10-25 (kd9_taper3_t100, kd9_3x134 with its own epoch budget)
+# Last modified: 2026-10-25 (kd9_taper3_t100, kd9_3x134)
 # One run of prereg/d9_deep_students_2026-10.md by name. Parameter assertion, resource wait,
 # training with the kill rule, then selection-block scoring, selection and the eval block.
 #   bash run_student.sh kd9_10x70
@@ -40,7 +40,7 @@ case "$RUN" in
   hl9_10x70) UNITS=$(printf '70 %.0s' $(seq 10)); WANT=298271; ALPHA=1.0 ;;
   kd9_taper4) UNITS="160 110 90 70"; WANT=293261 ;;
   kd9_taper3_t100) UNITS="160 120 100"; WANT=283241 ;;
-  kd9_3x134) UNITS="134 134 134"; WANT=302841; RUN_EPOCHS=240 ;;
+  kd9_3x134) UNITS="134 134 134"; WANT=302841 ;;
   *) echo "unknown run $RUN (README.md lists the runs)"; exit 1 ;;
 esac
 UNITS=${UNITS% }

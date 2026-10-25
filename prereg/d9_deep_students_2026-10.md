@@ -210,3 +210,20 @@ is taken on them.
 
 McNemar on the eval block for kd9_3x134: against MWPM on the same shots, against the teacher
 f3280e240, against kd9_3x140 and against kd9_taper3_t100.
+
+### 2026-10-25: correction to the kd9_3x134 epoch budget
+
+The amendment above set kd9_3x134 to 240 epochs on the statement that 240 is the budget of
+kd9_3x140. That is wrong: kd9_3x140 trained for 160 epochs (`EPOCHS=160` in its env.txt, 160
+validation epochs in its log). Only the teacher f3280e240 ran 240 epochs, from fresh-shot seed
+base 1 x 10^12, which `configs/partitions.yaml` reserves for 240.
+
+The first launch stopped before training on the seed-range guard in `src/fresh_shots.py`: base
+5 x 10^12 is reserved for 160 epochs, so 240 epochs from it would have drawn seeds outside the
+reservation. No weights were written and nothing was scored (run folder
+`runs/kd9_3x134_20261025T202323Z`, kept).
+
+kd9_3x134 runs for 160 epochs, the budget of every other run in this experiment and of
+kd9_3x140, on the same seed base and so the same shot stream. Nothing else about the run changes.
+Extending the reservation to 240 was rejected: it would have given kd9_3x134 a cosine schedule
+over a different horizon from the run it exists to isolate.
