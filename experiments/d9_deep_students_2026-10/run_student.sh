@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-10-23
-# Last modified: 2026-10-25 (kd9_taper3_t100)
+# Last modified: 2026-10-25 (kd9_taper3_t100, kd9_3x134 with its own epoch budget)
 # One run of prereg/d9_deep_students_2026-10.md by name. Parameter assertion, resource wait,
 # training with the kill rule, then selection-block scoring, selection and the eval block.
 #   bash run_student.sh kd9_10x70
@@ -33,12 +33,14 @@ stop_all () {
 }
 
 ALPHA=0.0
+RUN_EPOCHS=
 case "$RUN" in
   kd9_10x70) UNITS=$(printf '70 %.0s' $(seq 10)); WANT=298271 ;;
   kd9_8x70)  UNITS=$(printf '70 %.0s' $(seq 8));  WANT=239051 ;;
   hl9_10x70) UNITS=$(printf '70 %.0s' $(seq 10)); WANT=298271; ALPHA=1.0 ;;
   kd9_taper4) UNITS="160 110 90 70"; WANT=293261 ;;
   kd9_taper3_t100) UNITS="160 120 100"; WANT=283241 ;;
+  kd9_3x134) UNITS="134 134 134"; WANT=302841; RUN_EPOCHS=240 ;;
   *) echo "unknown run $RUN (README.md lists the runs)"; exit 1 ;;
 esac
 UNITS=${UNITS% }
@@ -58,7 +60,7 @@ source "$KD/teachers.sh"
 TF32=$(cat "$G0/tf32_decision.txt")
 [ "$TF32" = on ] || [ "$TF32" = off ] || stop_all "no d9 TF32 decision at $G0/tf32_decision.txt"
 
-EPOCHS=$(cat "$HERE/epochs.txt" 2>/dev/null || echo 240)
+EPOCHS=${RUN_EPOCHS:-$(cat "$HERE/epochs.txt" 2>/dev/null || echo 240)}
 FRESH=100000000; WU=3; SAVE_FROM=40; BASE="$HERE/runs"
 if [ -n "${SMOKE:-}" ]; then
   FRESH=10000000; EPOCHS=2; WU=0; SAVE_FROM=1; BASE="$HERE/smoke"

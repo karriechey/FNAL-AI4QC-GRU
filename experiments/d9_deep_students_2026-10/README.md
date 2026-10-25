@@ -92,3 +92,23 @@ Times UTC.
 - 2026-10-25 Train and validation loss track at matched epochs for both tapers (ratios to
   kd9_3x140 at epoch 35 agree to about 1%), as 100M fresh shots per epoch imply, so the deficit
   is on the training objective rather than generalization.
+- 2026-10-25 20:10 `pair_epoch.py` rewritten to key on the epoch number train_student.py prints
+  rather than on file order, keeping one entry per epoch and failing if the epochs are not exactly
+  1...N or if an epoch appears twice with different values. Checked against every run folder: the
+  four paused runs (kd9_10x70 54 epochs, hl9_10x70 55, kd9_8x70 64, kd9_taper4 120) and
+  kd9_taper3_t100 (39) all parse contiguous with no duplicates, so the duplicate-log fault is
+  covered for all of them, not only kd9_taper4. p_L now comes from the integer `val_errors` count
+  over the 200,000-shot block; the kd pilot reference reads `val_errors` from history.json and
+  falls back to val_ler x 200,000 for an older history without the counts.
+- 2026-10-25 The selected-checkpoint and eval-block numbers were never exposed to the log fault.
+  `score_selection.py` loads each `epochs/epochNNN.weights.h5` and decodes the selection block
+  itself, `select_checkpoint.py` reads only that scoring CSV and asserts the weights path it picked
+  matches the epoch, and the eval block is scored from the selected weights file. Neither reads
+  run.log, val_ler or history.json. The paired status.log lines are monitoring only.
+- 2026-10-25 20:02 kd9_taper3_t100 paused at the end of epoch 40, by decision, not by a rule in
+  the prereg: it tracked kd9_taper4 to within 1% at every matched epoch while kd9_3x140 was at
+  1.82x. Resumable exactly; resumed and scored after kd9_3x134.
+- 2026-10-25 kd9_3x134 (3 x GRU 134, 302,841 parameters, 240 epochs) added as a dated prereg
+  amendment. It is the widest uniform three-layer stack inside the 303,521 budget, so it separates
+  uniform width from taper at depth 3. Its 240-epoch budget is set in the run table in
+  `run_student.sh`, not in epochs.txt, which stays 160 for the other runs.

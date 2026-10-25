@@ -169,3 +169,44 @@ decision is taken on them.
 
 McNemar on the eval block for kd9_taper3_t100: against MWPM on the same shots, against the
 teacher f3280e240, against kd9_3x140 and against kd9_taper4.
+
+### 2026-10-25: kd9_3x134 added, kd9_taper3_t100 paused
+
+kd9_taper3_t100 was paused at the end of epoch 40 of 160, by decision and not by any rule in this
+document. It tracked kd9_taper4 to within 1% at every matched epoch (3.98x against 3.92x MWPM on
+the validation block at epoch 39) while kd9_3x140 was at 1.82x, and train loss tracked validation
+loss to about 1% for both tapers, so the deficit is on the training objective and the two tapered
+shapes behave as one. Weights, Adam state and history are kept and the run is exactly resumable
+(`resume_student.sh`); its recipe and 160-epoch budget do not change.
+
+One run is added, launched after this amendment is committed:
+
+| run | student | parameters | alpha | teacher | epochs |
+|---|---|---|---|---|---|
+| kd9_3x134 | 3 x GRU 134 | 302,841 | 0 | f3280e240 | 240 |
+
+kd9_3x140 reached 1.0461x but at 329,001 parameters, over the d=9 deployment budget of 303,521.
+A uniform 3 x GRU 134 is the widest three-layer stack that fits the budget, 302,841 parameters,
+and it isolates the one factor the tapers left confounded: at depth 3 and the same budget, a
+uniform width against a taper (kd9_taper3_t100, 160-120-100, 283,241). If it lands near 1.05x the
+d=9 result holds inside the budget and the taper was the problem; if it lands near 2x the
+remaining gap to kd9_3x140 is the last 26,160 parameters of width.
+
+The epoch budget is 240, the budget of the teacher and of kd9_3x140, rather than the 160 the other
+runs of this experiment use, so the comparison against kd9_3x140 is at matched epochs over the
+whole schedule. At the measured rate for a three-layer stack of this width this is about 33 h,
+inside the 120 h limit of the Runs section.
+
+Everything else follows kd9_3x140 and the sections above: teacher f3280e240 with alpha 0 and
+temperature 1, initialisation seed 0, batch 10,000, Adam with global clipnorm 0.64, peak LR 5e-4,
+warmup 3 epochs, cosine to 3e-5 over the 240 epochs, 100M fresh shots per epoch, seed base
+5 x 10^12, TF32 on in training and off in scoring, every epoch saved from 40, the same selection
+rule, the same kill rule and the same convergence test.
+
+Progress reporting: every 10 epochs the validation p_L of kd9_3x134, kd9_3x140, kd9_taper4 and
+kd9_taper3_t100 at that same epoch are appended to `status.log`, as integer error counts over the
+200,000-shot validation block divided by the block size. These are monitoring lines; no decision
+is taken on them.
+
+McNemar on the eval block for kd9_3x134: against MWPM on the same shots, against the teacher
+f3280e240, against kd9_3x140 and against kd9_taper3_t100.
