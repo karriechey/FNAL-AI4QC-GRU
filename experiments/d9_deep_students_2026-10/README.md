@@ -75,3 +75,8 @@ Times UTC.
   amendment and launched alone on the GPU. The instruction that added it said both to launch
   after kd9_taper4 finished and scored, and to pause kd9_taper4 and launch now; the later and
   more specific of the two was followed, so taper4's remaining epochs move behind taper3.
+- 2026-10-25 14:46 Smoke `kd9_taper3_t100` (2 epochs of 10M shots, GPU free of our runs): 57 s
+  then 48 s per epoch, about 480 s per 100M-shot epoch alone, against 620 s for kd9_taper4 and
+  1,500 s for kd9_10x70. Parameter assertion passed at 283,241. Trained, scored, selected and
+  eval-scored end to end. 160 epochs projects about 21 h, well inside the 120 h limit, so the
+  budget stays 160.
