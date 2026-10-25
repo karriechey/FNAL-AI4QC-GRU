@@ -1,4 +1,4 @@
-<!-- Created: 2026-10-23 | Last modified: 2026-10-23 -->
+<!-- Created: 2026-10-23 | Last modified: 2026-10-25 -->
 # Pre-registration: deep narrow d=9 students (October 2026)
 
 Committed before any run of this experiment trained. Code and run folders:
@@ -133,3 +133,39 @@ is going. These are monitoring lines; no decision is taken on them.
 
 McNemar on the eval block for kd9_taper4: against MWPM on the same shots, against the teacher
 f3280e240, and against kd9_3x140.
+
+### 2026-10-25: kd9_taper3_t100 added, kd9_taper4 paused
+
+kd9_taper4 was paused at an epoch boundary after epoch 120 of 160, by decision and not by any
+rule in this document. Its trajectory was already decided: 2.87x MWPM on the validation block at
+epoch 110 against 1.10x for kd9_3x140 at the same epoch, improving about 0.1x per 10 epochs, so
+the remaining 40 epochs cannot bring it near kd9_3x140. Weights, Adam state and per-epoch history
+are kept and the run is exactly resumable (`resume_student.sh`); its recipe and 160-epoch budget
+do not change. It is resumed for its remaining epochs once kd9_taper3_t100 finishes, and then
+scored.
+
+One run is added, launched after this amendment is committed, alone on the GPU:
+
+| run | student | parameters | alpha | teacher |
+|---|---|---|---|---|
+| kd9_taper3_t100 | GRU 160-120-100 | 283,241 | 0 | f3280e240 |
+
+Three layers at a parameter count close to kd9_taper4 and kd9_3x140 (283,241 against 293,261 and
+329,001), tapering but staying wide: the last layer is 100 rather than 70. It separates the two
+things that changed between kd9_3x140 (1.05x) and kd9_taper4 (near 2.9x mid-training), the number
+of layers and the width of the later layers, by holding the depth at three and narrowing only
+mildly. The parameter count is asserted with `count_params()` before training and is under the
+d=9 cap of 303,521.
+
+Everything else follows kd9_3x140 and the sections above: teacher f3280e240 with alpha 0 and
+temperature 1, initialisation seed 0, batch 10,000, Adam with global clipnorm 0.64, peak LR 5e-4,
+warmup 3 epochs, cosine to 3e-5 over 160 epochs, 100M fresh shots per epoch, seed base 5 x 10^12,
+TF32 on in training and off in scoring, every epoch saved from 40, the same selection rule, the
+same kill rule and the same convergence test.
+
+Progress reporting: every 10 epochs the validation p_L of kd9_taper3_t100, kd9_3x140 and
+kd9_taper4 at that same epoch are appended to `status.log`. These are monitoring lines; no
+decision is taken on them.
+
+McNemar on the eval block for kd9_taper3_t100: against MWPM on the same shots, against the
+teacher f3280e240, against kd9_3x140 and against kd9_taper4.

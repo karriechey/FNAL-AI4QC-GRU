@@ -64,3 +64,14 @@ Times UTC.
   62 s per epoch, about 620 s per 100M-shot epoch alone, against 1,500 s for kd9_10x70. Four
   layers instead of ten is the difference; the parameter counts are within 2%. Trained, scored,
   selected and eval-scored end to end. 160 epochs projects about 28 h.
+
+- 2026-10-25 14:32 kd9_taper4 paused at the end of epoch 120 of 160, by decision, not by a rule
+  in the prereg. At epoch 110 it was at 2.87x MWPM on the validation block against 1.10x for
+  kd9_3x140 at the same epoch, gaining about 0.1x per 10 epochs, so the last 40 epochs cannot
+  change the ordering. Weights, Adam state and history are kept; `resume_student.sh kd9_taper4`
+  continues it exactly. It is resumed after kd9_taper3_t100 finishes and scored then, so its
+  160-epoch number still enters the table.
+- 2026-10-25 kd9_taper3_t100 (GRU 160-120-100, 283,241 parameters) added as a dated prereg
+  amendment and launched alone on the GPU. The instruction that added it said both to launch
+  after kd9_taper4 finished and scored, and to pause kd9_taper4 and launch now; the later and
+  more specific of the two was followed, so taper4's remaining epochs move behind taper3.
