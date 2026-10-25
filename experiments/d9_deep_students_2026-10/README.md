@@ -112,3 +112,8 @@ Times UTC.
   amendment. It is the widest uniform three-layer stack inside the 303,521 budget, so it separates
   uniform width from taper at depth 3. Its 240-epoch budget is set in the run table in
   `run_student.sh`, not in epochs.txt, which stays 160 for the other runs.
+- 2026-10-25 20:18 Smoke `kd9_3x134` (2 epochs of 10M shots, GPU free of our runs): 56 s then
+  47 s per epoch, about 470 s per 100M-shot epoch alone. Parameter assertion passed at 302,841.
+  Trained, scored, selected and eval-scored end to end. 240 epochs projects about 31 h, inside
+  the 120 h limit, so the budget stays 240. Epoch weights from epoch 40 are about 0.72 GB against
+  4 GB free on /home, checked again every 12 h.
