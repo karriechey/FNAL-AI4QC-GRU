@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # Created: 2026-10-24
-# Last modified: 2026-10-25
+# Last modified: 2026-10-25 (exact p_L from val_errors; skip a run_part log that is still
+# a copy of run.log, as it is between a pause and the resume)
 # One status.log line pairing a run's validation p_L at --epoch with the reference runs at the
 # same epoch: kd9_3x140 from the kd pilot history.json, kd9_taper4 from its own run folder here.
 # Called by run_student.sh every 10 epochs.
 import argparse
 import glob
+import hashlib
 import json
 import os
 import re
@@ -14,16 +16,25 @@ from datetime import datetime, timezone
 
 MWPM = 0.002267   # d9 p=0.004 FORMAL pool, validation block
 HERE = os.path.dirname(os.path.abspath(__file__))
-EPOCH_LINE = re.compile(r'^\d+/\d+ - \d+s - .*val_ler: ([0-9.eE+-]+)')
+EPOCH_LINE = re.compile(r'^\d+/\d+ - \d+s - .*val_errors: ([0-9.eE+-]+)')
+N_VAL = 200000    # validation block FORMAL [15.0M, 15.2M)
 
 
-# a resumed run keeps the epochs before the pause in run_part*.log
+# a resumed run keeps the epochs before the pause in run_part*.log. Between the pause and the
+# resume that file is a copy of run.log, so identical files are counted once.
 def val_lers_from_run_dir(out):
-    v = []
+    v, seen = [], set()
     for log in sorted(glob.glob(os.path.join(out, 'seed0', 'run_part*.log'))) + \
                [os.path.join(out, 'seed0', 'run.log')]:
-        if os.path.exists(log):
-            v += [float(m.group(1)) for m in map(EPOCH_LINE.match, open(log, errors='replace')) if m]
+        if not os.path.exists(log):
+            continue
+        body = open(log, 'rb').read()
+        h = hashlib.md5(body).hexdigest()
+        if h in seen:
+            continue
+        seen.add(h)
+        v += [float(m.group(1)) / N_VAL
+              for m in map(EPOCH_LINE.match, body.decode(errors='replace').splitlines()) if m]
     return v
 
 
@@ -31,9 +42,10 @@ def kd_pilot_val_lers(run):
     for root in (os.path.expanduser('~/FNAL-AI4QC-GRU-kd/experiments/kd_pilot_p004_2026-10/runs'),
                  os.path.join(HERE, '..', 'kd_pilot_p004_2026-10', 'runs')):
         for h in sorted(glob.glob(os.path.join(root, f'{run}_2026*', 'seed0', 'runs', '*.history.json'))):
-            v = json.load(open(h)).get('val_ler', [])
+            d = json.load(open(h))
+            v = d.get('val_errors') or d.get('val_ler')
             if v:
-                return [float(x) for x in v]
+                return [float(x) / (N_VAL if 'val_errors' in d else 1) for x in v]
     return []
 
 

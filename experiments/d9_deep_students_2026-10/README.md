@@ -80,3 +80,15 @@ Times UTC.
   1,500 s for kd9_10x70. Parameter assertion passed at 283,241. Trained, scored, selected and
   eval-scored end to end. 160 epochs projects about 21 h, well inside the 120 h limit, so the
   budget stays 160.
+- 2026-10-25 20:00 `pair_epoch.py` corrected twice over. It read `val_ler` from the Keras epoch
+  line, which prints to four decimals, so two runs 12 validation errors apart both showed 0.0091
+  at epoch 35 and their ratios to kd9_3x140 came out identical to three decimals. It now reads
+  `val_errors`, an integer count over the 200,000-shot validation block, and divides, which is
+  exact. Second, `pause_runs.sh` copies run.log to run_part1.log, so between a pause and a resume
+  the two files are identical and the concatenation counted kd9_taper4's 120 epochs twice. Epochs
+  up to 120 still indexed correctly, so no pairing line written so far was wrong, but a resumed
+  run would have mis-indexed past 120. Identical files are now counted once, verified: 120 epochs
+  parsed for kd9_taper4, not 240.
+- 2026-10-25 Train and validation loss track at matched epochs for both tapers (ratios to
+  kd9_3x140 at epoch 35 agree to about 1%), as 100M fresh shots per epoch imply, so the deficit
+  is on the training objective rather than generalization.
