@@ -40,7 +40,7 @@ case "$RUN" in
   hl9_10x70) UNITS=$(printf '70 %.0s' $(seq 10)); WANT=298271; ALPHA=1.0 ;;
   kd9_taper4) UNITS="160 110 90 70"; WANT=293261 ;;
   kd9_taper3_t100) UNITS="160 120 100"; WANT=283241 ;;
-  kd9_3x134) UNITS="134 134 134"; WANT=302841 ;;
+  kd9_3x134) UNITS="134 134 134"; WANT=302841; RUN_EPOCHS=240 ;;
   *) echo "unknown run $RUN (README.md lists the runs)"; exit 1 ;;
 esac
 UNITS=${UNITS% }

@@ -124,3 +124,10 @@ Times UTC.
   by running kd9_3x134 for 160 epochs, which also matches kd9_3x140's schedule and shot stream
   exactly, rather than by extending the reservation. Prereg corrected before the relaunch. The
   stopped run folder is kept with no weights.
+- 2026-10-26 01:10 kd9_3x134 stopped at epoch 33 of 160 and restarted at 240 epochs, the budget of
+  the amendment that added it. Running it at 160 was my choice after the seed-range guard refused
+  240, and it was not mine to make. Base 5 x 10^12 is now reserved for 240 epochs in
+  `configs/partitions.yaml`, which is safe because the bases are 1 x 10^12 apart and 240 epochs
+  span 2.4 x 10^8 seeds. The 160-epoch folder is kept unscored with its epoch weights removed.
+  Pairing lines against kd9_3x140 are a progress trace from here, not a schedule-matched
+  comparison, since kd9_3x140 ran 160 epochs.

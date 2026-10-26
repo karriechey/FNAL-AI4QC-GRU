@@ -1,4 +1,4 @@
-<!-- Created: 2026-10-23 | Last modified: 2026-10-25 -->
+<!-- Created: 2026-10-23 | Last modified: 2026-10-26 -->
 # Pre-registration: deep narrow d=9 students (October 2026)
 
 Committed before any run of this experiment trained. Code and run folders:
@@ -227,3 +227,22 @@ kd9_3x134 runs for 160 epochs, the budget of every other run in this experiment 
 kd9_3x140, on the same seed base and so the same shot stream. Nothing else about the run changes.
 Extending the reservation to 240 was rejected: it would have given kd9_3x134 a cosine schedule
 over a different horizon from the run it exists to isolate.
+
+### 2026-10-26: kd9_3x134 restarted at 240 epochs
+
+The 160-epoch budget of the correction above is reverted. kd9_3x134 runs for 240 epochs, which was
+the budget of the amendment that added it. The 160-epoch attempt is abandoned at epoch 33 of 160
+(`runs/kd9_3x134_20261025T205320Z`, kept, not scored, its epoch weights deleted) and the run starts
+again from epoch 1.
+
+To allow it, `configs/partitions.yaml` raises the fresh-shot reservation of base 5 x 10^12 from 160
+to 240 epochs. The bases are 1 x 10^12 apart and 240 epochs span 2.4 x 10^8 seeds, so the widened
+range cannot reach the next one; `partitions.check()` passes. The runs already drawn from this base
+are unaffected: they used epochs 1 to 160 of the same stream and the widening only adds seeds above
+them.
+
+What this costs, recorded so the comparison is read correctly: kd9_3x140 trained 160 epochs, so a
+cosine decay over 240 puts kd9_3x134 on a different learning rate at every epoch and the paired
+status.log lines against kd9_3x140 are no longer schedule-matched. They stay useful as a progress
+trace. The number this run exists to produce is kd9_3x134's own selected-checkpoint eval result
+inside the 303,521 parameter budget, and the McNemar tests of the amendment are unchanged.
