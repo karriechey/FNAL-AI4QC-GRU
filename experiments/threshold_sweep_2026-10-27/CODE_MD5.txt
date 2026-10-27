@@ -1,0 +1,3 @@
+fb279193c676bd2af2cbbc6656195fc8  threshold_sweep.py
+1ed5d06fd7671a619e38a6805bf7e209  circuit_generators.py
+sinter 1.16.0 stim 1.16.0 pymatching 2.4.0
