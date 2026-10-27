@@ -131,3 +131,24 @@ Times UTC.
   span 2.4 x 10^8 seeds. The 160-epoch folder is kept unscored with its epoch weights removed.
   Pairing lines against kd9_3x140 are a progress trace from here, not a schedule-matched
   comparison, since kd9_3x140 ran 160 epochs.
+- 2026-10-27 09:23 kd9_3x134 done at 240 epochs. Selected epoch 237 of 240 (selection block
+  1.067x), eval block p_L 0.002391 against MWPM 0.002267, ratio 1.0546x at 302,841 parameters.
+  kd9_3x140 is 1.0461x at 329,001. Paired McNemar on the eval block: against MWPM net -223 shots,
+  exact p 0.0020; against the teacher f3280e240 net -1,761, p 1.8e-203; against kd9_3x140 net -35
+  of 1.8M shots, p 0.58, so the two are indistinguishable and the d=9 student fits inside the
+  303,521 budget. Convergence test: last-20 slope -5.7e-4 per epoch, t = -4.74, not converged, so
+  it was still improving at the end of the budget. Tests written to `mcnemar/`.
+- 2026-10-27 12:04 grace1 rebooted again (boot 07:04 local) and killed kd9_taper3_t100 in epoch 60
+  of 160, nine epochs into the stretch that resumed at 09:24. No OOM in dmesg. kd9_3x134 had
+  finished and been scored at 09:23, so nothing of it was lost. Resumed from the epoch 59 snapshot,
+  optimizer update count 590,000 = 10,000 x 59 as asserted.
+- 2026-10-27 15:14 Two faults in the resume path, both from this being a second resume of one run.
+  `resume_student.sh` took the last epoch from a line count of run.log, which after a resume starts
+  again at the resume epoch, so it would have anchored on epoch 19 rather than 59; it now takes the
+  largest epoch number train_student.py printed across every part log, counting an epoch complete
+  only when its grad-norm line is followed by the Keras timing line, and rotates run.log into the
+  next `run_partN.log` so an earlier stretch is never overwritten. `history_from_log.py` accepts
+  several --log parts for the same reason. The same line count drove the wrapper's status and
+  pairing epochs, which is why the first stretch logged "epoch 18" and a mislabeled "paired epoch
+  10"; `run_student.sh` now reads the printed epoch number. The stretch was restarted from epoch 59
+  under the fixed scripts, costing one incomplete epoch.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Created: 2026-10-23
-# Last modified: 2026-10-25 (kd9_taper3_t100, kd9_3x134)
+# Last modified: 2026-10-27 (status and pairing use the printed epoch number)
 # One run of prereg/d9_deep_students_2026-10.md by name. Parameter assertion, resource wait,
 # training with the kill rule, then selection-block scoring, selection and the eval block.
 #   bash run_student.sh kd9_10x70
@@ -136,7 +136,10 @@ while kill -0 $PODPID 2>/dev/null; do
   sleep 60
   "$HOSTPY" "$DEPTH/classify_lr_scan.py" --kill-check "$OUT" > "$OUT/kill_check.txt" 2>&1
   rc=$?
-  ep=$(grep -cE '^[0-9]+/[0-9]+ - [0-9]+s - loss' "$OUT/seed0/run.log" 2>/dev/null)
+  # the number train_student.py prints, not a line count: a resumed run.log starts at the
+  # resume epoch, so counting lines understates the epoch by everything before the resume
+  ep=$(grep -oE '^\[gru\] epoch [0-9]+: global grad norm' "$OUT/seed0/run.log" 2>/dev/null \
+       | tail -1 | grep -oE '[0-9]+')
   if [ "${ep:-0}" -gt "$last" ]; then
     status "epoch $ep $(grep -E '^[0-9]+/[0-9]+ - [0-9]+s - loss' "$OUT/seed0/run.log" | tail -1 | grep -oE '(val_)?(loss|ler): [0-9.e+-]*' | tr '\n' ' ')"
     last=$ep
