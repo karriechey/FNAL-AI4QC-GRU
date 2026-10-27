@@ -77,16 +77,6 @@
   },
   {
    "d": 9,
-   "p": 0.003,
-   "gru": 0.000473,
-   "mwpm": 0.000535,
-   "n": 1800000,
-   "source": "protocol/eval_selected.csv",
-   "weights": "/home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f9w_p003_u280x280x280_20261014T133836Z/seed0/epochs/epoch240.weights.h5",
-   "ratio": 0.8841121495327103
-  },
-  {
-   "d": 9,
    "p": 0.004,
    "gru": 0.001413,
    "mwpm": 0.002267,
