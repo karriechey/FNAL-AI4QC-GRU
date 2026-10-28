@@ -1,5 +1,5 @@
 # Created: 2026-10-27
-# Last modified: 2026-10-28 (sentence-case axis labels; finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
+# Last modified: 2026-10-28 (Greek nu from DejaVu Sans, MWPM legend entry; sentence-case axis labels; finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
 # Threshold figure: MWPM logical error rate vs p from the sinter sweep, GRU test-set results
 # as stars. Every point is a counted simulation result; the dashed fit lines are a guide only.
 #   python figures/threshold_figure.py
@@ -109,10 +109,12 @@ def add_collapse_inset(fig, c):
         ax.plot(c["x"][m], c["y"][m], "o", ms=4, color=COLORS[d], zorder=2)
     xs = np.linspace(c["x"].min(), c["x"].max(), 200)
     ax.plot(xs, np.polyval(c["coef"][::-1], xs), color="0.35", lw=1, zorder=1)
+    # Helvetica's nu looks like an italic v; \mathsf takes just that glyph from DejaVu Sans
+    plt.rcParams["mathtext.sf"] = "DejaVu Sans:italic"
     ax.text(0.04, 0.95, f"$p_{{th}}$ = {c['p_th']:.5f} $\\pm$ {c['p_th_err']:.5f}\n"
-            f"$\\nu$ = {c['nu']:.2f} $\\pm$ {c['nu_err']:.2f}", transform=ax.transAxes,
+            f"$\\mathsf{{\\nu}}$ = {c['nu']:.2f} $\\pm$ {c['nu_err']:.2f}", transform=ax.transAxes,
             ha="left", va="top", fontsize=poster_style.TICK_PT)
-    ax.set_xlabel("$(p - p_{th})\\,d^{\\,1/\\nu}$", fontsize=poster_style.TICK_PT, labelpad=2)
+    ax.set_xlabel("$(p - p_{th})\\,d^{\\,1/\\mathsf{\\nu}}$", fontsize=poster_style.TICK_PT, labelpad=2)
     ax.set_ylabel("$P_L$", fontsize=poster_style.TICK_PT, labelpad=2)
     ax.tick_params(labelsize=poster_style.TICK_PT)
     ax.locator_params(axis="both", nbins=4)
@@ -155,9 +157,10 @@ def plot(points, stars, a_fit, p_th):
         ax.plot(s["p"], s["gru"], marker="*", ms=26, color=COLORS[s["d"]], mec=STAR_EDGE, mew=1,
                 ls="none", zorder=4)
 
-    handles = [plt.Line2D([], [], marker="*", ms=26, color="0.35", mec=STAR_EDGE, mew=1, ls="none"),
+    handles = [plt.Line2D([], [], color=poster_style.NEUTRAL, lw=2),
+               plt.Line2D([], [], marker="*", ms=26, color="0.35", mec=STAR_EDGE, mew=1, ls="none"),
                 plt.Line2D([], [], color="0.35", ls=(0, (5, 4)), lw=1)]
-    ax.legend(handles, ["GRU", "fit"], loc="upper left", frameon=False, handlelength=2.6)
+    ax.legend(handles, ["MWPM", "GRU", "Fit"], loc="upper left", frameon=False, handlelength=2.6)
 
     ax.set_xscale("log")
     ax.set_yscale("log")
