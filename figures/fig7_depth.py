@@ -1,5 +1,5 @@
 # Created: 2026-10-28
-# Last modified: 2026-10-28
+# Last modified: 2026-10-28 (small-panel font sizes, same-size bracket, MWPM label left, sentence-case labels)
 # Poster version of depth_scaling.py: d = 7, p = 0.004, u70 stacks L = 1-10 and the single-layer
 # u172 / u255 runs matched to L = 4 / 8 in parameters. Eval-block ratios to MWPM on the same shots.
 #   python figures/fig7_depth.py
@@ -20,6 +20,8 @@ L1_PARAMS, PER_LAYER = 25061, 29610   # u70 stack at d = 7
 MATCH_OFFSET = 0.3                    # matched squares drawn just right of their L
 FRAME_IN = (4.5, 3.0)
 MARKER_MS = 6
+LABEL_PT, TICK_PT, NOTE_PT = 13, 11, 11   # smaller than poster_style: this panel is 4.5 in wide
+BRACKET_X = 8.62
 
 
 def load():
@@ -42,20 +44,22 @@ def plot(rows):
         x = r["L"] + MATCH_OFFSET
         ax.errorbar(x, r["ratio"], yerr=r["err"], fmt="s", ms=MARKER_MS + 1, mfc="white", mew=1.5,
                     color=poster_style.NEUTRAL, elinewidth=1, zorder=3)
-        ax.annotate(r["Width"], (x, r["ratio"]), xytext=(6, 0), textcoords="offset points",
-                    va="center", color=poster_style.NEUTRAL, fontsize=poster_style.CURVE_LABEL_PT)
+        # upper left of the square: above it would touch the MWPM line, right of u255 is the bracket
+        ax.annotate(r["Width"], (x, r["ratio"]), xytext=(-MARKER_MS, 1), textcoords="offset points",
+                    ha="right", va="bottom", color=poster_style.NEUTRAL, fontsize=NOTE_PT)
 
     l8 = next(r for r in stack if r["L"] == 8)
     u255 = next(r for r in rows if r["Width"] == "u255")
-    # the L = 8 / u255 gap is too small to hold text, so the label sits above with an arrow into it
-    ax.annotate("deep beats wide\nat equal parameters", (8 + MATCH_OFFSET / 2, np.sqrt(l8["ratio"] * u255["ratio"])),
-                xytext=(7.4, 2.2), ha="center", va="center", fontsize=poster_style.CURVE_LABEL_PT,
-                color=poster_style.INK, linespacing=1.0,
-                arrowprops=dict(arrowstyle="-", color=poster_style.INK, lw=0.8, shrinkA=2, shrinkB=1))
+    tick = 0.1
+    ax.plot([BRACKET_X - tick, BRACKET_X, BRACKET_X, BRACKET_X - tick],
+            [l8["ratio"], l8["ratio"], u255["ratio"], u255["ratio"]], color=poster_style.INK, lw=0.8)
+    # centred on the bracket's upper half so the text clears the L = 9 marker below it
+    ax.text(BRACKET_X + 0.08, (l8["ratio"] * u255["ratio"] ** 3) ** 0.25, "same size", ha="left", va="center",
+            fontsize=NOTE_PT, color=poster_style.INK)
 
     ax.axhline(1.0, color=poster_style.INK, lw=0.8, ls="--", zorder=1)
-    ax.text(1.0, 1.0, "MWPM", transform=ax.get_yaxis_transform(), ha="right", va="bottom",
-            fontsize=poster_style.CURVE_LABEL_PT, color=poster_style.INK)
+    ax.annotate("MWPM", (0, 1.0), xycoords=ax.get_yaxis_transform(), xytext=(3, 1),
+                textcoords="offset points", ha="left", va="bottom", fontsize=NOTE_PT, color=poster_style.INK)
 
     ax.set_yscale("log")
     ax.set_ylim(0.6, 4.5)
@@ -66,11 +70,11 @@ def plot(rows):
     ax.set_xlim(0.5, 10.9)
     ax.set_xticks([1, 2, 4, 6, 8, 10])
     ax.set_xlabel("GRU layers $L$")
-    ax.set_ylabel("$P_L$ / MWPM")
+    ax.set_ylabel("Error ratio (GRU / MWPM)")
     top = ax.secondary_xaxis("top", functions=(lambda L: (L1_PARAMS + PER_LAYER * (L - 1)) / 1e3,
                                                lambda k: (k * 1e3 - L1_PARAMS) / PER_LAYER + 1))
     top.set_xticks([25, 100, 200, 290])
-    top.set_xlabel("parameters (thousands)")
+    top.set_xlabel("Parameters (k)")
     fig.tight_layout(pad=0.3)
     return fig
 
@@ -78,6 +82,7 @@ def plot(rows):
 if __name__ == "__main__":
     path, rows = load()
     poster_style.apply()
+    plt.rcParams.update({"axes.labelsize": LABEL_PT, "xtick.labelsize": TICK_PT, "ytick.labelsize": TICK_PT})
     fig = plot(rows)
     POSTER.mkdir(parents=True, exist_ok=True)
     fig.savefig(POSTER / "fig7_depth.png", dpi=300, facecolor="white")

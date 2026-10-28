@@ -1,5 +1,5 @@
 # Created: 2026-10-28
-# Last modified: 2026-10-28
+# Last modified: 2026-10-28 (sentence-case axis labels)
 # GRU / MWPM logical error rate ratio over d x p (test-set cells, the threshold figure's stars),
 # and the suppression factor Lambda at p = 0.004 for both decoders.
 #   python figures/ratio_map.py
@@ -61,8 +61,8 @@ def plot(cells, lam):
     ax.set_yticks(range(len(DISTANCES)))
     ax.set_yticklabels([str(d) for d in DISTANCES])
     ax.tick_params(length=0)
-    ax.set_xlabel("physical error rate $p$")
-    ax.set_ylabel("code distance $d$")
+    ax.set_xlabel("Physical error rate $p$")
+    ax.set_ylabel("Code distance $d$")
 
     x0 = 4.45 / 6.9
     fig.text(x0, 0.80, f"$\\Lambda$ at $p$ = {LAMBDA_P:g}", fontsize=poster_style.AXIS_LABEL_PT,

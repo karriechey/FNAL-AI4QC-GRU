@@ -1,5 +1,5 @@
 # Created: 2026-10-27
-# Last modified: 2026-10-28 (finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
+# Last modified: 2026-10-28 (sentence-case axis labels; finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
 # Threshold figure: MWPM logical error rate vs p from the sinter sweep, GRU test-set results
 # as stars. Every point is a counted simulation result; the dashed fit lines are a guide only.
 #   python figures/threshold_figure.py
@@ -165,8 +165,8 @@ def plot(points, stars, a_fit, p_th):
     x_ticks = [0.001, 0.002, 0.004, 0.008, 0.015]
     ax.set_xticks(x_ticks)
     ax.set_xticklabels([f"{t:g}" for t in x_ticks])
-    ax.set_xlabel("physical error rate $p$")
-    ax.set_ylabel("logical error rate $P_L$")
+    ax.set_xlabel("Physical error rate $p$")
+    ax.set_ylabel("Logical error rate $P_L$")
     fig.tight_layout()
     return fig
 
