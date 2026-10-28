@@ -1,0 +1,27 @@
+{
+ "tf": "2.15.0",
+ "gpu": [
+  "/device:GPU:0"
+ ],
+ "data_s": 7.9,
+ "truth_equal_recorded": true,
+ "mwpm_equal_recorded": true,
+ "fp32_decisions_equal_recorded": 1.0,
+ "fp32_logit_max_abs_diff_recorded": 0.0,
+ "n": 1800000,
+ "fp32_errors": 9267,
+ "mwpm_errors": 13627,
+ "fp32_p_L": 0.005148333333333334,
+ "mwpm_p_L": 0.007570555555555555,
+ "ratio": 0.6800469655830337,
+ "recorded": {
+  "p_L": 0.005148,
+  "mwpm_p_L": 0.007571,
+  "ratio": 0.68
+ },
+ "matches_recorded": true,
+ "fq_float_vs_keras_200k": {
+  "max_abs_diff": 0.0,
+  "decision_agreement": 1.0
+ }
+}

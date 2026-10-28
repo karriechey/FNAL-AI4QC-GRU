@@ -1,0 +1,8 @@
+# tag seed [lr]; Phase 2 one-dimensional QAT points
+w8_s16 0
+w6_s16 0
+w5_s16 0
+w4_s16 0
+w3_s16 0
+w16_s8 0
+w16_s6 0
