@@ -47,7 +47,7 @@ HLS_KEYS = {
     'gru_recurrent_weight': [('gru', 'recurrent_weight')],
     'gru_bias': [('gru', 'bias'), ('gru', 'recurrent_bias')],
     'gru_state': [('gru', 'result')],
-    'gru_table': [('gru', 'table')],
+    'gru_table': [('gru', 'table_t')],   # layer attribute, not a Precision key
     'gru_accum': [('gru', 'accum')],
     'logit_weight': [('logit', 'weight')],
     'logit_bias': [('logit', 'bias')],
@@ -93,7 +93,10 @@ def hls_config(model, spec, strategy='Resource', reuse_factor=1, table_size=TABL
     cfg['LayerName']['syndrome_sequence']['Precision']['result'] = input_type
     for g, (w, i) in spec.items():
         for layer, key in HLS_KEYS[g]:
-            cfg['LayerName'][layer].setdefault('Precision', {})[key] = ap_type(w, i, mode)
+            if key == 'table_t':
+                cfg['LayerName'][layer]['table_t'] = ap_type(w, i, mode)
+            else:
+                cfg['LayerName'][layer].setdefault('Precision', {})[key] = ap_type(w, i, mode)
     if trace:
         for n in ('gru', 'logit'):
             cfg['LayerName'][n]['Trace'] = True
