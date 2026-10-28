@@ -1,5 +1,5 @@
 # Created: 2026-10-28
-# Last modified: 2026-10-28 (small-panel font sizes, same-size bracket, MWPM label left, sentence-case labels)
+# Last modified: 2026-10-28 (small-panel font sizes, MWPM label left, sentence-case labels, matched-run legend instead of bracket, 10 pt point labels)
 # Poster version of depth_scaling.py: d = 7, p = 0.004, u70 stacks L = 1-10 and the single-layer
 # u172 / u255 runs matched to L = 4 / 8 in parameters. Eval-block ratios to MWPM on the same shots.
 #   python figures/fig7_depth.py
@@ -21,7 +21,7 @@ MATCH_OFFSET = 0.3                    # matched squares drawn just right of thei
 FRAME_IN = (4.5, 3.0)
 MARKER_MS = 6
 LABEL_PT, TICK_PT, NOTE_PT = 13, 11, 11   # smaller than poster_style: this panel is 4.5 in wide
-BRACKET_X = 8.62
+POINT_PT = 10
 
 
 def load():
@@ -44,18 +44,16 @@ def plot(rows):
         x = r["L"] + MATCH_OFFSET
         ax.errorbar(x, r["ratio"], yerr=r["err"], fmt="s", ms=MARKER_MS + 1, mfc="white", mew=1.5,
                     color=poster_style.NEUTRAL, elinewidth=1, zorder=3)
-        # upper left of the square: above it would touch the MWPM line, right of u255 is the bracket
-        ax.annotate(r["Width"], (x, r["ratio"]), xytext=(-MARKER_MS, 1), textcoords="offset points",
-                    ha="right", va="bottom", color=poster_style.NEUTRAL, fontsize=NOTE_PT)
+        # u255 sits just under the MWPM line, so its label goes to the left, raised to clear the L = 8 marker
+        above = r["Width"] == "u172"
+        ax.annotate(r["Width"], (x, r["ratio"]), xytext=(0, MARKER_MS) if above else (-MARKER_MS, 1),
+                    textcoords="offset points", ha="center" if above else "right",
+                    va="bottom", color=poster_style.NEUTRAL, fontsize=POINT_PT)
 
-    l8 = next(r for r in stack if r["L"] == 8)
-    u255 = next(r for r in rows if r["Width"] == "u255")
-    tick = 0.1
-    ax.plot([BRACKET_X - tick, BRACKET_X, BRACKET_X, BRACKET_X - tick],
-            [l8["ratio"], l8["ratio"], u255["ratio"], u255["ratio"]], color=poster_style.INK, lw=0.8)
-    # centred on the bracket's upper half so the text clears the L = 9 marker below it
-    ax.text(BRACKET_X + 0.08, (l8["ratio"] * u255["ratio"] ** 3) ** 0.25, "same size", ha="left", va="center",
-            fontsize=NOTE_PT, color=poster_style.INK)
+    key = plt.Line2D([], [], ls="none", marker="s", ms=MARKER_MS + 1, mfc="white", mew=1.5,
+                     color=poster_style.NEUTRAL)
+    ax.legend([key], ["1 wide GRU layer,\nsame parameters as the stack"], loc="upper right",
+              frameon=False, fontsize=10, handletextpad=0.3, handlelength=1.0, borderaxespad=0.4)
 
     ax.axhline(1.0, color=poster_style.INK, lw=0.8, ls="--", zorder=1)
     ax.annotate("MWPM", (0, 1.0), xycoords=ax.get_yaxis_transform(), xytext=(3, 1),
