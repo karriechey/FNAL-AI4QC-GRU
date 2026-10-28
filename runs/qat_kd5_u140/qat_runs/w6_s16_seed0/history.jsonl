@@ -1,0 +1,10 @@
+{"epoch": 0, "ler": 0.06064111111111111, "ler_over_fp32": 11.778784935793675, "note": "start (PTQ at this spec)"}
+{"epoch": 1, "loss": 0.030120537663809954, "ler": 0.009945555555555555, "ler_over_fp32": 1.9318010143520015, "ler_over_mwpm": 1.3137154179203052, "improved": true, "epoch_s": 126.3, "lr": null}
+{"epoch": 2, "loss": 0.025997351673431694, "ler": 0.008465, "ler_over_fp32": 1.644221430883781, "ler_over_mwpm": 1.1181477948191092, "improved": true, "epoch_s": 120.0, "lr": null}
+{"epoch": 3, "loss": 0.02626027613133192, "ler": 0.00862388888888889, "ler_over_fp32": 1.6750836300852487, "ler_over_mwpm": 1.1391355397372864, "improved": false, "epoch_s": 120.0, "lr": null}
+{"epoch": 4, "loss": 0.026500895388424397, "ler": 0.008005, "ler_over_fp32": 1.55487212690191, "ler_over_mwpm": 1.0573860717692816, "improved": true, "epoch_s": 120.0, "lr": null}
+{"epoch": 5, "loss": 0.026455203237943353, "ler": 0.008791666666666666, "ler_over_fp32": 1.7076723858853997, "ler_over_mwpm": 1.1612974242313054, "improved": false, "epoch_s": 120.1, "lr": null}
+{"epoch": 6, "loss": 0.02645679126121104, "ler": 0.008399444444444444, "ler_over_fp32": 1.63148807596849, "ler_over_mwpm": 1.1094885154472738, "improved": false, "epoch_s": 120.5, "lr": null}
+{"epoch": 7, "loss": 0.026295485303737223, "ler": 0.008505, "ler_over_fp32": 1.6519909355778568, "ler_over_mwpm": 1.1234314229103985, "improved": false, "epoch_s": 120.0, "lr": null}
+{"epoch": 8, "loss": 0.02626586127560586, "ler": 0.00866111111111111, "ler_over_fp32": 1.6823135858422358, "ler_over_mwpm": 1.144052249211125, "improved": false, "epoch_s": 109.1, "lr": null}
+{"epoch": 9, "loss": 0.026127529369667172, "ler": 0.010032777777777778, "ler_over_fp32": 1.9487428509765834, "ler_over_mwpm": 1.3252366625082557, "improved": false, "epoch_s": 81.0, "lr": null}

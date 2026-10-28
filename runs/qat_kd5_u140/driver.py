@@ -31,12 +31,19 @@ def read_jobs():
 
 
 def run_name(spec_tag, seed, lr):
-    return f'{spec_tag}_seed{seed}' + ('_halflr' if lr < args.lr else '')
+    if lr == args.lr:
+        return f'{spec_tag}_seed{seed}'
+    return f'{spec_tag}_seed{seed}' + ('_halflr' if lr == args.lr / 2 else f'_lr{lr:g}')
+
+
+def finished(name):
+    return os.path.exists(os.path.join(HERE, 'qat_runs', name, 'result.json'))
 
 
 running, done, idle_logged = {}, set(), False
 while True:
-    queue = [j for j in read_jobs() if run_name(*j) not in done and run_name(*j) not in running]
+    queue = [j for j in read_jobs() if run_name(*j) not in done and run_name(*j) not in running
+             and not finished(run_name(*j))]
     for name, (p, job) in list(running.items()):
         if p.poll() is None:
             continue
@@ -46,7 +53,7 @@ while True:
         status = json.load(open(res))['status'] if os.path.exists(res) else f'no result (exit {p.returncode})'
         say(f'END {name}: {status}')
         tag, seed, lr = job
-        if (status.startswith('failed') or status.startswith('no result')) and lr >= args.lr:
+        if (status.startswith('failed') or status.startswith('no result')) and lr == args.lr:
             with open(args.jobs, 'a') as f:
                 f.write(f'{tag} {seed} {lr / 2}   # retry of {name}\n')
             say(f'queued retry of {name} at lr {lr / 2}')

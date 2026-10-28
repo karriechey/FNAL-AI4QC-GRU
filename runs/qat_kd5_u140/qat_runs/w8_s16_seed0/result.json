@@ -1,0 +1,91 @@
+{
+ "tag": "w8_s16_seed0",
+ "spec": {
+  "gru_weight": [
+   8,
+   6
+  ],
+  "gru_recurrent_weight": [
+   8,
+   6
+  ],
+  "gru_bias": [
+   8,
+   4
+  ],
+  "logit_weight": [
+   8,
+   4
+  ],
+  "logit_bias": [
+   8,
+   1
+  ],
+  "gru_state": [
+   16,
+   2
+  ],
+  "gru_table": [
+   16,
+   1
+  ],
+  "gru_accum": [
+   24,
+   9
+  ],
+  "logit_accum": [
+   24,
+   7
+  ]
+ },
+ "args": {
+  "tag": "w8_s16_seed0",
+  "spec_json": "specs/w8_s16.json",
+  "lr": 0.0003,
+  "epochs": 25,
+  "shots_per_epoch": 20000000,
+  "first_epoch": 80,
+  "patience": 5,
+  "seed": 0,
+  "workers": 5,
+  "gpu_mem_mib": 4000,
+  "out": "/home/kchey/FNAL-AI4QC-GRU-qat/runs/qat_kd5_u140/qat_runs/w8_s16_seed0"
+ },
+ "status": "early stop: no improvement for 5 evals",
+ "best_epoch": 1,
+ "score": {
+  "ler": 0.005742222222222222,
+  "ler_fp32": 0.005148333333333334,
+  "ler_mwpm": 0.007570555555555555,
+  "ler_over_fp32": 1.1153555627495413,
+  "ler_over_mwpm": 0.7584941659939826,
+  "mcnemar_vs_fp32": {
+   "n": 1800000,
+   "errors_ref": 9267,
+   "errors_new": 10336,
+   "b": 2369,
+   "c": 1300,
+   "n_disc": 3669,
+   "p_exact": 1.4455977590262751e-70,
+   "agreement": 0.9979616666666666
+  }
+ },
+ "start_score": {
+  "ler": 0.009085555555555555,
+  "ler_fp32": 0.005148333333333334,
+  "ler_mwpm": 0.007570555555555555,
+  "ler_over_fp32": 1.7647566634293728,
+  "ler_over_mwpm": 1.200117413957584,
+  "mcnemar_vs_fp32": {
+   "n": 1800000,
+   "errors_ref": 9267,
+   "errors_new": 16354,
+   "b": 9518,
+   "c": 2431,
+   "n_disc": 11949,
+   "p_exact": 0.0,
+   "agreement": 0.9933616666666667
+  }
+ },
+ "train_s": 884.4
+}
