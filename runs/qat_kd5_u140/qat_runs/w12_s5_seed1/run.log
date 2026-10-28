@@ -1,0 +1,24 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+2026-10-28 18:34:37.658358: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-10-28 18:34:37.658386: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-10-28 18:34:37.658832: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+{"epoch": 0, "ler": 0.007386666666666666, "ler_over_fp32": 1.4347685335059888, "note": "start (PTQ at this spec)"}
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793212493.459505     414 device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.

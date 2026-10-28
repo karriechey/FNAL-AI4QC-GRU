@@ -1,1 +1,10 @@
 {"epoch": 0, "ler": 0.005715, "ler_over_fp32": 1.110067983166073, "note": "start (PTQ at this spec)"}
+{"epoch": 1, "loss": 0.016681249394547196, "ler": 0.005389444444444444, "ler_over_fp32": 1.0468328477392899, "ler_over_mwpm": 0.7118955015777501, "improved": true, "epoch_s": 147.1, "lr": null}
+{"epoch": 2, "loss": 0.016571892568375914, "ler": 0.005398333333333333, "ler_over_fp32": 1.0485594043379733, "ler_over_mwpm": 0.7130696411535922, "improved": false, "epoch_s": 141.6, "lr": null}
+{"epoch": 3, "loss": 0.016565752166323364, "ler": 0.00542, "ler_over_fp32": 1.0527678860472645, "ler_over_mwpm": 0.7159316063697073, "improved": false, "epoch_s": 141.4, "lr": null}
+{"epoch": 4, "loss": 0.01651215454330668, "ler": 0.005353333333333333, "ler_over_fp32": 1.0398187115571382, "ler_over_mwpm": 0.7071255595508916, "improved": true, "epoch_s": 141.3, "lr": null}
+{"epoch": 5, "loss": 0.016526209881994873, "ler": 0.005387222222222222, "ler_over_fp32": 1.046401208589619, "ler_over_mwpm": 0.7116019666837895, "improved": false, "epoch_s": 137.9, "lr": null}
+{"epoch": 6, "loss": 0.01652690105838701, "ler": 0.005385, "ler_over_fp32": 1.0459695694399482, "ler_over_mwpm": 0.711308431789829, "improved": false, "epoch_s": 118.6, "lr": null}
+{"epoch": 7, "loss": 0.016461269572377205, "ler": 0.005398888888888889, "ler_over_fp32": 1.048667314125391, "ler_over_mwpm": 0.7131430248770823, "improved": false, "epoch_s": 99.4, "lr": null}
+{"epoch": 8, "loss": 0.016438078325707466, "ler": 0.005353333333333333, "ler_over_fp32": 1.0398187115571382, "ler_over_mwpm": 0.7071255595508916, "improved": false, "epoch_s": 99.2, "lr": null}
+{"epoch": 9, "loss": 0.01643145009269938, "ler": 0.005365, "ler_over_fp32": 1.0420848170929102, "ler_over_mwpm": 0.7086666177441844, "improved": false, "epoch_s": 79.7, "lr": null}

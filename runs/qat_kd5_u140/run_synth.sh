@@ -35,7 +35,11 @@ array set opt {
 }
 EOF
 start=$(date +%s)
-if command -v vitis-run > /dev/null; then
+backend=$(python3 -c "import json; print(json.load(open('../target.json'))['backend'])")
+if [ "$backend" = Vivado ]; then
+  command -v vivado_hls > /dev/null || { echo "Vivado backend project: vivado_hls not on PATH"; exit 1; }
+  vivado_hls -f build_prj.tcl > ../synth.log 2>&1    # options from build_opt.tcl above
+elif command -v vitis-run > /dev/null; then
   vitis-run --tcl build_prj.tcl --mode hls > ../synth.log 2>&1
 elif command -v vitis_hls > /dev/null; then
   vitis_hls -f build_prj.tcl > ../synth.log 2>&1

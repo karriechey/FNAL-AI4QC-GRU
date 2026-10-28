@@ -25,6 +25,8 @@ ap.add_argument('configs', nargs='+', help='qat:<run name> or ptq:<spec tag>')
 ap.add_argument('--n', type=int, default=1_000_000)
 ap.add_argument('--workers', type=int, default=48)
 ap.add_argument('--rf', type=int, default=70)
+ap.add_argument('--export-only', default=None, metavar='DIR',
+                help='write synthesis exports (Vitis and Vivado backends) under DIR without C-sim')
 args = ap.parse_args()
 
 EXPORT = os.path.join(Q.HERE, 'hls_export')
@@ -57,11 +59,11 @@ def on_grid_keras(fq, spec):
     return m
 
 
-def convert(model, spec, prj, table_size=Q.TABLE_SIZE):
+def convert(model, spec, prj, table_size=Q.TABLE_SIZE, backend='Vitis'):
     import hls4ml
     cfg = Q.hls_config(model, spec, reuse_factor=args.rf, table_size=table_size)
     hm = hls4ml.converters.convert_from_keras_model(
-        model, hls_config=cfg, output_dir=prj, project_name='myproject', backend='Vitis',
+        model, hls_config=cfg, output_dir=prj, project_name='myproject', backend=backend,
         io_type=Q.IO_TYPE, part=Q.PART, clock_period=Q.CLOCK_NS)
     hm.write()
     return hm, cfg
@@ -93,8 +95,8 @@ def versions():
             'python': platform.python_version(), 'machine': platform.machine(), 'host': platform.node()}
 
 
-def export(tag, prj, cfg, model, spec, rec):
-    out = os.path.join(EXPORT, tag)
+def export(tag, prj, cfg, model, spec, rec, root=EXPORT, backend='Vitis'):
+    out = os.path.join(root, tag)
     if os.path.exists(out):
         out = out + time.strftime('_%Y%m%dT%H%M%SZ', time.gmtime())
     os.makedirs(out)
@@ -106,12 +108,23 @@ def export(tag, prj, cfg, model, spec, rec):
     Q.dump({'spec_W_I': spec, 'rounding': 'AP_RND', 'overflow': 'AP_SAT', 'input': 'ap_uint<1>',
             'table_size': rec.get('table_size', Q.TABLE_SIZE)}, os.path.join(out, 'precisions.json'))
     Q.dump(versions(), os.path.join(out, 'versions.json'))
-    Q.dump({'part': Q.PART, 'clock_period_ns': Q.CLOCK_NS, 'io_type': Q.IO_TYPE, 'backend': 'Vitis',
+    Q.dump({'part': Q.PART, 'clock_period_ns': Q.CLOCK_NS, 'io_type': Q.IO_TYPE, 'backend': backend,
             'strategy': 'Resource', 'reuse_factor': args.rf, 'static_gru': True}, os.path.join(out, 'target.json'))
     shutil.copy(os.path.join(Q.HERE, 'run_synth.sh'), out)
     shutil.copy(os.path.join(Q.HERE, 'collect_csynth.py'), out)
     return out
 
+
+if args.export_only:
+    for config in args.configs:
+        kind, name, spec, fq = load(config)
+        model = on_grid_keras(fq, spec)
+        for backend in ('Vitis', 'Vivado'):
+            tag = f'{kind}_{name}_{backend.lower()}'
+            prj = os.path.join(Q.SCRATCH, 'hls', f'export_{tag}')
+            hm, cfg = convert(model, spec, prj, backend=backend)
+            print('exported', export(tag, prj, cfg, model, spec, {}, root=args.export_only, backend=backend), flush=True)
+    sys.exit(0)
 
 summary = []
 for config in args.configs:

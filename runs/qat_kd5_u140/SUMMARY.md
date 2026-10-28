@@ -1,0 +1,28 @@
+<!-- Created: 2026-10-28 | Last updated: 2026-10-28 -->
+# kd5_u140 quantization study: summary
+
+DRAFT, filled in as results land.
+
+## What finished, what did not
+
+(pending)
+
+## Decisions made unattended
+
+1. Output location: code and results in `runs/qat_kd5_u140/` as asked (the repo had no `runs/` folder; other studies live in `experiments/`). On grace1 the working copy is `~/FNAL-AI4QC-GRU-qat` (code and small results); scratch (eval-block arrays, logits, hls4ml projects) in `/tmp/kchey_qat`, because grace1 `/home` had 2.4-2.8 GB free (100% used). `/tmp` is wiped on reboot; everything kept is copied to the repo.
+2. hls4ml: upstream main 1259e2b25 (today's HEAD, includes #1568 reset_after=False, #1577 recurrent RF fix, #1589 new Resource cell), as a git worktree at `/tmp/kchey_qat/hls4ml_main`, run with the existing `~/hls4ml_main_env` (TF 2.15.1, tf_keras 2.15.1, qkeras 0.9.0) with the worktree first on PYTHONPATH (`hpy.sh`). A `hls4ml/_version.py` (gitignored, normally made by the installer) was written by hand. The editable install in `~/hls4ml_src` (fix-recurrent-rf-dispatch branch) was not touched.
+3. QGRU path skipped (Phase 0.3 default). QKeras QGRU converts with reset_after=False and the same GRU types, but the Dense head takes QKeras types (no AP_RND/AP_SAT) instead of the configured ones, and the GRU weight data written by hls4ml is the same as for the plain Keras GRU (QGRU quantizers are not applied to the data, upstream issue #1579). QAT uses a fake-quantized TF model (`fq_gru.py`) that follows the hls4ml kernel; PTQ uses the same model with the FP32 weights.
+4. Precision groups (NOTES.md): weights = GRU kernel, recurrent kernel, bias (and the all-zero recurrent bias), Dense kernel and bias; state = GRU result_t (h and r*h) and table_t (sigmoid and tanh table entries, table_size 1024); accumulators (GRU accum_t, Dense accum/result) held at 24 bits on both axes. Reason: hls4ml stores gate and candidate outputs in accum_t, so a narrow accum_t is also a narrow gate. Input ap_uint<1>. All types AP_RND, AP_SAT (hls4ml defaults truncate and wrap, which needed 24 bits in the u70 study).
+5. The GRU table precision is a layer attribute `table_t`, not a `Precision` key; the first wiring run used the hls4ml default ap_fixed<18,8> for the tables. Fixed in `qcommon.hls_config`; the low-precision emulator check (item 9) ran after the fix.
+6. Integer bits, Phase 1: I = floor(log2 max|v|) + 2 (sign included) + 1 headroom over all 1.8M eval-block shots. Phase 2 (QAT) uses different integer bits, decided after seeing the Phase 1 profile: weight groups take the I that minimizes squared quantization error of the FP32 weights (outliers: recurrent kernel max 51.9, 99th percentile 3.8), h takes I = 2 and table entries I = 1 (smallest that hold their range). Every QAT run's epoch-0 score is PTQ at its own quantizers, reported as "PTQ (QAT integer bits)".
+7. Total bits for the selection rule = weight bits + state bits (accumulators fixed at 24 for all points).
+8. QAT recipe details not given in the task: 20M fresh shots per epoch, at most 25 epochs, cosine from 3e-4 to 3e-6 over 25 epochs, TF32 off in training (quantizer rounding), eval block after every epoch. Training shots: the parent's registered seed base 3e12, epochs 80-104 (seed 0), shots the parent never saw; seed s uses epochs [80 + 25 s, 105 + 25 s) (registered max 160). Init is the parent and steps are deterministic, so different shots are the only source of seed variation.
+9. Wiring and emulator checks before any sweep: ap_fixed<32,10> everywhere, emulator vs FP32 99.9917% on 1.8M shots (b=85, c=64); hls4ml C-sim vs emulator 99.975% on 20k shots. At low precision (w16_s6 and w5_s16 specs, 5k shots each) C-sim and emulator gave identical logits (max |diff| 0.0).
+10. QAT points: state 10 dropped (above the PTQ state knee of 8). Weight points {8, 6, 5, 4, 3} all ran (all below the weight knee of 12).
+11. 2D grid (6 points): weights {12, 10} x state {8, 6, 5}. Reason: no QAT weight point at or below 8 bits was acceptable, the smallest acceptable weight width was the PTQ knee 12, and the smallest acceptable state width under QAT was 6.
+12. Extra run outside the plan, labelled diagnostic and excluded from selection: w8_s16 at peak LR 3e-5. Reason: w8_s16 at 3e-4 had its best eval at epoch 1 and its training loss rose afterwards.
+13. Seeds: the candidate is w12_s6; its neighbor one bit lower is w12_s5 (state one bit lower, same weights). w10_s8, the other acceptable 18-bit point (which wins on LER but loses the state-bit tie-break), also got seeds 1 and 2, in case the candidate fails on its seed mean.
+14. Phase 3 configurations: candidate w12_s6 plus w10_s8, w12_s8 (the Pareto front in total bits vs LER) and w16_s6 (smallest acceptable single-axis point). Vitis backend (the export targets Vitis HLS; its GRU kernel is the Vivado one), io_parallel, Resource strategy, ReuseFactor 70, static GRU, xcvu13p-flga2577-2-e, 5 ns. Weights put on their ap_fixed grid in Keras before conversion. C-sim on the first 1,000,000 eval-block shots (C-sim costs about 0.34 core-seconds per shot).
+15. A first QAT launch was stopped: `train_qat.py` had no `__main__` guard, so each spawned fresh-shot worker re-ran the script (duplicate evaluations, GPU out of memory with the llama-server sharing the card). Those run folders were deleted and the seven points rerun from scratch.
+16. GPU shared with a llama-server (57.5 GB); QAT ran 6-7 jobs at once with a 4 GB cap each.
+17. The Mac lost its network for about 5 hours (13:08Z-18:08Z, probably sleep): the GPU was idle in that time. `caffeinate` now keeps the Mac awake.

@@ -40,7 +40,8 @@ for res in sorted(glob.glob(os.path.join(Q.HERE, 'qat_runs', '*', 'result.json')
     name = r['tag']
     wb, sb = r['spec']['gru_weight'][0], r['spec']['gru_state'][0]
     rows.append(row_from_score(f'ptq_qatbits_{name}', 'PTQ (QAT integer bits)', wb, sb, r['start_score']))
-    rows.append(row_from_score(f'qat_{name}', 'QAT', wb, sb, r['score'], r['status'], r['best_epoch']))
+    method = 'QAT' if '_lr' not in name else 'QAT diagnostic (LR 3e-5, not used for selection)'
+    rows.append(row_from_score(f'qat_{name}', method, wb, sb, r['score'], r['status'], r['best_epoch']))
 
 hls = {}
 for res in sorted(glob.glob(os.path.join(RES, 'p3_*.json'))):
@@ -54,7 +55,7 @@ for row in rows:
     row['total_bits'] = row['weight_bits'] + row['state_bits']
     row['ler_over_fp32'] = row['ler'] / row['ler_fp32']
     row['ler_over_mwpm'] = row['ler'] / row['ler_mwpm']
-    row['acceptable'] = Q.acceptable(row)
+    row['acceptable'] = Q.acceptable(row) and not row['method'].startswith('QAT diagnostic')
 
 with open(os.path.join(RES, 'all_points.csv'), 'w', newline='') as f:
     w = csv.DictWriter(f, fieldnames=list(rows[0]))
@@ -102,3 +103,19 @@ ok.sort(key=lambda r: (r['total_bits'], r['state_bits'], r['ler']))
 print('acceptable, fewest total bits first:')
 for r in ok[:8]:
     print(f"  {r['config']}: W{r['weight_bits']} S{r['state_bits']} LER {r['ler']:.6f} ({r['ler_over_fp32']:.3f}x FP32)")
+
+seeds = {}
+for r in rows:
+    if r['method'] == 'QAT' and '_seed' in r['config']:
+        seeds.setdefault(r['config'].rsplit('_seed', 1)[0], []).append(r)
+with open(os.path.join(RES, 'qat_seeds.csv'), 'w', newline='') as f:
+    w = csv.writer(f)
+    w.writerow(['config', 'n_seeds', 'ler_per_seed', 'ler_mean', 'ler_over_fp32_mean', 'ler_over_mwpm_mean',
+                'acceptable_per_seed', 'acceptable_mean'])
+    for k, rs in sorted(seeds.items()):
+        m = sum(r['ler'] for r in rs) / len(rs)
+        acc_mean = m <= 1.05 * fp32 and m < mwpm
+        w.writerow([k, len(rs), ';'.join(f"{r['ler']:.6f}" for r in rs), f'{m:.6f}', f'{m / fp32:.4f}',
+                    f'{m / mwpm:.4f}', ';'.join(str(r['acceptable']) for r in rs), acc_mean])
+        if len(rs) > 1:
+            print(f'{k}: {len(rs)} seeds, mean LER {m:.6f} ({m / fp32:.4f}x FP32), acceptable on mean: {acc_mean}')

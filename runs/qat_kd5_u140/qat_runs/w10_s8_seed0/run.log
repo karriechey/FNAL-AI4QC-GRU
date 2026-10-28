@@ -22,3 +22,10 @@ WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet th
 {"epoch": 0, "ler": 0.0054644444444444445, "ler_over_fp32": 1.0614006690406819, "note": "start (PTQ at this spec)"}
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
 I0000 00:00:1793210904.633935     416 device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+{"epoch": 1, "loss": 0.016325856661889702, "ler": 0.005315555555555555, "ler_over_fp32": 1.0324808460127333, "ler_over_mwpm": 0.7021354663535627, "improved": true, "epoch_s": 121.1, "lr": null}
+{"epoch": 2, "loss": 0.016389451085124164, "ler": 0.005331111111111111, "ler_over_fp32": 1.0355023200604294, "ler_over_mwpm": 0.7041902106112865, "improved": false, "epoch_s": 114.3, "lr": null}
+{"epoch": 3, "loss": 0.016467139006592333, "ler": 0.00536, "ler_over_fp32": 1.041113629006151, "ler_over_mwpm": 0.7080061642327732, "improved": false, "epoch_s": 114.4, "lr": null}
+{"epoch": 4, "loss": 0.016463429660070687, "ler": 0.005387222222222222, "ler_over_fp32": 1.046401208589619, "ler_over_mwpm": 0.7116019666837895, "improved": false, "epoch_s": 114.4, "lr": null}
+{"epoch": 5, "loss": 0.016504671551752836, "ler": 0.005408333333333334, "ler_over_fp32": 1.0505017805114925, "ler_over_mwpm": 0.7143905481764146, "improved": false, "epoch_s": 114.4, "lr": null}
+{"epoch": 6, "loss": 0.016525188308674842, "ler": 0.005441666666666667, "ler_over_fp32": 1.0569763677565553, "ler_over_mwpm": 0.7187935715858224, "improved": false, "epoch_s": 115.3, "lr": null}
+DONE early stop: no improvement for 5 evals 1 0.005315555555555555
