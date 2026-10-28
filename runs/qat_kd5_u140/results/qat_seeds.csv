@@ -1,0 +1,14 @@
+config,n_seeds,ler_per_seed,ler_mean,ler_over_fp32_mean,ler_over_mwpm_mean,acceptable_per_seed,acceptable_mean
+qat_w10_s5,1,0.005686,0.005686,1.1043,0.7510,False,False
+qat_w10_s6,1,0.005513,0.005513,1.0709,0.7283,False,False
+qat_w10_s8,3,0.005316;0.005284;0.005344,0.005314,1.0323,0.7020,True;True;True,True
+qat_w12_s5,3,0.005532;0.005572;0.005548,0.005551,1.0781,0.7332,False;False;False,False
+qat_w12_s6,3,0.005353;0.005329;0.005304,0.005329,1.0351,0.7039,True;True;True,True
+qat_w12_s8,1,0.005168,0.005168,1.0038,0.6826,True,True
+qat_w16_s6,1,0.005296,0.005296,1.0286,0.6995,True,True
+qat_w16_s8,1,0.005171,0.005171,1.0043,0.6830,True,True
+qat_w3_s16,1,0.050461,0.050461,9.8014,6.6654,False,False
+qat_w4_s16,1,0.018177,0.018177,3.5307,2.4010,False,False
+qat_w5_s16,1,0.009283,0.009283,1.8032,1.2262,False,False
+qat_w6_s16,1,0.008005,0.008005,1.5549,1.0574,False,False
+qat_w8_s16,1,0.005742,0.005742,1.1154,0.7585,False,False

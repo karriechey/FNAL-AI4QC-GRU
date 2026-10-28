@@ -1,1 +1,7 @@
 {"epoch": 0, "ler": 0.0054644444444444445, "ler_over_fp32": 1.0614006690406819, "note": "start (PTQ at this spec)"}
+{"epoch": 1, "loss": 0.0162962507288903, "ler": 0.0053438888888888885, "ler_over_fp32": 1.0379842451710368, "ler_over_mwpm": 0.7058780362515594, "improved": true, "epoch_s": 112.9, "lr": null}
+{"epoch": 2, "loss": 0.016377482533920556, "ler": 0.005371666666666667, "ler_over_fp32": 1.043379734541923, "ler_over_mwpm": 0.7095472224260659, "improved": false, "epoch_s": 107.3, "lr": null}
+{"epoch": 3, "loss": 0.016435474668163808, "ler": 0.005376666666666667, "ler_over_fp32": 1.0443509226286825, "ler_over_mwpm": 0.7102076759374771, "improved": false, "epoch_s": 107.2, "lr": null}
+{"epoch": 4, "loss": 0.016447022033389658, "ler": 0.005382222222222222, "ler_over_fp32": 1.0454300205028595, "ler_over_mwpm": 0.7109415131723784, "improved": false, "epoch_s": 107.3, "lr": null}
+{"epoch": 5, "loss": 0.016503321074415, "ler": 0.005393888888888889, "ler_over_fp32": 1.0476961260386317, "ler_over_mwpm": 0.7124825713656712, "improved": false, "epoch_s": 107.3, "lr": null}
+{"epoch": 6, "loss": 0.016462799906730653, "ler": 0.005368888888888889, "ler_over_fp32": 1.0428401856048344, "ler_over_mwpm": 0.7091803038086153, "improved": false, "epoch_s": 107.1, "lr": null}
