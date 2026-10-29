@@ -1,0 +1,105 @@
+{
+ "environment": {
+  "hls4ml_version": "1.4.0.dev+g1259e2b25",
+  "hls4ml_path": "/tmp/kchey_qat/hls4ml_main",
+  "hls4ml_commit": "1259e2b25ed082e000e749b8ba97b449f4e613a9",
+  "contains_5376da23e": true,
+  "hls4ml_local_changes": "none"
+ },
+ "shots": [
+  15200000,
+  15210000
+ ],
+ "layer_types": {
+  "syndrome_sequence": "Input",
+  "gru": "GRU",
+  "gru_1": "GRU",
+  "gru_2": "GRU",
+  "gru_3": "GRU",
+  "logit": "Dense"
+ },
+ "gru_attrs": {
+  "gru": {
+   "return_sequences": "True",
+   "apply_reset_gate": "before",
+   "n_unit_par": "1",
+   "n_cycles": "1",
+   "reuse_factor": "70",
+   "static": "True"
+  },
+  "gru_1": {
+   "return_sequences": "True",
+   "apply_reset_gate": "before",
+   "n_unit_par": "1",
+   "n_cycles": "1",
+   "reuse_factor": "70",
+   "static": "True"
+  },
+  "gru_2": {
+   "return_sequences": "True",
+   "apply_reset_gate": "before",
+   "n_unit_par": "1",
+   "n_cycles": "1",
+   "reuse_factor": "70",
+   "static": "True"
+  },
+  "gru_3": {
+   "return_sequences": "False",
+   "apply_reset_gate": "before",
+   "n_unit_par": "1",
+   "n_cycles": "1",
+   "reuse_factor": "70",
+   "static": "True"
+  }
+ },
+ "csim_s": 90.3,
+ "n_flipped": 5,
+ "flipped": [
+  {
+   "shot": 15200964,
+   "keras_logit": 0.3538283705711365,
+   "hls_logit": -0.0009498680010437965,
+   "truth": 0
+  },
+  {
+   "shot": 15203242,
+   "keras_logit": -0.08362181484699249,
+   "hls_logit": 0.1391361802816391,
+   "truth": 1
+  },
+  {
+   "shot": 15204918,
+   "keras_logit": 0.02424381673336029,
+   "hls_logit": -0.5282047986984253,
+   "truth": 1
+  },
+  {
+   "shot": 15207283,
+   "keras_logit": -0.0631382018327713,
+   "hls_logit": 0.08480963110923767,
+   "truth": 1
+  },
+  {
+   "shot": 15207718,
+   "keras_logit": 0.06426475942134857,
+   "hls_logit": -0.4683842360973358,
+   "truth": 0
+  }
+ ],
+ "flipped_outside_0p2": 1,
+ "max_abs_logit_diff": 2.8953027725219727,
+ "mean_abs_logit_diff": 0.12960536208013074,
+ "stats_vs_keras": {
+  "n": 10000,
+  "errors_keras": 40,
+  "errors_hls": 37,
+  "pL_keras": 0.004,
+  "pL_hls": 0.0037,
+  "b": 1,
+  "c": 4,
+  "n_disc": 5,
+  "p_exact": 0.375,
+  "decision_agreement": 0.9995
+ },
+ "status": "FAIL: flips with |Keras logit| >= 0.2"
+}
