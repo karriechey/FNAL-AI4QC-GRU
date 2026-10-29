@@ -1,11 +1,11 @@
-{"epoch": 0, "ler": 0.0052138888888888886, "ler_over_fp32": 1.0127333549152906, "note": "start (PTQ at this spec)"}
-{"epoch": 1, "loss": 0.016042311078868807, "ler": 0.005196666666666666, "ler_over_fp32": 1.0093881515053413, "ler_over_mwpm": 0.686431349526675, "improved": true, "epoch_s": 146.8, "lr": null}
-{"epoch": 2, "loss": 0.01603875353327021, "ler": 0.0051805555555555554, "ler_over_fp32": 1.0062587676702275, "ler_over_mwpm": 0.6843032215454612, "improved": true, "epoch_s": 141.5, "lr": null}
-{"epoch": 3, "loss": 0.016065379816573112, "ler": 0.0051916666666666665, "ler_over_fp32": 1.008416963418582, "ler_over_mwpm": 0.6857708960152639, "improved": false, "epoch_s": 141.2, "lr": null}
-{"epoch": 4, "loss": 0.016041852279100568, "ler": 0.005188333333333333, "ler_over_fp32": 1.0077695046940756, "ler_over_mwpm": 0.685330593674323, "improved": false, "epoch_s": 141.3, "lr": null}
-{"epoch": 5, "loss": 0.01606565756024793, "ler": 0.005167777777777778, "ler_over_fp32": 1.00377684255962, "ler_over_mwpm": 0.6826153959051883, "improved": true, "epoch_s": 137.7, "lr": null}
-{"epoch": 6, "loss": 0.016072984216734768, "ler": 0.005204444444444445, "ler_over_fp32": 1.0108988885291896, "ler_over_mwpm": 0.6874587216555369, "improved": false, "epoch_s": 118.5, "lr": null}
-{"epoch": 7, "loss": 0.0160328587051481, "ler": 0.005217777777777778, "ler_over_fp32": 1.0134887234272147, "ler_over_mwpm": 0.6892199310192999, "improved": false, "epoch_s": 99.6, "lr": null}
-{"epoch": 8, "loss": 0.016007393516600132, "ler": 0.005241111111111111, "ler_over_fp32": 1.018020934498759, "ler_over_mwpm": 0.6923020474058854, "improved": false, "epoch_s": 99.3, "lr": null}
-{"epoch": 9, "loss": 0.016008159997873007, "ler": 0.005201111111111111, "ler_over_fp32": 1.0102514298046832, "ler_over_mwpm": 0.6870184193145961, "improved": false, "epoch_s": 79.7, "lr": null}
-{"epoch": 10, "loss": 0.016036904634907843, "ler": 0.005184444444444445, "ler_over_fp32": 1.0070141361821516, "ler_over_mwpm": 0.6848169076098922, "improved": false, "epoch_s": 61.2, "lr": null}
+{"epoch": 0, "pL": 0.0052138888888888886, "pL_over_fp32": 1.0127333549152906, "note": "start (PTQ at this spec)"}
+{"epoch": 1, "loss": 0.016042311078868807, "pL": 0.005196666666666666, "pL_over_fp32": 1.0093881515053413, "pL_over_mwpm": 0.686431349526675, "improved": true, "epoch_s": 146.8, "lr": null}
+{"epoch": 2, "loss": 0.01603875353327021, "pL": 0.0051805555555555554, "pL_over_fp32": 1.0062587676702275, "pL_over_mwpm": 0.6843032215454612, "improved": true, "epoch_s": 141.5, "lr": null}
+{"epoch": 3, "loss": 0.016065379816573112, "pL": 0.0051916666666666665, "pL_over_fp32": 1.008416963418582, "pL_over_mwpm": 0.6857708960152639, "improved": false, "epoch_s": 141.2, "lr": null}
+{"epoch": 4, "loss": 0.016041852279100568, "pL": 0.005188333333333333, "pL_over_fp32": 1.0077695046940756, "pL_over_mwpm": 0.685330593674323, "improved": false, "epoch_s": 141.3, "lr": null}
+{"epoch": 5, "loss": 0.01606565756024793, "pL": 0.005167777777777778, "pL_over_fp32": 1.00377684255962, "pL_over_mwpm": 0.6826153959051883, "improved": true, "epoch_s": 137.7, "lr": null}
+{"epoch": 6, "loss": 0.016072984216734768, "pL": 0.005204444444444445, "pL_over_fp32": 1.0108988885291896, "pL_over_mwpm": 0.6874587216555369, "improved": false, "epoch_s": 118.5, "lr": null}
+{"epoch": 7, "loss": 0.0160328587051481, "pL": 0.005217777777777778, "pL_over_fp32": 1.0134887234272147, "pL_over_mwpm": 0.6892199310192999, "improved": false, "epoch_s": 99.6, "lr": null}
+{"epoch": 8, "loss": 0.016007393516600132, "pL": 0.005241111111111111, "pL_over_fp32": 1.018020934498759, "pL_over_mwpm": 0.6923020474058854, "improved": false, "epoch_s": 99.3, "lr": null}
+{"epoch": 9, "loss": 0.016008159997873007, "pL": 0.005201111111111111, "pL_over_fp32": 1.0102514298046832, "pL_over_mwpm": 0.6870184193145961, "improved": false, "epoch_s": 79.7, "lr": null}
+{"epoch": 10, "loss": 0.016036904634907843, "pL": 0.005184444444444445, "pL_over_fp32": 1.0070141361821516, "pL_over_mwpm": 0.6848169076098922, "improved": false, "epoch_s": 61.2, "lr": null}

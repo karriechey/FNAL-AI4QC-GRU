@@ -86,10 +86,10 @@ def main():
 
 
     y0, s0 = evaluate()
-    best = {'epoch': 0, 'ler': s0['ler'], 'score': s0}
+    best = {'epoch': 0, 'pL': s0['pL'], 'score': s0}
     np.save(os.path.join(Q.SCRATCH, 'logits', f'qat_{args.tag}_best.npy'), y0.astype(np.float32))
     student.save_weights(os.path.join(args.out, 'best.weights.h5'))
-    log({'epoch': 0, 'ler': s0['ler'], 'ler_over_fp32': s0['ler_over_fp32'], 'note': 'start (PTQ at this spec)'})
+    log({'epoch': 0, 'pL': s0['pL'], 'pL_over_fp32': s0['pL_over_fp32'], 'note': 'start (PTQ at this spec)'})
 
     fs = fresh_shots.FreshShots(Q.D, Q.P, Q.ROUNDS, args.shots_per_epoch, BATCH, workers=args.workers,
                                 seed_base=Q.FRESH_SEED_BASE)
@@ -107,16 +107,16 @@ def main():
             log({'epoch': e, 'loss': mean_loss, 'status': status})
             break
         y, s = evaluate()
-        improved = s['ler'] < best['ler']
+        improved = s['pL'] < best['pL']
         if improved:
-            best = {'epoch': e, 'ler': s['ler'], 'score': s}
+            best = {'epoch': e, 'pL': s['pL'], 'score': s}
             student.save_weights(os.path.join(args.out, 'best.weights.h5'))
             np.save(os.path.join(Q.SCRATCH, 'logits', f'qat_{args.tag}_best.npy'), y.astype(np.float32))
             since_best = 0
         else:
             since_best += 1
-        log({'epoch': e, 'loss': mean_loss, 'ler': s['ler'], 'ler_over_fp32': s['ler_over_fp32'],
-             'ler_over_mwpm': s['ler_over_mwpm'], 'improved': improved, 'epoch_s': round(time.time() - t0, 1),
+        log({'epoch': e, 'loss': mean_loss, 'pL': s['pL'], 'pL_over_fp32': s['pL_over_fp32'],
+             'pL_over_mwpm': s['pL_over_mwpm'], 'improved': improved, 'epoch_s': round(time.time() - t0, 1),
              'lr': float(opt.learning_rate(opt.iterations)) if callable(opt.learning_rate) else None})
         if since_best >= args.patience:
             status = f'early stop: no improvement for {args.patience} evals'
@@ -125,7 +125,7 @@ def main():
     Q.dump({'tag': args.tag, 'spec': spec, 'args': vars(args), 'status': status, 'best_epoch': best['epoch'],
             'score': best['score'], 'start_score': s0, 'train_s': round(time.time() - t_start, 1)},
            os.path.join(args.out, 'result.json'))
-    print('DONE', status, best['epoch'], best['ler'], flush=True)
+    print('DONE', status, best['epoch'], best['pL'], flush=True)
 
 
 if __name__ == '__main__':

@@ -90,11 +90,11 @@
  "agreement_vs_quantized_keras": 1.0,
  "max_abs_logit_diff": 0.0,
  "hls": {
-  "ler": 0.005242,
-  "ler_fp32": 0.005107,
-  "ler_mwpm": 0.007538,
-  "ler_over_fp32": 1.0264343058547092,
-  "ler_over_mwpm": 0.6954099230565136,
+  "pL": 0.005242,
+  "pL_fp32": 0.005107,
+  "pL_mwpm": 0.007538,
+  "pL_over_fp32": 1.0264343058547092,
+  "pL_over_mwpm": 0.6954099230565136,
   "mcnemar_vs_fp32": {
    "n": 1000000,
    "errors_ref": 5107,
@@ -107,11 +107,11 @@
   }
  },
  "emulator": {
-  "ler": 0.005242,
-  "ler_fp32": 0.005107,
-  "ler_mwpm": 0.007538,
-  "ler_over_fp32": 1.0264343058547092,
-  "ler_over_mwpm": 0.6954099230565136,
+  "pL": 0.005242,
+  "pL_fp32": 0.005107,
+  "pL_mwpm": 0.007538,
+  "pL_over_fp32": 1.0264343058547092,
+  "pL_over_mwpm": 0.6954099230565136,
   "mcnemar_vs_fp32": {
    "n": 1000000,
    "errors_ref": 5107,

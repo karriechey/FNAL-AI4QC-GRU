@@ -5,8 +5,8 @@ Written 2026-10-28 ~13:00Z, after Phase 1 (PTQ) and before any QAT run started.
 
 ## Selection rule (eval block only)
 
-A configuration is acceptable if its eval-block LER <= 1.05 x the FP32 parent's LER and its LER
-< MWPM's LER, both on the same 1,800,000 eval-block shots [15.2M, 17M). The candidate is the
+A configuration is acceptable if its eval-block pL <= 1.05 x the FP32 parent's pL and its pL
+< MWPM's pL, both on the same 1,800,000 eval-block shots [15.2M, 17M). The candidate is the
 acceptable configuration with the fewest total bits (weight bits + state bits), ties broken by
 fewer state bits. If nothing below 16 + 16 is acceptable, that is the result.
 

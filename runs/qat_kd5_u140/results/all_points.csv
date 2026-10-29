@@ -1,4 +1,4 @@
-config,method,weight_bits,state_bits,ler,ler_fp32,ler_mwpm,b,c,n_disc,p_exact,status,best_epoch,hls4ml_agreement,hls4ml_ler,hls4ml_n,total_bits,ler_over_fp32,ler_over_mwpm,acceptable
+config,method,weight_bits,state_bits,pL,pL_fp32,pL_mwpm,b,c,n_disc,p_exact,status,best_epoch,hls4ml_agreement,hls4ml_pL,hls4ml_n,total_bits,pL_over_fp32,pL_over_mwpm,acceptable
 ptq_w16_s16,PTQ (Phase 1 integer bits),16,16,0.005158888888888889,0.005148333333333334,0.007570555555555555,85,66,151,0.1427180761829656,,,,,,32,1.0020502859609366,0.6814412563293462,True
 ptq_w12_s16,PTQ (Phase 1 integer bits),12,16,0.005243333333333333,0.005148333333333334,0.007570555555555555,772,601,1373,4.358503159241909e-06,,,,,,28,1.0184525736484298,0.692595582299846,True
 ptq_w10_s16,PTQ (Phase 1 integer bits),10,16,0.008567777777777778,0.005148333333333334,0.007570555555555555,8514,2359,10873,0.0,,,,,,26,1.664184741556059,1.1317237836647833,False

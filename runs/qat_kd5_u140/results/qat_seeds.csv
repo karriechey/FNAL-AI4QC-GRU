@@ -1,4 +1,4 @@
-config,n_seeds,ler_per_seed,ler_mean,ler_over_fp32_mean,ler_over_mwpm_mean,acceptable_per_seed,acceptable_mean
+config,n_seeds,pL_per_seed,pL_mean,pL_over_fp32_mean,pL_over_mwpm_mean,acceptable_per_seed,acceptable_mean
 qat_w10_s5,1,0.005686,0.005686,1.1043,0.7510,False,False
 qat_w10_s6,1,0.005513,0.005513,1.0709,0.7283,False,False
 qat_w10_s8,3,0.005316;0.005284;0.005344,0.005314,1.0323,0.7020,True;True;True,True

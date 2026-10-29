@@ -44,10 +44,10 @@ out['mwpm_equal_recorded'] = bool((rec['mwpm_pred'] == mwpm).all())
 out['fp32_decisions_equal_recorded'] = float(((rec['student_logit'] > 0) == (logit > 0)).mean())
 out['fp32_logit_max_abs_diff_recorded'] = float(np.abs(rec['student_logit'] - logit).max())
 errs, mw_errs = int(((logit > 0) != truth).sum()), int((mwpm != truth).sum())
-out.update({'n': int(hi - lo), 'fp32_errors': errs, 'mwpm_errors': mw_errs, 'fp32_p_L': errs / (hi - lo),
-            'mwpm_p_L': mw_errs / (hi - lo), 'ratio': errs / mw_errs, 'recorded': Q.RECORDED,
-            'matches_recorded': round(errs / (hi - lo), 6) == Q.RECORDED['p_L']
-                                and round(mw_errs / (hi - lo), 6) == Q.RECORDED['mwpm_p_L']})
+out.update({'n': int(hi - lo), 'fp32_errors': errs, 'mwpm_errors': mw_errs, 'fp32_pL': errs / (hi - lo),
+            'mwpm_pL': mw_errs / (hi - lo), 'ratio': errs / mw_errs, 'recorded': Q.RECORDED,
+            'matches_recorded': round(errs / (hi - lo), 6) == Q.RECORDED['pL']
+                                and round(mw_errs / (hi - lo), 6) == Q.RECORDED['mwpm_pL']})
 
 # float FQ model (no quantizer, exact activations) against Keras
 fq = F.build_fq({}, tables=False)

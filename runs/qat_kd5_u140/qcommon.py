@@ -27,7 +27,7 @@ PARENT_RUN = '/home/kchey/FNAL-AI4QC-GRU-kd/experiments/kd_pilot_p004_2026-10/ru
 PARENT_WEIGHTS = PARENT_RUN + '/seed0/epochs/epoch079.weights.h5'
 PARENT_PER_SHOT = PARENT_RUN + '/eval_selected_per_shot.npz'
 # recorded in eval_selected.log and GRU_distillation_runs_2026-10-19.csv
-RECORDED = {'p_L': 0.005148, 'mwpm_p_L': 0.007571, 'ratio': 0.6800}
+RECORDED = {'pL': 0.005148, 'mwpm_pL': 0.007571, 'ratio': 0.6800}
 
 TEACHER_WEIGHTS = '/home/kchey/FNAL-AI4QC-GRU-kd/experiments/kd_pilot_p004_2026-10/teachers/f5w_p004_epoch80.weights.h5'
 TEACHER_UNITS, TEACHER_PARAMS = 280, 256481
@@ -154,18 +154,18 @@ def paired(ref_pred, new_pred, truth):
 
 
 def score(pred, d):
-    # p_L, ratio to FP32 and MWPM on the same shots, McNemar vs the FP32 parent
+    # pL, ratio to FP32 and MWPM on the same shots, McNemar vs the FP32 parent
     truth, fp = d['truth'].astype(bool), d['fp32_logit'] > 0
     mw = d['mwpm_pred'].astype(bool)
     st = paired(fp, pred, truth)
-    ler, ler_fp, ler_mw = float((pred != truth).mean()), float((fp != truth).mean()), float((mw != truth).mean())
-    return {'ler': ler, 'ler_fp32': ler_fp, 'ler_mwpm': ler_mw, 'ler_over_fp32': ler / ler_fp,
-            'ler_over_mwpm': ler / ler_mw, 'mcnemar_vs_fp32': st}
+    pL, pL_fp, pL_mw = float((pred != truth).mean()), float((fp != truth).mean()), float((mw != truth).mean())
+    return {'pL': pL, 'pL_fp32': pL_fp, 'pL_mwpm': pL_mw, 'pL_over_fp32': pL / pL_fp,
+            'pL_over_mwpm': pL / pL_mw, 'mcnemar_vs_fp32': st}
 
 
 def acceptable(row):
-    # pre-registered rule (NOTES.md): p_L <= 1.05 x FP32 and p_L < MWPM, same eval-block shots
-    return row['ler'] <= 1.05 * row['ler_fp32'] and row['ler'] < row['ler_mwpm']
+    # pre-registered rule (NOTES.md): pL <= 1.05 x FP32 and pL < MWPM, same eval-block shots
+    return row['pL'] <= 1.05 * row['pL_fp32'] and row['pL'] < row['pL_mwpm']
 
 
 def dump(obj, path):

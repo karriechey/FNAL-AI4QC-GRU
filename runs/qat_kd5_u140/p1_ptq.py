@@ -82,8 +82,8 @@ for axis, wb, sb in points:
     sc = Q.score(y > 0, d)
     mc = sc['mcnemar_vs_fp32']
     row = {'method': 'PTQ', 'axis': axis, 'weight_bits': wb, 'state_bits': sb, 'accum_bits': Q.ACCUM_BITS,
-           'total_bits': wb + sb, 'ler': sc['ler'], 'ler_fp32': sc['ler_fp32'], 'ler_mwpm': sc['ler_mwpm'],
-           'ler_over_fp32': sc['ler_over_fp32'], 'ler_over_mwpm': sc['ler_over_mwpm'],
+           'total_bits': wb + sb, 'pL': sc['pL'], 'pL_fp32': sc['pL_fp32'], 'pL_mwpm': sc['pL_mwpm'],
+           'pL_over_fp32': sc['pL_over_fp32'], 'pL_over_mwpm': sc['pL_over_mwpm'],
            'b': mc['b'], 'c': mc['c'], 'n_disc': mc['n_disc'], 'p_exact': mc['p_exact'],
            'agreement_fp32': mc['agreement'], 'acceptable': Q.acceptable(sc),
            'spec': json.dumps(spec), 's': round(time.time() - t1, 1)}
