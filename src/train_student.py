@@ -318,10 +318,11 @@ def load_extension_features(zex, take, d, r, p, inputs, student, idx_t, binary_t
         n_det_of = lambda: int(zex['n_det'])
     f_ex = get('flips', 0, take).astype(binary_t).reshape(-1)
     compact = 'det_evts_packed' in files
-    if compact:
+    if compact or 'measurements' not in files:
         if not (student == 'gru' and inputs == 'evts'):
-            raise SystemExit(f"{LOG} compact pool (detection events only) serves the GRU "
+            raise SystemExit(f"{LOG} a pool with detection events only serves the GRU "
                              f"with inputs='evts' only; got student={student} inputs={inputs}")
+    if compact:
         n_det = n_det_of()
     x_ex = out
     for a in range(0, take, chunk):
@@ -331,7 +332,8 @@ def load_extension_features(zex, take, d, r, p, inputs, student, idx_t, binary_t
             b_c = None
         else:
             e_c = get('det_evts', a, b).astype(binary_t)
-            b_c, _, _ = split_measurements(get('measurements', a, b).astype(binary_t), d, idx_t)
+            b_c = (split_measurements(get('measurements', a, b).astype(binary_t), d, idx_t)[0]
+                   if 'measurements' in files else None)
         x_c = to_host_uint8(assemble_features(b_c, e_c, inputs, student=student,
                                               d=d, rounds=r, p=p))
         if x_ex is None:
