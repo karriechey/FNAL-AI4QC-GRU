@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last updated: 2026-10-26 (d9 pilot seed base extended to 240 epochs for kd9_3x134). Earlier 2026-10-19 (d5 pilot seed base extended to 160 epochs). Earlier 2026-10-18 (fresh_seed_ranges). Earlier 2026-10-16 (FORMAL pools d5 p = 0.005 seed 62 and d9 p = 0.005 seed 63, from
+# Last updated: 2026-10-28 (fresh seed bases 6e12-11e12 for depth_vs_distance). Earlier 2026-10-26 (d9 pilot seed base extended to 240 epochs for kd9_3x134). Earlier 2026-10-19 (d5 pilot seed base extended to 160 epochs). Earlier 2026-10-18 (fresh_seed_ranges). Earlier 2026-10-16 (FORMAL pools d5 p = 0.005 seed 62 and d9 p = 0.005 seed 63, from
 # experiments/pools_p005_2026-10-15/generate.sh). Before that 2026-10-14 (FORMAL pools d5 p = 0.003 seed 60 and d9 p = 0.003 seed 61, from
 # experiments/pools_p003_2026-10-14/generate.sh). Earlier 2026-10-06 (the single complete record of every pool: all FORMAL and TRAINONLY
 # pools for d = 5, 7, 9 and p = 0.003, 0.004, 0.005 with seeds, sizes, formats and flips
@@ -154,6 +154,12 @@ fresh_seed_ranges:
   - {base: 4000000000000, max_epochs: 80, used_by: "kd_pilot_p004 d7"}
   - {base: 5000000000000, max_epochs: 240,
      used_by: "kd_pilot_p004 d9 and d9_deep_students (160-epoch runs; kd9_3x134 at 240)"}
+  - {base: 6000000000000, max_epochs: 80, used_by: "depth_vs_distance d5 seed 0 (LR scan and L = 1-5)"}
+  - {base: 7000000000000, max_epochs: 80, used_by: "depth_vs_distance d7 seed 0 (LR scan and L = 1-5)"}
+  - {base: 8000000000000, max_epochs: 160, used_by: "depth_vs_distance d9 seed 0 (LR scan and L = 1-5)"}
+  - {base: 9000000000000, max_epochs: 80, used_by: "depth_vs_distance d5 seed 1"}
+  - {base: 10000000000000, max_epochs: 80, used_by: "depth_vs_distance d7 seed 1"}
+  - {base: 11000000000000, max_epochs: 160, used_by: "depth_vs_distance d9 seed 1"}
 
 # Corrections to fields in the pool fingerprints (2026-10-06).
 fingerprint_notes:
