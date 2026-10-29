@@ -1,14 +1,15 @@
 <!-- Created: 2026-10-28 | Last updated: 2026-10-29 -->
 # kd5_u140 quantization study: summary
 
-Status 2026-10-29 01:10Z. The FP32 reference matched the recorded numbers exactly, so nothing is flagged here.
+Status 2026-10-29 17:00Z. The FP32 reference matched the recorded numbers exactly, so nothing is flagged here.
 
 ## What finished, what did not
 
 - Finished: Phase 0 (recon, FP32 reproduced exactly, QGRU check, wiring check), Phase 1 (profiling, both PTQ axes, knees), Phase 2 (7 single-axis QAT points, 6-point 2D grid, 3 seeds for the candidate, its neighbor and the other 18-bit point, plus one diagnostic run).
 - Candidate under the pre-registered rule: QAT, weights 12 bits, state 6 bits (18 total, accumulators 24), eval-block pL 0.005353 = 1.040x FP32, 0.707x MWPM (seed 0); 3-seed mean 1.035x FP32, all three seeds acceptable.
 - Finished: Phase 3 hls4ml C-sim on the first 1,000,000 eval-block shots for w12_s6, w10_s8, w12_s8, w16_s6 (grace1, aarch64, compile worked without changes, about 22 min each). hls4ml and the quantized Keras model agree on 100% of decisions, max |logit difference| 0.0, for all four; no widening was needed. Exports with run_synth.sh in `hls_export/<config>/`.
-- Not done here: C synthesis (no Vivado or Vitis HLS on grace1). Synthesis backend changed to Vivado (see "Synthesis on EAF" below); bundle `for_eaf/eaf_qat_kd5_u140_synth_vivado.tar.gz` (sha256 in `eaf_bundle_vivado/BUNDLE_SHA256.txt`), waiting to be run on EAF.
+- Finished: C synthesis of the four Phase 3 configs on EAF (Vivado HLS 2020.1, RF 70, 2026-10-29 02:28-16:25Z), all meet the 5 ns clock. Results in `results/synth_rf70.csv` (see "Synthesis results" below).
+- Running: RF 10 / 35 / 140 synthesis of the candidate on EAF.
 - Dropped: QAT state 10 (above the PTQ state knee). Not blocked: nothing.
 
 ## Result table (eval block [15.2M, 17M), 1,800,000 shots; FP32 pL 0.005148, MWPM 0.007571 on the same shots)
@@ -45,7 +46,7 @@ b = FP32 right and the configuration wrong, c = the reverse; exact two-sided McN
 | qat_w8_s16, LR 3e-5 (diagnostic) | 8 | 16 | QAT | 0.005518 | 1.072 | 0.729 | 1796 / 1129 / 2925 | not used |
 
 All rows (also PTQ at the QAT integer bits, every run's epoch-0 score): `results/all_points.csv`; seed means `results/qat_seeds.csv`.
-Plots: `figures/pL_vs_weights_bits.png`, `figures/pL_vs_state_bits.png`, `figures/pareto_pL_vs_total_bits.png` (pL vs total bits; no synthesis numbers yet).
+Plots: `figures/pL_vs_weights_bits.png`, `figures/pL_vs_state_bits.png`, `figures/pareto_pL_vs_total_bits.png` (pL vs total bits), `figures/pareto_pL_vs_lut.png` (pL vs synthesized LUT).
 
 Profiled integer bits (Phase 1, max + 1 headroom): GRU kernel 7 (max 27.8), recurrent kernel 8 (51.9), bias 5 (7.4), Dense kernel 5 (4.6), Dense bias 2 (0.61), GRU accumulator 9 (73.0), h and r*h 3 (1.0), tables 2, Dense accumulator 7. PTQ knees: weights 12, state 8.
 
@@ -55,10 +56,10 @@ MWPM and FP32 on the same 1M shots. b / c vs FP32 as above.
 
 | config | agreement vs quantized Keras | max abs logit diff | hls4ml pL | pL/FP32 | pL/MWPM | b / c / n_disc vs FP32 | resources (EAF csynth) |
 |---|---|---|---|---|---|---|---|
-| qat_w12_s6 (candidate) | 100.000% | 0.0 | 0.005304 | 1.039 | 0.704 | 726 / 529 / 1255 | pending |
-| qat_w10_s8 | 100.000% | 0.0 | 0.005242 | 1.026 | 0.695 | 588 / 453 / 1041 | pending |
-| qat_w12_s8 | 100.000% | 0.0 | 0.005099 | 0.998 | 0.676 | 286 / 294 / 580 | pending |
-| qat_w16_s6 | 100.000% | 0.0 | 0.005245 | 1.027 | 0.696 | 631 / 493 / 1124 | pending |
+| qat_w12_s6 (candidate) | 100.000% | 0.0 | 0.005304 | 1.039 | 0.704 | 726 / 529 / 1255 | 30.23% LUT, 49 DSP |
+| qat_w10_s8 | 100.000% | 0.0 | 0.005242 | 1.026 | 0.695 | 588 / 453 / 1041 | 30.17% LUT, 14 DSP |
+| qat_w12_s8 | 100.000% | 0.0 | 0.005099 | 0.998 | 0.676 | 286 / 294 / 580 | 30.43% LUT, 63 DSP |
+| qat_w16_s6 | 100.000% | 0.0 | 0.005245 | 1.027 | 0.696 | 631 / 493 / 1124 | 34.74% LUT, 774 DSP |
 
 ## Synthesis on EAF: Vivado backend
 
@@ -77,6 +78,25 @@ Vivado HLS 2020.1 compatibility: the tcl (`set_top`, `add_files`, `config_compil
 
 The earlier EAF attempts: the first failed at once (vivado_hls not on PATH); the second stopped during RTL generation and two background relaunches wrote nothing, because the EAF home volume (30 GB) was full (0 bytes free; it also truncated a bundle upload to 0 bytes). Synthesis now runs on `/scratch/fast/7DayLifetime/kchey/qat_synth` (started 2026-10-29 02:28:40Z, Vivado HLS 2020.1); home was cleared of the old bundle and four d3 pools. `run_all.sh` sources the 2020.1 settings itself, runs under nohup, and skips configs that already have results.
 
+### Synthesis results (RF 70)
+
+Vivado HLS 2020.1 C synthesis, xcvu13p-flga2577-2-e, 5 ns target, 2.7-5.3 h per config. Raw output in
+`results/synth_vivado_rf70_2026-10-29/`; table with pL and `_pct` columns from `synth_table.py` in
+`results/synth_rf70.csv`. Percentages are of the xcvu13p. pL is the eval-block QAT seed 0 value.
+
+| config | pL / FP32 | est clock (ns) | latency (cycles) | latency (us) | II (cycles) | LUT | FF | DSP | BRAM_18K |
+|---|---|---|---|---|---|---|---|---|---|
+| qat_w10_s8 | 1.032 | 4.328 | 1,627-1,628 | 8.14 | 1,556 | 521,362 (30.17%) | 132,102 (3.82%) | 14 (0.11%) | 7 (0.13%) |
+| qat_w12_s6 (candidate) | 1.040 | 4.340 | 1,627-1,628 | 8.14 | 1,556 | 522,406 (30.23%) | 132,617 (3.84%) | 49 (0.40%) | 7 (0.13%) |
+| qat_w12_s8 | 1.004 | 4.328 | 1,627-1,628 | 8.14 | 1,556 | 525,812 (30.43%) | 137,674 (3.98%) | 63 (0.51%) | 7 (0.13%) |
+| qat_w16_s6 | 1.029 | 4.328 | 1,633-1,634 | 8.17 | 1,562 | 600,228 (34.74%) | 150,340 (4.35%) | 774 (6.30%) | 19 (0.35%) |
+
+- Latency and II are set by RF 70 and barely depend on precision. w16_s6 adds 6 cycles, from the DSP multiply pipeline stage.
+- From 10 to 12 weight bits, HLS builds the multipliers from LUTs, and the three configs differ by under 0.3% LUT. Most of the 30% is the partitioned weight arrays and their multiplexers (XFORM 203-104 warnings), which depend on RF, not on bit width.
+- At 16 weight bits, 774 multipliers go to DSPs, and LUT still rises by 78k (+15%): wider weight multiplexers and adders.
+- w12_s8 has better pL than w16_s6 and costs less on every resource. For +3.4k LUT, +5k FF and +14 DSP over the candidate, it brings pL from 1.040x to 1.004x FP32 (seed 0; candidate seed range 1.030-1.040x).
+- w10_s8 is the cheapest (fewest DSPs, lowest LUT) and has a slightly lower mean pL than the candidate. Total bits is a poor stand-in for FPGA cost here.
+
 ### ReuseFactor sweep of the candidate (RF 10, 35, 140; RF 70 above)
 
 Same RF values as the u70 sweep. qat_w12_s6 rebuilt with the Vivado backend at each RF (`rf_sweep_check.sh`,
@@ -90,7 +110,8 @@ server in parallel (`run_one.sh`). Resources and latency: pending.
 
 - Weights are the bottleneck: no QAT point at or below 8 weight bits is acceptable. w8 at the planned LR peaked at epoch 1 and its loss rose after; at 1/10 that LR it reached 1.072x. A longer, lower-LR schedule, per-channel integer bits or clipping the weight outliers (recurrent max 52 vs 99th percentile 3.8) are the untested options.
 - The early-stop rule (5 evals) ended most runs at epochs 6-20 of 25, before the cosine LR had decayed much.
-- w10_s8 has the same total bits as the candidate and a slightly lower mean pL (1.032x vs 1.035x); it loses only on the state-bit tie-break. Synthesis will show which is cheaper.
+- w10_s8 has the same total bits as the candidate and a slightly lower mean pL (1.032x vs 1.035x); it loses only on the state-bit tie-break. Synthesis shows it is also slightly cheaper (-1k LUT, 14 vs 49 DSP).
+- w12_s8 reaches FP32 pL (1.004x) for +0.2% LUT over the candidate, but has one seed only. Seeds 1 and 2 would be needed to state it as an alternative.
 - All selection used the eval block, so eval-block pL values of the selected points are slightly optimistic; the held-out blocks were not read.
 - Accumulators were held at 24 bits throughout; how far they can shrink is not measured.
 
