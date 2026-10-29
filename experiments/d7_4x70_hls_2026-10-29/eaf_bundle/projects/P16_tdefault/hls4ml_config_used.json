@@ -1,0 +1,112 @@
+{
+ "Model": {
+  "Precision": {
+   "default": "ap_fixed<32,16>"
+  },
+  "ReuseFactor": 70,
+  "Strategy": "Resource",
+  "BramFactor": 1000000000,
+  "TraceOutput": false,
+  "BitExact": null
+ },
+ "LayerName": {
+  "syndrome_sequence": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<16,2,AP_RND,AP_SAT>"
+   }
+  },
+  "gru": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<16,1,AP_RND,AP_SAT>",
+    "weight": "ap_fixed<16,5,AP_RND,AP_SAT>",
+    "bias": "ap_fixed<16,4,AP_RND,AP_SAT>",
+    "recurrent_weight": "ap_fixed<16,4,AP_RND,AP_SAT>",
+    "recurrent_bias": "ap_fixed<16,4,AP_RND,AP_SAT>",
+    "accum": "ap_fixed<16,7,AP_RND,AP_SAT>",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 70,
+   "Static": true,
+   "TableSize": 1024,
+   "Strategy": "Resource",
+   "static": true,
+   "table_size": 1024
+  },
+  "gru_1": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<16,1,AP_RND,AP_SAT>",
+    "weight": "ap_fixed<16,4,AP_RND,AP_SAT>",
+    "bias": "ap_fixed<16,3,AP_RND,AP_SAT>",
+    "recurrent_weight": "ap_fixed<16,6,AP_RND,AP_SAT>",
+    "recurrent_bias": "ap_fixed<16,3,AP_RND,AP_SAT>",
+    "accum": "ap_fixed<16,6,AP_RND,AP_SAT>",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 70,
+   "Static": true,
+   "TableSize": 1024,
+   "Strategy": "Resource",
+   "static": true,
+   "table_size": 1024
+  },
+  "gru_2": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<16,2,AP_RND,AP_SAT>",
+    "weight": "ap_fixed<16,4,AP_RND,AP_SAT>",
+    "bias": "ap_fixed<16,2,AP_RND,AP_SAT>",
+    "recurrent_weight": "ap_fixed<16,4,AP_RND,AP_SAT>",
+    "recurrent_bias": "ap_fixed<16,2,AP_RND,AP_SAT>",
+    "accum": "ap_fixed<16,7,AP_RND,AP_SAT>",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 70,
+   "Static": true,
+   "TableSize": 1024,
+   "Strategy": "Resource",
+   "static": true,
+   "table_size": 1024
+  },
+  "gru_3": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<16,2,AP_RND,AP_SAT>",
+    "weight": "ap_fixed<16,4,AP_RND,AP_SAT>",
+    "bias": "ap_fixed<16,2,AP_RND,AP_SAT>",
+    "recurrent_weight": "ap_fixed<16,5,AP_RND,AP_SAT>",
+    "recurrent_bias": "ap_fixed<16,2,AP_RND,AP_SAT>",
+    "accum": "ap_fixed<16,7,AP_RND,AP_SAT>",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 70,
+   "Static": true,
+   "TableSize": 1024,
+   "Strategy": "Resource",
+   "static": true,
+   "table_size": 1024
+  },
+  "logit": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<16,6,AP_RND,AP_SAT>",
+    "weight": "ap_fixed<16,3,AP_RND,AP_SAT>",
+    "bias": "ap_fixed<16,1,AP_RND,AP_SAT>",
+    "accum": "ap_fixed<16,6,AP_RND,AP_SAT>"
+   },
+   "ReuseFactor": 70,
+   "Strategy": "Resource"
+  },
+  "logit_linear": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<16,6,AP_RND,AP_SAT>",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 1,
+   "TableSize": 1024
+  }
+ }
+}

@@ -1,0 +1,122 @@
+Backend: Vivado
+ClockPeriod: 5.0
+ClockUncertainty: 12.5%
+HLSConfig:
+  LayerName:
+    gru:
+      Precision:
+        accum: ap_fixed<16,7,AP_RND,AP_SAT>
+        bias: ap_fixed<16,4,AP_RND,AP_SAT>
+        recurrent_bias: ap_fixed<16,4,AP_RND,AP_SAT>
+        recurrent_weight: ap_fixed<16,4,AP_RND,AP_SAT>
+        result: ap_fixed<16,1,AP_RND,AP_SAT>
+        table: fixed<18,8,TRN,WRAP,0>
+        weight: ap_fixed<16,5,AP_RND,AP_SAT>
+      ReuseFactor: 70
+      Static: true
+      Strategy: Resource
+      TableSize: 1024
+      Trace: false
+      static: true
+      table_size: 4096
+      table_t: ap_fixed<16,1,AP_RND,AP_SAT>
+    gru_1:
+      Precision:
+        accum: ap_fixed<16,6,AP_RND,AP_SAT>
+        bias: ap_fixed<16,3,AP_RND,AP_SAT>
+        recurrent_bias: ap_fixed<16,3,AP_RND,AP_SAT>
+        recurrent_weight: ap_fixed<16,6,AP_RND,AP_SAT>
+        result: ap_fixed<16,1,AP_RND,AP_SAT>
+        table: fixed<18,8,TRN,WRAP,0>
+        weight: ap_fixed<16,4,AP_RND,AP_SAT>
+      ReuseFactor: 70
+      Static: true
+      Strategy: Resource
+      TableSize: 1024
+      Trace: false
+      static: true
+      table_size: 4096
+      table_t: ap_fixed<16,1,AP_RND,AP_SAT>
+    gru_2:
+      Precision:
+        accum: ap_fixed<16,7,AP_RND,AP_SAT>
+        bias: ap_fixed<16,2,AP_RND,AP_SAT>
+        recurrent_bias: ap_fixed<16,2,AP_RND,AP_SAT>
+        recurrent_weight: ap_fixed<16,4,AP_RND,AP_SAT>
+        result: ap_fixed<16,2,AP_RND,AP_SAT>
+        table: fixed<18,8,TRN,WRAP,0>
+        weight: ap_fixed<16,4,AP_RND,AP_SAT>
+      ReuseFactor: 70
+      Static: true
+      Strategy: Resource
+      TableSize: 1024
+      Trace: false
+      static: true
+      table_size: 4096
+      table_t: ap_fixed<16,1,AP_RND,AP_SAT>
+    gru_3:
+      Precision:
+        accum: ap_fixed<16,7,AP_RND,AP_SAT>
+        bias: ap_fixed<16,2,AP_RND,AP_SAT>
+        recurrent_bias: ap_fixed<16,2,AP_RND,AP_SAT>
+        recurrent_weight: ap_fixed<16,5,AP_RND,AP_SAT>
+        result: ap_fixed<16,2,AP_RND,AP_SAT>
+        table: fixed<18,8,TRN,WRAP,0>
+        weight: ap_fixed<16,4,AP_RND,AP_SAT>
+      ReuseFactor: 70
+      Static: true
+      Strategy: Resource
+      TableSize: 1024
+      Trace: false
+      static: true
+      table_size: 4096
+      table_t: ap_fixed<16,1,AP_RND,AP_SAT>
+    logit:
+      Precision:
+        accum: ap_fixed<16,6,AP_RND,AP_SAT>
+        bias: ap_fixed<16,1,AP_RND,AP_SAT>
+        result: ap_fixed<16,6,AP_RND,AP_SAT>
+        weight: ap_fixed<16,3,AP_RND,AP_SAT>
+      ReuseFactor: 70
+      Strategy: Resource
+      Trace: false
+    logit_linear:
+      Precision:
+        result: ap_fixed<16,6,AP_RND,AP_SAT>
+        table: fixed<18,8,TRN,WRAP,0>
+      ReuseFactor: 1
+      TableSize: 1024
+      Trace: false
+    syndrome_sequence:
+      Precision:
+        result: ap_fixed<16,2,AP_RND,AP_SAT>
+      Trace: false
+  Model:
+    BitExact: null
+    BramFactor: 1000000000
+    Precision:
+      default: ap_fixed<32,16>
+    ReuseFactor: 70
+    Strategy: Resource
+    TraceOutput: false
+IOType: io_parallel
+InputData: null
+InputShapes:
+  syndrome_sequence:
+  - 8
+  - 48
+KerasModel: !keras_model '/tmp/kchey_qat/d7_4x70/eaf_P16_t4096/keras_model.keras'
+OutputDir: /tmp/kchey_qat/d7_4x70/eaf_P16_t4096
+OutputPredictions: null
+OutputShapes:
+  layer6_out:
+  - 1
+Part: xczu49dr-ffvf1760-2-e
+ProjectName: myproject
+Stamp: 013015fb
+Version: 1.0.0
+WriterConfig:
+  Namespace: null
+  TBOutputStream: both
+  WriteTar: false
+  WriteWeightsTxt: true

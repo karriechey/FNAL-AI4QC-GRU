@@ -100,9 +100,11 @@ def _work(task):
     return a, np.asarray(_HM['m'].predict(np.ascontiguousarray(xb)), float).reshape(-1)
 
 
-def csim_predict(hm, x, workers=48, chunk=2000):
+def csim_predict(hm, x, workers=48, chunk=None):
+    # chunk sized so every worker gets work on small shot counts too
     _HM['m'] = hm
     x = np.ascontiguousarray(x.astype(np.float32))
+    chunk = chunk or max(50, min(2000, -(-len(x) // workers)))
     tasks = [(a, x[a:a + chunk]) for a in range(0, len(x), chunk)]
     y = np.empty(len(x))
     with mp.get_context('fork').Pool(min(workers, len(tasks))) as pool:

@@ -2,7 +2,8 @@
 # Step A: does hls4ml convert and C-simulate the stacked GRU? ap_fixed<32,16> default precision (tables at
 # the hls4ml default), Resource, io_parallel, static GRU, RF 70, xczu49dr, shots [15.2M, 15.21M).
 # Pass: decisions equal to Keras except shots with |Keras logit| < 0.2.
-#   bash hpy.sh step_a.py
+#   bash hpy.sh step_a.py [--table-size 4096 --table-t 'ap_fixed<18,1>']
+import argparse
 import os
 import sys
 import time
@@ -12,13 +13,24 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import d7_common as C
 import numpy as np
 
-out = {'environment': C.hls4ml_record(), 'shots': [C.EVAL_START, C.EVAL_START + 10_000]}
+ap = argparse.ArgumentParser()
+ap.add_argument('--table-size', type=int, default=None)
+ap.add_argument('--table-t', default=None)
+args = ap.parse_args()
+tag = 'step_a' if args.table_size is None else f'step_a_t{args.table_size}_{args.table_t.replace("ap_fixed<", "").replace(">", "").replace(",", "_")}'
+out = {'environment': C.hls4ml_record(), 'shots': [C.EVAL_START, C.EVAL_START + 10_000],
+       'table_size': args.table_size or 'hls4ml default 1024', 'table_t': args.table_t or 'hls4ml default ap_fixed<18,8>'}
 d = C.load_eval(10_000)
 x, truth, kl = d['x'].astype(np.float32), d['truth'].astype(bool), d['keras_logit'].astype(np.float64)
 model = C.build_model()
-prj = os.path.join(C.SCRATCH, 'hls_step_a_fixed32_16')
+prj = os.path.join(C.SCRATCH, f'hls_{tag}')
 try:
     cfg = C.base_config(model)
+    for n in C.GRU_NAMES:
+        if args.table_size:
+            cfg['LayerName'][n]['table_size'] = args.table_size
+        if args.table_t:
+            cfg['LayerName'][n]['table_t'] = args.table_t
     hm = C.convert(model, cfg, prj)
     out['layer_types'] = {n: hm.graph[n].class_name for n in hm.graph}
     out['gru_attrs'] = {n: {k: str(hm.graph[n].get_attr(k)) for k in ('return_sequences', 'apply_reset_gate', 'n_unit_par',
@@ -29,7 +41,7 @@ except Exception as e:
     out['status'] = 'FAILED in conversion or compile'
     out['error'] = f'{type(e).__name__}: {e}'
     out['traceback'] = traceback.format_exc()
-    C.dump(out, os.path.join(C.HERE, 'results', 'step_a.json'))
+    C.dump(out, os.path.join(C.HERE, 'results', f'{tag}.json'))
     print(out['traceback'], flush=True)
     sys.exit(1)
 
@@ -45,8 +57,8 @@ out['max_abs_logit_diff'] = float(np.abs(y - kl).max())
 out['mean_abs_logit_diff'] = float(np.abs(y - kl).mean())
 out['stats_vs_keras'] = C.paired(kl > 0, y > 0, truth)
 out['status'] = 'PASS' if out['flipped_outside_0p2'] == 0 else 'FAIL: flips with |Keras logit| >= 0.2'
-np.save(os.path.join(C.SCRATCH, 'step_a_hls_logits.npy'), y.astype(np.float32))
-C.dump(out, os.path.join(C.HERE, 'results', 'step_a.json'))
+np.save(os.path.join(C.SCRATCH, f'{tag}_hls_logits.npy'), y.astype(np.float32))
+C.dump(out, os.path.join(C.HERE, 'results', f'{tag}.json'))
 print({k: v for k, v in out.items() if k not in ('flipped', 'traceback')}, flush=True)
 for f in out['flipped']:
     print('flipped', f, flush=True)
