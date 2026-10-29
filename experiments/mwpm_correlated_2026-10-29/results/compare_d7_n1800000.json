@@ -1,0 +1,96 @@
+{
+ "d": 7,
+ "p": 0.004,
+ "rounds": 7,
+ "n_shots": 1800000,
+ "shot_range": [
+  15200000,
+  17000000
+ ],
+ "gru": "f7w_p004",
+ "dump": "/home/kchey/FNAL-AI4QC-GRU-kd/experiments/kd_pilot_p004_2026-10/teacher_check/d7/teacher_eval_per_shot.npz",
+ "dem_sha256": "2a9c156e842dfc8cb6a0dc9589defc6eae1769b4411ae4257153aa6ff88db79a",
+ "uncorrelated_equals_stored_mwpm": true,
+ "errors": {
+  "mwpm": 7724,
+  "mwpm_correlated": 4290,
+  "gru": 4878
+ },
+ "pL": {
+  "mwpm": 0.004291111111111111,
+  "mwpm_correlated": 0.0023833333333333332,
+  "gru": 0.00271
+ },
+ "pL_wilson95": {
+  "mwpm": [
+   0.004196672160957681,
+   0.004387665884875468
+  ],
+  "mwpm_correlated": [
+   0.0023131536815781243,
+   0.0024556369516264115
+  ],
+  "gru": [
+   0.0026351075474771507,
+   0.002787015024756397
+  ]
+ },
+ "x_mwpm": {
+  "gru_over_mwpm": 0.6315380631796997,
+  "gru_over_mwpm_correlated": 1.1370629370629373,
+  "mwpm_correlated_over_mwpm": 0.5554117037804246
+ },
+ "relative_improvement_pct": {
+  "gru_vs_mwpm": 36.84619368203003,
+  "gru_vs_mwpm_correlated": -13.706293706293726,
+  "mwpm_correlated_vs_mwpm": 44.45882962195754
+ },
+ "mcnemar": {
+  "gru_vs_mwpm_correlated": {
+   "b_A_right_B_wrong": 2060,
+   "c_B_right_A_wrong": 2648,
+   "n_disc": 4708,
+   "p_exact": 1.0715112816690482e-17
+  },
+  "gru_vs_mwpm": {
+   "b_A_right_B_wrong": 4846,
+   "c_B_right_A_wrong": 2000,
+   "n_disc": 6846,
+   "p_exact": 4.7753183529917025e-267
+  },
+  "mwpm_correlated_vs_mwpm": {
+   "b_A_right_B_wrong": 5002,
+   "c_B_right_A_wrong": 1568,
+   "n_disc": 6570,
+   "p_exact": 0.0
+  }
+ },
+ "cost": {
+  "mwpm": {
+   "wall_s": 7.727516412734985,
+   "cpu_s": 7.7064449999999995,
+   "peak_rss_mib": 655.4375,
+   "build_cpu_s": 0.005770112,
+   "decode_cpu_s": 7.69664992,
+   "decode_us_per_shot": 4.275916622222222
+  },
+  "mwpm_correlated": {
+   "wall_s": 22.6949782371521,
+   "cpu_s": 22.64466,
+   "peak_rss_mib": 648.1875,
+   "build_cpu_s": 0.008141088000000001,
+   "decode_cpu_s": 22.631638816,
+   "decode_us_per_shot": 12.573132675555556
+  }
+ },
+ "noop_child_peak_rss_mib": 646.4375,
+ "environment": {
+  "pymatching": "2.4.0",
+  "stim": "1.16.0",
+  "numpy": "1.26.4",
+  "python": "3.11.16",
+  "host": "grace1.fnal.gov",
+  "machine": "aarch64",
+  "cpu_threads_used": 1
+ }
+}

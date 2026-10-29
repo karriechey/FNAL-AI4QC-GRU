@@ -1,0 +1,96 @@
+{
+ "d": 5,
+ "p": 0.004,
+ "rounds": 5,
+ "n_shots": 10000,
+ "shot_range": [
+  15200000,
+  15210000
+ ],
+ "gru": "f5w_p004",
+ "dump": "/home/kchey/FNAL-AI4QC-GRU-kd/experiments/kd_pilot_p004_2026-10/teacher_check/d5/teacher_eval_per_shot.npz",
+ "dem_sha256": "e83c09673ca1d91a18dbae812b1d7231266e325ace66e271e202a60e84c42223",
+ "uncorrelated_equals_stored_mwpm": true,
+ "errors": {
+  "mwpm": 80,
+  "mwpm_correlated": 56,
+  "gru": 47
+ },
+ "pL": {
+  "mwpm": 0.008,
+  "mwpm_correlated": 0.0056,
+  "gru": 0.0047
+ },
+ "pL_wilson95": {
+  "mwpm": [
+   0.006433050040171234,
+   0.009944804362533186
+  ],
+  "mwpm_correlated": [
+   0.004315267064726288,
+   0.007264430530186442
+  ],
+  "gru": [
+   0.003536501759254328,
+   0.006243887032736521
+  ]
+ },
+ "x_mwpm": {
+  "gru_over_mwpm": 0.5875,
+  "gru_over_mwpm_correlated": 0.8392857142857143,
+  "mwpm_correlated_over_mwpm": 0.7
+ },
+ "relative_improvement_pct": {
+  "gru_vs_mwpm": 41.25,
+  "gru_vs_mwpm_correlated": 16.07142857142857,
+  "mwpm_correlated_vs_mwpm": 30.000000000000004
+ },
+ "mcnemar": {
+  "gru_vs_mwpm_correlated": {
+   "b_A_right_B_wrong": 25,
+   "c_B_right_A_wrong": 16,
+   "n_disc": 41,
+   "p_exact": 0.21102359760880063
+  },
+  "gru_vs_mwpm": {
+   "b_A_right_B_wrong": 46,
+   "c_B_right_A_wrong": 13,
+   "n_disc": 59,
+   "p_exact": 1.9167786796225883e-05
+  },
+  "mwpm_correlated_vs_mwpm": {
+   "b_A_right_B_wrong": 38,
+   "c_B_right_A_wrong": 14,
+   "n_disc": 52,
+   "p_exact": 0.0011951203200073481
+  }
+ },
+ "cost": {
+  "mwpm": {
+   "wall_s": 0.01808452606201172,
+   "cpu_s": 0.017699,
+   "peak_rss_mib": 65.4375,
+   "build_cpu_s": 0.0028486400000000004,
+   "decode_cpu_s": 0.013351744,
+   "decode_us_per_shot": 1.3351744
+  },
+  "mwpm_correlated": {
+   "wall_s": 0.04153728485107422,
+   "cpu_s": 0.041137,
+   "peak_rss_mib": 65.4375,
+   "build_cpu_s": 0.0036454720000000003,
+   "decode_cpu_s": 0.035622271999999996,
+   "decode_us_per_shot": 3.5622271999999997
+  }
+ },
+ "noop_child_peak_rss_mib": 65.4375,
+ "environment": {
+  "pymatching": "2.4.0",
+  "stim": "1.16.0",
+  "numpy": "1.26.4",
+  "python": "3.11.16",
+  "host": "grace1.fnal.gov",
+  "machine": "aarch64",
+  "cpu_threads_used": 1
+ }
+}
