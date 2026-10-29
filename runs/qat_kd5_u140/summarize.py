@@ -1,6 +1,6 @@
 # Created: 2026-10-28 | Last updated: 2026-10-28
 # Collects PTQ, QAT and hls4ml results into results/all_points.csv and draws the per-axis plots
-# and the Pareto plot (eval-block LER vs total bits; no synthesis numbers on grace1).
+# and the Pareto plot (eval-block p_L vs total bits; no synthesis numbers on grace1).
 #   bash hpy.sh summarize.py
 import csv
 import glob
@@ -102,7 +102,7 @@ ok = [r for r in rows if r['acceptable'] and r['method'] != 'PTQ (QAT integer bi
 ok.sort(key=lambda r: (r['total_bits'], r['state_bits'], r['ler']))
 print('acceptable, fewest total bits first:')
 for r in ok[:8]:
-    print(f"  {r['config']}: W{r['weight_bits']} S{r['state_bits']} LER {r['ler']:.6f} ({r['ler_over_fp32']:.3f}x FP32)")
+    print(f"  {r['config']}: W{r['weight_bits']} S{r['state_bits']} p_L {r['ler']:.6f} ({r['ler_over_fp32']:.3f}x FP32)")
 
 seeds = {}
 for r in rows:
@@ -118,4 +118,4 @@ with open(os.path.join(RES, 'qat_seeds.csv'), 'w', newline='') as f:
         w.writerow([k, len(rs), ';'.join(f"{r['ler']:.6f}" for r in rs), f'{m:.6f}', f'{m / fp32:.4f}',
                     f'{m / mwpm:.4f}', ';'.join(str(r['acceptable']) for r in rs), acc_mean])
         if len(rs) > 1:
-            print(f'{k}: {len(rs)} seeds, mean LER {m:.6f} ({m / fp32:.4f}x FP32), acceptable on mean: {acc_mean}')
+            print(f'{k}: {len(rs)} seeds, mean p_L {m:.6f} ({m / fp32:.4f}x FP32), acceptable on mean: {acc_mean}')

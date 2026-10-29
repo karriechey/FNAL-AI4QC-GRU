@@ -154,7 +154,7 @@ def paired(ref_pred, new_pred, truth):
 
 
 def score(pred, d):
-    # LER, ratio to FP32 and MWPM on the same shots, McNemar vs the FP32 parent
+    # p_L, ratio to FP32 and MWPM on the same shots, McNemar vs the FP32 parent
     truth, fp = d['truth'].astype(bool), d['fp32_logit'] > 0
     mw = d['mwpm_pred'].astype(bool)
     st = paired(fp, pred, truth)
@@ -164,7 +164,7 @@ def score(pred, d):
 
 
 def acceptable(row):
-    # pre-registered rule (NOTES.md): LER <= 1.05 x FP32 and LER < MWPM, same eval-block shots
+    # pre-registered rule (NOTES.md): p_L <= 1.05 x FP32 and p_L < MWPM, same eval-block shots
     return row['ler'] <= 1.05 * row['ler_fp32'] and row['ler'] < row['ler_mwpm']
 
 
