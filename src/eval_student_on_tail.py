@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/eval_student_on_tail.py @ d5ee86f
 # Created: 2026-08-05
-# Last modified: 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint; the sealed block is scored only with --score-sealed, logged in configs/sealed_access.tsv, once per weights file unless --score-sealed-again; an existing CSV with an older header is left as it is and the row goes to <name>.v2.csv).
+# Last modified: 2026-10-29 (pools with detection events only: no measurements read). Earlier 2026-10-02 (pool d/p/rounds checked against the arguments; --hidden default by student, as in train_student.py; CSV records the weights path and whether it is a .best checkpoint; the sealed block is scored only with --score-sealed, logged in configs/sealed_access.tsv, once per weights file unless --score-sealed-again; an existing CSV with an older header is left as it is and the row goes to <name>.v2.csv).
 # 2026-10-05: --units takes several values for stacked GRU layers.
 # 2026-10-06: pool rows read by range (pool_rows), so only the scored block is loaded; a block that a decoder already read (partitions spent_blocks) is flagged.
 # Earlier 2026-09-26 (imports from helpers / circuit_generators; --reset-after; host-memory tf.data input; --unroll; --no-tf32)
@@ -204,10 +204,14 @@ def run():
     print(f"[student-eval] scoring shots [{lo:,}, {hi:,}) of {os.path.basename(args.pool)}",
           flush=True)
 
-    m_te = PR.rows(args.pool, 'measurements', lo, hi).astype(binary_t)
+    # pools without measurements (detection events only) serve the GRU on 'evts'
+    has_meas = 'measurements' in PR.keys(args.pool)
+    if not has_meas and not (args.student == 'gru' and args.inputs == 'evts'):
+        raise SystemExit(f"[student-eval] {os.path.basename(args.pool)} has no measurements; GRU with inputs='evts' only")
+    m_te = PR.rows(args.pool, 'measurements', lo, hi).astype(binary_t) if has_meas else None
     e_te = PR.rows(args.pool, 'det_evts', lo, hi).astype(binary_t)
     truth = PR.rows(args.pool, 'flips', lo, hi).astype(np.int8).reshape(-1)
-    b_te, _, _ = split_measurements(m_te, d, idx_t)
+    b_te = split_measurements(m_te, d, idx_t)[0] if has_meas else None
     from host_data import to_host_uint8, make_dataset
     x_te = assemble_features(b_te, e_te, args.inputs, student=args.student,
                              d=d, rounds=r, p=p)

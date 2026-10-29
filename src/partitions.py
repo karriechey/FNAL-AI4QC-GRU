@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last modified: 2026-10-18 (fresh_seed_ranges).
+# Last modified: 2026-10-29 (check_pool_geometry also checks the pool basis against QEC_BASIS). Earlier 2026-10-18 (fresh_seed_ranges).
 # Earlier 2026-10-06 (used_seeds, held-out files sealed whole, spent_blocks, checks over the complete pool table).
 # Earlier 2026-10-02 (sealed_block, check_disjoint, check_pool_geometry: run-time guards used by train_student.py and eval_student_on_tail.py; p in file names read in both the p0.004 and p004 styles; sealed-access log).
 # Earlier 2026-09-25
@@ -179,6 +179,11 @@ def check_pool_geometry(pool, d, p, rounds):
         if not m:
             return None
         have, src = (int(m.group(1)), p_from_name(m.group(2)), int(m.group(3))), 'file name'
+    from circuit_generators import current_basis
+    pool_basis = (fp or {}).get('basis') or ('x' if '_X_' in name else 'z')
+    if pool_basis != current_basis():
+        raise ValueError(f'{name}: {pool_basis.upper()}-basis pool, but the circuit is '
+                         f'{current_basis().upper()}-basis (QEC_BASIS). STOP.')
     want = (int(d), float(p), int(rounds))
     if have[0] != want[0] or abs(have[1] - want[1]) > 1e-9 or have[2] != want[2]:
         raise ValueError(f'{name}: {src} says d={have[0]} p={have[1]} r={have[2]}, the '

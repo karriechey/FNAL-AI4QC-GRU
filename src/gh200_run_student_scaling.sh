@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-10-21 (STOP_AFTER_STEPS, SKIP_TAIL_EVAL). Earlier 2026-10-18 (TEACHER_WEIGHTS/UNITS/PARAMS, SAVE_EPOCHS_FROM). Earlier 2026-10-11 (FRESH_SEED_BASE: first Stim seed of the fresh shots, for replicates on different shots; tag _fsb<base> when set). Earlier 2026-10-09 (FRESH_SHOTS=<n>: n new Stim shots per epoch replace the training array; needs NTRAIN=0 and no EXTRA_POOL; tag _fresh<n>). Earlier 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-29 (pools without measurements; QEC_BASIS passes through the environment). Earlier 2026-10-21 (STOP_AFTER_STEPS, SKIP_TAIL_EVAL). Earlier 2026-10-18 (TEACHER_WEIGHTS/UNITS/PARAMS, SAVE_EPOCHS_FROM). Earlier 2026-10-11 (FRESH_SEED_BASE: first Stim seed of the fresh shots, for replicates on different shots; tag _fsb<base> when set). Earlier 2026-10-09 (FRESH_SHOTS=<n>: n new Stim shots per epoch replace the training array; needs NTRAIN=0 and no EXTRA_POOL; tag _fresh<n>). Earlier 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -233,7 +233,7 @@ N = z['det_evts'].shape[0]
 v1, e1 = v0 + vn, e0 + en
 print(f"[gru] pool {pool}")
 print(f"[gru] shots={N:,}  det_evts{z['det_evts'].shape}  "
-      f"measurements{z['measurements'].shape}")
+      f"measurements{z['measurements'].shape if 'measurements' in z.files else ' none (detection events only)'}")
 assert N >= sealed, f"pool holds {N:,} shots, sealed block starts at {sealed:,}"
 assert ntr <= v0, f"training prefix [0, {ntr:,}) overlaps validation at {v0:,}"
 assert v1 <= e0, f"validation [{v0:,}, {v1:,}) overlaps evaluation at {e0:,}"

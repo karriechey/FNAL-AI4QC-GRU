@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/StudentModels.py @ d5ee86f
 # Created: 2026-07-29
-# Last modified: 2026-10-05 (units may be a sequence: stacked GRU layers; a single int builds exactly the model as before).
+# Last modified: 2026-10-29 (layout cache keyed by basis). Earlier 2026-10-05 (units may be a sequence: stacked GRU layers; a single int builds exactly the model as before).
 # Earlier 2026-09-26 (reset_after and unroll are build arguments, default False)
 
 import numpy as np
@@ -29,7 +29,8 @@ def detector_sequence_layout(d, rounds, p):
     # Map flat det_evts onto (timestep, plaquette position), zero where unmeasured, so the
     # input stays rectangular for hls4ml. Returns (n_timesteps, n_positions, index_map).
 
-    key = (d, rounds, round(p, 6))
+    from circuit_generators import current_basis
+    key = (d, rounds, round(p, 6), current_basis())
     if key in _LAYOUT_CACHE:
         return _LAYOUT_CACHE[key]
 
