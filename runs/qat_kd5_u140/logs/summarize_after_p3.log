@@ -1,0 +1,12 @@
+acceptable, fewest total bits first:
+  qat_w12_s6_seed2: W12 S6 LER 0.005304 (1.030x FP32)
+  qat_w12_s6_seed1: W12 S6 LER 0.005329 (1.035x FP32)
+  qat_w12_s6_seed0: W12 S6 LER 0.005353 (1.040x FP32)
+  qat_w10_s8_seed1: W10 S8 LER 0.005284 (1.026x FP32)
+  qat_w10_s8_seed0: W10 S8 LER 0.005316 (1.032x FP32)
+  qat_w10_s8_seed2: W10 S8 LER 0.005344 (1.038x FP32)
+  qat_w12_s8_seed0: W12 S8 LER 0.005168 (1.004x FP32)
+  qat_w16_s6_seed0: W16 S6 LER 0.005296 (1.029x FP32)
+qat_w10_s8: 3 seeds, mean LER 0.005314 (1.0323x FP32), acceptable on mean: True
+qat_w12_s5: 3 seeds, mean LER 0.005551 (1.0781x FP32), acceptable on mean: False
+qat_w12_s6: 3 seeds, mean LER 0.005329 (1.0351x FP32), acceptable on mean: True

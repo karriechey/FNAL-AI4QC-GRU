@@ -1,19 +1,19 @@
 <!-- Created: 2026-10-28 | Last updated: 2026-10-28 -->
 # kd5_u140 quantization study: summary
 
-Status 2026-10-28 19:05Z. The FP32 reference matched the recorded numbers exactly, so nothing is flagged here.
+Status 2026-10-29 01:10Z. The FP32 reference matched the recorded numbers exactly, so nothing is flagged here.
 
 ## What finished, what did not
 
 - Finished: Phase 0 (recon, FP32 reproduced exactly, QGRU check, wiring check), Phase 1 (profiling, both PTQ axes, knees), Phase 2 (7 single-axis QAT points, 6-point 2D grid, 3 seeds for the candidate, its neighbor and the other 18-bit point, plus one diagnostic run).
 - Candidate under the pre-registered rule: QAT, weights 12 bits, state 6 bits (18 total, accumulators 24), eval-block LER 0.005353 = 1.040x FP32, 0.707x MWPM (seed 0); 3-seed mean 1.035x FP32, all three seeds acceptable.
-- Running: Phase 3 hls4ml C-sim on 1,000,000 eval-block shots for w12_s6, w10_s8, w12_s8, w16_s6 (grace1, about 2-2.5 h each, started 18:35Z, one after another). Results land in `results/p3_*.json` and `hls_export/`; `after_p3.sh` rebuilds the tables and figures when it ends.
+- Finished: Phase 3 hls4ml C-sim on the first 1,000,000 eval-block shots for w12_s6, w10_s8, w12_s8, w16_s6 (grace1, aarch64, compile worked without changes, about 22 min each). hls4ml and the quantized Keras model agree on 100% of decisions, max |logit difference| 0.0, for all four; no widening was needed. Exports with run_synth.sh in `hls_export/<config>/`.
 - Not done here: C synthesis (no Vitis or Vivado HLS on grace1). Exports for both backends: `for_eaf/eaf_qat_kd5_u140_synth.tar.gz` (sha256 in `eaf_bundle/BUNDLE_SHA256.txt`); synthesis started on EAF with Vivado HLS 2020.1 (first attempt failed because vivado_hls was not on PATH; rerun after sourcing settings64.sh).
 - Dropped: QAT state 10 (above the PTQ state knee). Not blocked: nothing.
 
 ## Result table (eval block [15.2M, 17M), 1,800,000 shots; FP32 LER 0.005148, MWPM 0.007571 on the same shots)
 
-b = FP32 right and the configuration wrong, c = the reverse; exact two-sided McNemar. Accumulators 24 bits everywhere. hls4ml agreement and resources: pending (Phase 3 and EAF).
+b = FP32 right and the configuration wrong, c = the reverse; exact two-sided McNemar. Accumulators 24 bits everywhere. hls4ml agreement: Phase 3 table below. Resources: pending (EAF).
 
 | config | weight bits | state bits | method | eval LER | LER/FP32 | LER/MWPM | b / c / n_disc vs FP32 | acceptable |
 |---|---|---|---|---|---|---|---|---|
@@ -48,6 +48,17 @@ All rows (also PTQ at the QAT integer bits, every run's epoch-0 score): `results
 Plots: `figures/ler_vs_weights_bits.png`, `figures/ler_vs_state_bits.png`, `figures/pareto_ler_vs_total_bits.png` (LER vs total bits; no synthesis numbers yet).
 
 Profiled integer bits (Phase 1, max + 1 headroom): GRU kernel 7 (max 27.8), recurrent kernel 8 (51.9), bias 5 (7.4), Dense kernel 5 (4.6), Dense bias 2 (0.61), GRU accumulator 9 (73.0), h and r*h 3 (1.0), tables 2, Dense accumulator 7. PTQ knees: weights 12, state 8.
+
+## Phase 3: hls4ml C-sim (Vitis backend, io_parallel, Resource, RF 70; first 1,000,000 eval-block shots)
+
+MWPM and FP32 on the same 1M shots. b / c vs FP32 as above.
+
+| config | agreement vs quantized Keras | max abs logit diff | hls4ml LER | LER/FP32 | LER/MWPM | b / c / n_disc vs FP32 | resources (EAF csynth) |
+|---|---|---|---|---|---|---|---|
+| qat_w12_s6 (candidate) | 100.000% | 0.0 | 0.005304 | 1.039 | 0.704 | 726 / 529 / 1255 | pending |
+| qat_w10_s8 | 100.000% | 0.0 | 0.005242 | 1.026 | 0.695 | 588 / 453 / 1041 | pending |
+| qat_w12_s8 | 100.000% | 0.0 | 0.005099 | 0.998 | 0.676 | 286 / 294 / 580 | pending |
+| qat_w16_s6 | 100.000% | 0.0 | 0.005245 | 1.027 | 0.696 | 631 / 493 / 1124 | pending |
 
 ## Open questions
 

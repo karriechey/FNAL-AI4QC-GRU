@@ -1,0 +1,59 @@
+{
+ "Model": {
+  "Precision": {
+   "default": "ap_fixed<32,16>"
+  },
+  "ReuseFactor": 70,
+  "Strategy": "Resource",
+  "BramFactor": 1000000000,
+  "TraceOutput": false,
+  "BitExact": null
+ },
+ "LayerName": {
+  "syndrome_sequence": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_uint<1>"
+   }
+  },
+  "gru": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<8,2,AP_RND,AP_SAT>",
+    "weight": "ap_fixed<10,6,AP_RND,AP_SAT>",
+    "bias": "ap_fixed<10,4,AP_RND,AP_SAT>",
+    "recurrent_weight": "ap_fixed<10,7,AP_RND,AP_SAT>",
+    "recurrent_bias": "ap_fixed<10,4,AP_RND,AP_SAT>",
+    "accum": "ap_fixed<24,9,AP_RND,AP_SAT>",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 70,
+   "Static": true,
+   "TableSize": 1024,
+   "Strategy": "Resource",
+   "static": true,
+   "table_size": 1024,
+   "table_t": "ap_fixed<8,1,AP_RND,AP_SAT>"
+  },
+  "logit": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<24,7,AP_RND,AP_SAT>",
+    "weight": "ap_fixed<10,4,AP_RND,AP_SAT>",
+    "bias": "ap_fixed<10,1,AP_RND,AP_SAT>",
+    "accum": "ap_fixed<24,7,AP_RND,AP_SAT>"
+   },
+   "ReuseFactor": 70,
+   "Strategy": "Resource"
+  },
+  "logit_linear": {
+   "Trace": false,
+   "Precision": {
+    "result": "ap_fixed<24,7,AP_RND,AP_SAT>",
+    "table": "fixed<18,8,TRN,WRAP,0>"
+   },
+   "ReuseFactor": 1,
+   "TableSize": 1024
+  }
+ }
+}
