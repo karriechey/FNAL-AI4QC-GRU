@@ -1,4 +1,4 @@
-<!-- Created: 2026-10-28 | Last updated: 2026-10-28 -->
+<!-- Created: 2026-10-28 | Last updated: 2026-10-29 -->
 # kd5_u140 quantization study: summary
 
 Status 2026-10-29 01:10Z. The FP32 reference matched the recorded numbers exactly, so nothing is flagged here.
@@ -8,7 +8,7 @@ Status 2026-10-29 01:10Z. The FP32 reference matched the recorded numbers exactl
 - Finished: Phase 0 (recon, FP32 reproduced exactly, QGRU check, wiring check), Phase 1 (profiling, both PTQ axes, knees), Phase 2 (7 single-axis QAT points, 6-point 2D grid, 3 seeds for the candidate, its neighbor and the other 18-bit point, plus one diagnostic run).
 - Candidate under the pre-registered rule: QAT, weights 12 bits, state 6 bits (18 total, accumulators 24), eval-block LER 0.005353 = 1.040x FP32, 0.707x MWPM (seed 0); 3-seed mean 1.035x FP32, all three seeds acceptable.
 - Finished: Phase 3 hls4ml C-sim on the first 1,000,000 eval-block shots for w12_s6, w10_s8, w12_s8, w16_s6 (grace1, aarch64, compile worked without changes, about 22 min each). hls4ml and the quantized Keras model agree on 100% of decisions, max |logit difference| 0.0, for all four; no widening was needed. Exports with run_synth.sh in `hls_export/<config>/`.
-- Not done here: C synthesis (no Vitis or Vivado HLS on grace1). Exports for both backends: `for_eaf/eaf_qat_kd5_u140_synth.tar.gz` (sha256 in `eaf_bundle/BUNDLE_SHA256.txt`); synthesis started on EAF with Vivado HLS 2020.1 (first attempt failed because vivado_hls was not on PATH; rerun after sourcing settings64.sh).
+- Not done here: C synthesis (no Vitis or Vivado HLS on grace1). Exports for both backends: `for_eaf/eaf_qat_kd5_u140_synth.tar.gz` (sha256 in `eaf_bundle/BUNDLE_SHA256.txt`); synthesis on EAF with Vivado HLS 2020.1: first attempt failed at once (vivado_hls not on PATH); second attempt was killed with the Jupyter session during RTL generation of the first config (log ends without an error at 1.8 GB); third attempt started under nohup.
 - Dropped: QAT state 10 (above the PTQ state knee). Not blocked: nothing.
 
 ## Result table (eval block [15.2M, 17M), 1,800,000 shots; FP32 LER 0.005148, MWPM 0.007571 on the same shots)
@@ -83,9 +83,9 @@ MWPM and FP32 on the same 1M shots. b / c vs FP32 as above.
 11. 2D grid (6 points): weights {12, 10} x state {8, 6, 5}. Reason: no QAT weight point at or below 8 bits was acceptable, the smallest acceptable weight width was the PTQ knee 12, and the smallest acceptable state width under QAT was 6.
 12. Extra run outside the plan, labelled diagnostic and excluded from selection: w8_s16 at peak LR 3e-5. Reason: w8_s16 at 3e-4 had its best eval at epoch 1 and its training loss rose afterwards.
 13. Seeds: the candidate is w12_s6; its neighbor one bit lower is w12_s5 (state one bit lower, same weights). w10_s8, the other acceptable 18-bit point (which wins on LER but loses the state-bit tie-break), also got seeds 1 and 2, in case the candidate fails on its seed mean.
-14. Phase 3 configurations: candidate w12_s6 plus w10_s8, w12_s8 (the Pareto front in total bits vs LER) and w16_s6 (smallest acceptable single-axis point). Vitis backend (the export targets Vitis HLS; its GRU kernel is the Vivado one), io_parallel, Resource strategy, ReuseFactor 70, static GRU, xcvu13p-flga2577-2-e, 5 ns. Weights put on their ap_fixed grid in Keras before conversion. C-sim on the first 1,000,000 eval-block shots (C-sim costs about 0.34 core-seconds per shot).
+14. Phase 3 configurations: candidate w12_s6 plus w10_s8, w12_s8 (the Pareto front in total bits vs LER) and w16_s6 (smallest acceptable single-axis point). Vitis backend (the export targets Vitis HLS; its GRU kernel is the Vivado one), io_parallel, Resource strategy, ReuseFactor 70, static GRU, xcvu13p-flga2577-2-e, 5 ns. Weights put on their ap_fixed grid in Keras before conversion. C-sim on the first 1,000,000 eval-block shots, about 22 min per configuration with 40 workers (0.05 core-seconds per shot; an earlier estimate of 0.34 was measured while the CPU was oversubscribed).
 15. A first QAT launch was stopped: `train_qat.py` had no `__main__` guard, so each spawned fresh-shot worker re-ran the script (duplicate evaluations, GPU out of memory with the llama-server sharing the card). Those run folders were deleted and the seven points rerun from scratch.
 16. GPU shared with a llama-server (57.5 GB); QAT ran 6-7 jobs at once with a 4 GB cap each.
-17. The Mac lost its network for about 5 hours (13:08Z-18:08Z, probably sleep): the GPU was idle in that time. `caffeinate` now keeps the Mac awake.
+17. The Mac lost its network for about 5 hours (13:08Z-18:08Z, probably sleep): the GPU was idle in that time. `caffeinate` kept the Mac awake from 18:10Z until it was stopped at 18:45Z; grace1 jobs never depended on the Mac.
 18. Candidate check with seeds: candidate and neighbor taken from the seed-0 sweep; the seed mean was checked against the same rule afterwards (w12_s6 passes on every seed, so no fallback was needed).
 19. Phase 3 order on grace1: the w16_s6 C-sim started first (while the grid trained) was stopped after 26 min and restarted in priority order (candidate first) because the CPU was oversubscribed.
