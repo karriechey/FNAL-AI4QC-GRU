@@ -101,7 +101,7 @@ def export(tag, prj, cfg, model, spec, rec, root=EXPORT, backend='Vitis'):
         out = out + time.strftime('_%Y%m%dT%H%M%SZ', time.gmtime())
     os.makedirs(out)
     shutil.copytree(prj, os.path.join(out, 'project'),
-                    ignore=shutil.ignore_patterns('*.so', '*.o', 'tb_data'))
+                    ignore=shutil.ignore_patterns('*.so', '*.o'))
     model.save_weights(os.path.join(out, 'keras_on_grid.weights.h5'))
     open(os.path.join(out, 'keras_model.json'), 'w').write(model.to_json())
     Q.dump(cfg, os.path.join(out, 'hls4ml_config.json'))

@@ -8,7 +8,7 @@ Status 2026-10-29 01:10Z. The FP32 reference matched the recorded numbers exactl
 - Finished: Phase 0 (recon, FP32 reproduced exactly, QGRU check, wiring check), Phase 1 (profiling, both PTQ axes, knees), Phase 2 (7 single-axis QAT points, 6-point 2D grid, 3 seeds for the candidate, its neighbor and the other 18-bit point, plus one diagnostic run).
 - Candidate under the pre-registered rule: QAT, weights 12 bits, state 6 bits (18 total, accumulators 24), eval-block pL 0.005353 = 1.040x FP32, 0.707x MWPM (seed 0); 3-seed mean 1.035x FP32, all three seeds acceptable.
 - Finished: Phase 3 hls4ml C-sim on the first 1,000,000 eval-block shots for w12_s6, w10_s8, w12_s8, w16_s6 (grace1, aarch64, compile worked without changes, about 22 min each). hls4ml and the quantized Keras model agree on 100% of decisions, max |logit difference| 0.0, for all four; no widening was needed. Exports with run_synth.sh in `hls_export/<config>/`.
-- Not done here: C synthesis (no Vitis or Vivado HLS on grace1). Exports for both backends: `for_eaf/eaf_qat_kd5_u140_synth.tar.gz` (sha256 in `eaf_bundle/BUNDLE_SHA256.txt`); synthesis on EAF with Vivado HLS 2020.1: first attempt failed at once (vivado_hls not on PATH); second attempt was killed with the Jupyter session during RTL generation of the first config (log ends without an error at 1.8 GB); third attempt started under nohup.
+- Not done here: C synthesis (no Vivado or Vitis HLS on grace1). Synthesis backend changed to Vivado (see "Synthesis on EAF" below); bundle `for_eaf/eaf_qat_kd5_u140_synth_vivado.tar.gz` (sha256 in `eaf_bundle_vivado/BUNDLE_SHA256.txt`), waiting to be run on EAF.
 - Dropped: QAT state 10 (above the PTQ state knee). Not blocked: nothing.
 
 ## Result table (eval block [15.2M, 17M), 1,800,000 shots; FP32 pL 0.005148, MWPM 0.007571 on the same shots)
@@ -60,6 +60,23 @@ MWPM and FP32 on the same 1M shots. b / c vs FP32 as above.
 | qat_w12_s8 | 100.000% | 0.0 | 0.005099 | 0.998 | 0.676 | 286 / 294 / 580 | pending |
 | qat_w16_s6 | 100.000% | 0.0 | 0.005245 | 1.027 | 0.696 | 631 / 493 / 1124 | pending |
 
+## Synthesis on EAF: Vivado backend
+
+EAF has Vivado HLS 2020.1 and no Vitis HLS, so the Phase 3 projects (hls4ml Vitis backend, used for the C-sim checks) cannot be synthesized there as they are. The projects for EAF are regenerated with the hls4ml Vivado backend from the same on-grid Keras models and the same hls4ml configuration (precisions, io_parallel, Resource, RF 70, xcvu13p-flga2577-2-e, 5 ns). The Vitis exports stay in `hls_export/<config>/` and in `for_eaf/eaf_qat_kd5_u140_synth.tar.gz`.
+
+Checks that the Vivado projects are the design verified in C-sim (`p3_vivado.py`, `results/p3_vivado_check.json`):
+
+| config | C-sim logits vs verified Vitis C-sim, first 100,000 eval-block shots | decision agreement | firmware sources vs Vitis project |
+|---|---|---|---|
+| qat_w12_s6 | max abs diff 0.0 | 100% | equal, apart from unused conv / pooling / streaming / fused-dense headers |
+| qat_w10_s8 | 0.0 | 100% | same |
+| qat_w12_s8 | 0.0 | 100% | same |
+| qat_w16_s6 | 0.0 | 100% | same |
+
+Vivado HLS 2020.1 compatibility: the tcl (`set_top`, `add_files`, `config_compile -name_max_length`, `set_part`, `config_schedule -enable_dsp_full_reg`, `create_clock`, `csynth_design`) is the same command set that synthesized the u70 projects (hls4ml 2ed80fb9) on EAF; the changes since 2ed80fb9 add an optional `build_opt.tcl` and a place-and-route switch that C synthesis does not use. Pragmas used: ARRAY_PARTITION, ARRAY_RESHAPE, DATAFLOW, INLINE, INTERFACE, PIPELINE, RESOURCE, UNROLL, all valid in 2020.1. The same Vivado-backend firmware (byte-identical; only a library stamp, an output path and a zip timestamp differ outside the firmware) already ran on EAF 2020.1 through scheduling into RTL generation for qat_w12_s6 before that session was killed, with no errors. No patch to hls4ml or to the generated projects was needed. `tb_data/` (empty) is now kept in the export because `build_prj.tcl` adds it.
+
+The earlier EAF attempts: the first failed at once (vivado_hls not on PATH); the second was killed with the Jupyter session. `run_all.sh` now sources the 2020.1 settings itself, runs under nohup, and skips configs that already have results.
+
 ## Open questions
 
 - Weights are the bottleneck: no QAT point at or below 8 weight bits is acceptable. w8 at the planned LR peaked at epoch 1 and its loss rose after; at 1/10 that LR it reached 1.072x. A longer, lower-LR schedule, per-channel integer bits or clipping the weight outliers (recurrent max 52 vs 99th percentile 3.8) are the untested options.
@@ -89,3 +106,4 @@ MWPM and FP32 on the same 1M shots. b / c vs FP32 as above.
 17. The Mac lost its network for about 5 hours (13:08Z-18:08Z, probably sleep): the GPU was idle in that time. `caffeinate` kept the Mac awake from 18:10Z until it was stopped at 18:45Z; grace1 jobs never depended on the Mac.
 18. Candidate check with seeds: candidate and neighbor taken from the seed-0 sweep; the seed mean was checked against the same rule afterwards (w12_s6 passes on every seed, so no fallback was needed).
 19. Phase 3 order on grace1: the w16_s6 C-sim started first (while the grid trained) was stopped after 26 min and restarted in priority order (candidate first) because the CPU was oversubscribed.
+20. Synthesis backend: Vivado for EAF (2020.1); the C-sim checks were on Vitis-backend projects, so the Vivado projects were checked against them (section "Synthesis on EAF").

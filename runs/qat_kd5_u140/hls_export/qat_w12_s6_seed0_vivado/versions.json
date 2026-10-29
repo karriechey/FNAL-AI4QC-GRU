@@ -1,0 +1,10 @@
+{
+ "hls4ml_version": "1.4.0.dev+g1259e2b25",
+ "hls4ml_path": "/tmp/kchey_qat/hls4ml_main",
+ "hls4ml_commit": "1259e2b25ed082e000e749b8ba97b449f4e613a9",
+ "hls4ml_local_changes": "none",
+ "tensorflow": "2.15.1",
+ "numpy": "1.26.4",
+ "python": "3.11.16",
+ "machine": "aarch64"
+}

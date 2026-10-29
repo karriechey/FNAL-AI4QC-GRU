@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Created: 2026-10-28 | Last updated: 2026-10-28
-# C synthesis of the exported hls4ml project (x86 Linux, Vitis HLS on PATH), then LUT, FF, DSP,
+# C synthesis of the exported hls4ml project (x86 Linux; Vivado HLS 2020.1 for Vivado-backend projects,
+# Vitis HLS for Vitis-backend ones), then LUT, FF, DSP,
 # BRAM, URAM, latency, II and clock into synth_results.csv.
 #   bash run_synth.sh                 the project as exported (part and clock in target.json)
 #   RECONVERT=1 bash run_synth.sh     regenerate project/ from keras_model.json + hls4ml_config.json
@@ -37,7 +38,11 @@ EOF
 start=$(date +%s)
 backend=$(python3 -c "import json; print(json.load(open('../target.json'))['backend'])")
 if [ "$backend" = Vivado ]; then
-  command -v vivado_hls > /dev/null || { echo "Vivado backend project: vivado_hls not on PATH"; exit 1; }
+  if ! command -v vivado_hls > /dev/null; then
+    set +u; source "${VIVADO_SETTINGS:-/opt/xilinx/Vivado/2020.1/settings64.sh}" > /dev/null 2>&1; set -u
+  fi
+  command -v vivado_hls > /dev/null || { echo "Vivado backend project: vivado_hls not on PATH (set VIVADO_SETTINGS)"; exit 1; }
+  { vivado_hls -version 2>&1 | grep -m1 -i "vivado" || true; } > ../hls_tool_version.txt
   vivado_hls -f build_prj.tcl > ../synth.log 2>&1    # options from build_opt.tcl above
 elif command -v vitis-run > /dev/null; then
   vitis-run --tcl build_prj.tcl --mode hls > ../synth.log 2>&1
@@ -49,4 +54,5 @@ fi
 echo "csynth wall $(( $(date +%s) - start )) s" >> ../synth.log
 cd "$HERE"
 python3 collect_csynth.py project synth_results.csv
+[ -f hls_tool_version.txt ] && echo "tool: $(cat hls_tool_version.txt)"
 cat synth_results.csv
