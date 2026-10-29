@@ -1,0 +1,59 @@
+{
+ "qat_w12_s6_seed0": {
+  "config": "qat:w12_s6_seed0",
+  "n": 100000,
+  "reuse_factor": 35,
+  "firmware_files_differing_from_vitis": [
+   "firmware/nnet_utils/nnet_conv1d.h",
+   "firmware/nnet_utils/nnet_conv1d_latency.h",
+   "firmware/nnet_utils/nnet_conv1d_resource.h",
+   "firmware/nnet_utils/nnet_conv1d_stream.h",
+   "firmware/nnet_utils/nnet_conv2d.h",
+   "firmware/nnet_utils/nnet_conv2d_latency.h",
+   "firmware/nnet_utils/nnet_conv2d_resource.h",
+   "firmware/nnet_utils/nnet_conv2d_stream.h",
+   "firmware/nnet_utils/nnet_dense_stream.h",
+   "firmware/nnet_utils/nnet_pooling.h",
+   "firmware/nnet_utils/nnet_pooling_stream.h",
+   "firmware/nnet_utils/nnet_sepconv1d_stream.h",
+   "firmware/nnet_utils/nnet_sepconv2d_stream.h",
+   "firmware/nnet_utils/nnet_dense_fused.h (Vitis only)"
+  ],
+  "max_abs_diff_vs_vitis_csim": 0.0,
+  "decision_agreement_vs_vitis_csim": 1.0,
+  "types": {
+   "input_t": "ap_uint<1>",
+   "gru_accum_t": "ap_fixed<24,9,AP_RND,AP_SAT,0>",
+   "gru_table_t": "ap_fixed<6,1,AP_RND,AP_SAT,0>",
+   "layer2_t": "ap_fixed<6,2,AP_RND,AP_SAT,0>",
+   "gru_weight_t": "ap_fixed<12,6,AP_RND,AP_SAT,0>",
+   "gru_recurrent_weight_t": "ap_fixed<12,7,AP_RND,AP_SAT,0>",
+   "gru_bias_t": "ap_fixed<12,4,AP_RND,AP_SAT,0>",
+   "gru_recurrent_bias_t": "ap_fixed<12,4,AP_RND,AP_SAT,0>",
+   "layer2_index": "ap_uint<1>",
+   "logit_accum_t": "ap_fixed<24,7,AP_RND,AP_SAT,0>",
+   "result_t": "ap_fixed<24,7,AP_RND,AP_SAT,0>",
+   "logit_weight_t": "ap_fixed<12,4,AP_RND,AP_SAT,0>",
+   "logit_bias_t": "ap_fixed<12,1,AP_RND,AP_SAT,0>",
+   "layer3_index": "ap_uint<1>"
+  },
+  "generated_schedule": {
+   "n_unit_par": [
+    "4"
+   ],
+   "n_cycles": [
+    "1"
+   ],
+   "reuse_factor": [
+    "35",
+    "35",
+    "35",
+    "35",
+    "35",
+    "35"
+   ]
+  },
+  "status": "exported",
+  "export": "/home/kchey/FNAL-AI4QC-GRU-qat/runs/qat_kd5_u140/hls_export/qat_w12_s6_seed0_rf35_vivado"
+ }
+}

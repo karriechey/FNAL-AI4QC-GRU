@@ -1,5 +1,6 @@
 # Created: 2026-10-28 | Last updated: 2026-10-28
 # Vivado-backend projects of the Phase 3 configurations, for C synthesis with Vivado HLS 2020.1 on EAF.
+# --rf other than 70 makes <config>_rf<RF>_vivado; its C-sim is still compared with the verified RF 70 Vitis C-sim.
 # Same on-grid Keras model and hls4ml config as p3_hls.py (Vitis backend); a config is exported only if
 #   1. its firmware sources equal the Vitis project's (build scripts aside), and
 #   2. its C-sim logits on the first --n eval-block shots equal the saved Vitis C-sim logits (max |diff| 0.0).
@@ -68,10 +69,10 @@ for config in args.configs:
     name, spec, model = load(config)
     tag = f'qat_{name}'
     cfg = Q.hls_config(model, spec, reuse_factor=args.rf)
-    rec = {'config': config, 'n': args.n}
+    rec = {'config': config, 'n': args.n, 'reuse_factor': args.rf}
     prj = {}
     for backend in ('Vivado', 'Vitis'):
-        prj[backend] = os.path.join(Q.SCRATCH, 'hls', f'p3v_{tag}_{backend.lower()}')
+        prj[backend] = os.path.join(Q.SCRATCH, 'hls', f'p3v_{tag}_rf{args.rf}_{backend.lower()}')
         hm = hls4ml.converters.convert_from_keras_model(
             model, hls_config=json.loads(json.dumps(cfg)), output_dir=prj[backend], project_name='myproject',
             backend=backend, io_type=Q.IO_TYPE, part=Q.PART, clock_period=Q.CLOCK_NS)
@@ -84,11 +85,13 @@ for config in args.configs:
     vitis = np.load(os.path.join(Q.SCRATCH, 'logits', f'hls_{tag}.npy'))[:args.n].astype(np.float64)
     rec['max_abs_diff_vs_vitis_csim'] = float(np.abs(y.astype(np.float32) - vitis).max())
     rec['decision_agreement_vs_vitis_csim'] = float(((y > 0) == (vitis > 0)).mean())
-    rec['types'] = H.generated_types(prj['Vivado'])['typedefs']
+    gen = H.generated_types(prj['Vivado'])
+    rec['types'] = gen['typedefs']
+    rec['generated_schedule'] = {k: gen[k] for k in ('n_unit_par', 'n_cycles', 'reuse_factor')}
     if rec['max_abs_diff_vs_vitis_csim'] != 0.0:
         rec['status'] = 'stopped: Vivado C-sim differs from the verified Vitis C-sim'
     else:
-        out = os.path.join(args.out, f'{tag}_vivado')
+        out = os.path.join(args.out, f'{tag}_vivado' if args.rf == 70 else f'{tag}_rf{args.rf}_vivado')
         shutil.rmtree(out, ignore_errors=True)
         shutil.copytree(prj['Vivado'], os.path.join(out, 'project'), ignore=shutil.ignore_patterns('*.so', '*.o'))
         model.save_weights(os.path.join(out, 'keras_on_grid.weights.h5'))
@@ -111,4 +114,4 @@ for config in args.configs:
         rec['export'] = out
     summary[tag] = rec
     print(json.dumps({k: v for k, v in rec.items() if k != 'types'}), flush=True)
-Q.dump(summary, os.path.join(Q.HERE, 'results', 'p3_vivado_check.json'))
+Q.dump(summary, os.path.join(Q.HERE, 'results', 'p3_vivado_check.json' if args.rf == 70 else f'p3_vivado_check_rf{args.rf}.json'))

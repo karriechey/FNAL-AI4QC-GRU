@@ -77,6 +77,15 @@ Vivado HLS 2020.1 compatibility: the tcl (`set_top`, `add_files`, `config_compil
 
 The earlier EAF attempts: the first failed at once (vivado_hls not on PATH); the second stopped during RTL generation and two background relaunches wrote nothing, because the EAF home volume (30 GB) was full (0 bytes free; it also truncated a bundle upload to 0 bytes). Synthesis now runs on `/scratch/fast/7DayLifetime/kchey/qat_synth` (started 2026-10-29 02:28:40Z, Vivado HLS 2020.1); home was cleared of the old bundle and four d3 pools. `run_all.sh` sources the 2020.1 settings itself, runs under nohup, and skips configs that already have results.
 
+### ReuseFactor sweep of the candidate (RF 10, 35, 140; RF 70 above)
+
+Same RF values as the u70 sweep. qat_w12_s6 rebuilt with the Vivado backend at each RF (`rf_sweep_check.sh`,
+`results/p3_vivado_check_rf*.json`): generated schedules 14 / 4 / 1 GRU units in parallel, one cycle per
+unit group, no RF snapping; C-sim logits equal the verified RF 70 C-sim on the first 100,000 eval-block shots
+(max abs diff 0.0, 100% decisions) at every RF. So pL does not depend on RF. Synthesis bundle
+`for_eaf/eaf_qat_kd5_u140_rf_sweep.tar.gz` (sha256 in `eaf_bundle_rf/BUNDLE_SHA256.txt`), one config per EAF
+server in parallel (`run_one.sh`). Resources and latency: pending.
+
 ## Open questions
 
 - Weights are the bottleneck: no QAT point at or below 8 weight bits is acceptable. w8 at the planned LR peaked at epoch 1 and its loss rose after; at 1/10 that LR it reached 1.072x. A longer, lower-LR schedule, per-channel integer bits or clipping the weight outliers (recurrent max 52 vs 99th percentile 3.8) are the untested options.

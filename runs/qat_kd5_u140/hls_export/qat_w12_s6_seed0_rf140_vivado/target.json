@@ -1,0 +1,30 @@
+{
+ "part": "xcvu13p-flga2577-2-e",
+ "clock_period_ns": 5.0,
+ "io_type": "io_parallel",
+ "backend": "Vivado",
+ "strategy": "Resource",
+ "reuse_factor": 140,
+ "static_gru": true,
+ "hls_tool": "Vivado HLS 2020.1",
+ "csim_check": {
+  "n": 100000,
+  "max_abs_diff_vs_vitis_csim": 0.0,
+  "firmware_files_differing_from_vitis": [
+   "firmware/nnet_utils/nnet_conv1d.h",
+   "firmware/nnet_utils/nnet_conv1d_latency.h",
+   "firmware/nnet_utils/nnet_conv1d_resource.h",
+   "firmware/nnet_utils/nnet_conv1d_stream.h",
+   "firmware/nnet_utils/nnet_conv2d.h",
+   "firmware/nnet_utils/nnet_conv2d_latency.h",
+   "firmware/nnet_utils/nnet_conv2d_resource.h",
+   "firmware/nnet_utils/nnet_conv2d_stream.h",
+   "firmware/nnet_utils/nnet_dense_stream.h",
+   "firmware/nnet_utils/nnet_pooling.h",
+   "firmware/nnet_utils/nnet_pooling_stream.h",
+   "firmware/nnet_utils/nnet_sepconv1d_stream.h",
+   "firmware/nnet_utils/nnet_sepconv2d_stream.h",
+   "firmware/nnet_utils/nnet_dense_fused.h (Vitis only)"
+  ]
+ }
+}
