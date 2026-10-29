@@ -9,7 +9,7 @@ Status 2026-10-29 17:00Z. The FP32 reference matched the recorded numbers exactl
 - Candidate under the pre-registered rule: QAT, weights 12 bits, state 6 bits (18 total, accumulators 24), eval-block pL 0.005353 = 1.040x FP32, 0.707x MWPM (seed 0); 3-seed mean 1.035x FP32, all three seeds acceptable.
 - Finished: Phase 3 hls4ml C-sim on the first 1,000,000 eval-block shots for w12_s6, w10_s8, w12_s8, w16_s6 (grace1, aarch64, compile worked without changes, about 22 min each). hls4ml and the quantized Keras model agree on 100% of decisions, max |logit difference| 0.0, for all four; no widening was needed. Exports with run_synth.sh in `hls_export/<config>/`.
 - Finished: C synthesis of the four Phase 3 configs on EAF (Vivado HLS 2020.1, RF 70, 2026-10-29 02:28-16:25Z), all meet the 5 ns clock. Results in `results/synth_rf70.csv` (see "Synthesis results" below).
-- Running: RF 10 / 35 / 140 synthesis of the candidate on EAF.
+- RF sweep synthesis of the candidate on EAF: RF 140 done, RF 35 running, RF 10 not started.
 - Dropped: QAT state 10 (above the PTQ state knee). Not blocked: nothing.
 
 ## Result table (eval block [15.2M, 17M), 1,800,000 shots; FP32 pL 0.005148, MWPM 0.007571 on the same shots)
@@ -104,7 +104,18 @@ Same RF values as the u70 sweep. qat_w12_s6 rebuilt with the Vivado backend at e
 unit group, no RF snapping; C-sim logits equal the verified RF 70 C-sim on the first 100,000 eval-block shots
 (max abs diff 0.0, 100% decisions) at every RF. So pL does not depend on RF. Synthesis bundle
 `for_eaf/eaf_qat_kd5_u140_rf_sweep.tar.gz` (sha256 in `eaf_bundle_rf/BUNDLE_SHA256.txt`), one config per EAF
-server in parallel (`run_one.sh`). Resources and latency: pending.
+server in parallel (`run_one.sh`).
+
+Synthesis (Vivado HLS 2020.1 on EAF, `results/synth_vivado_rf_sweep_2026-10-29/`, table `results/synth_rf_sweep.csv`):
+
+| RF | est clock (ns) | latency (cycles) | latency (us) | II (cycles) | II (us) | LUT | FF | DSP | BRAM_18K |
+|---|---|---|---|---|---|---|---|---|---|
+| 70 | 4.340 | 1,627-1,628 | 8.14 | 1,556 | 7.78 | 522,406 (30.23%) | 132,617 (3.84%) | 49 (0.40%) | 7 (0.13%) |
+| 140 | 4.340 | 2,531-2,532 | 12.66 | 2,390 | 11.95 | 281,915 (16.31%) | 75,000 (2.17%) | 35 (0.28%) | 399 (7.42%) |
+| 35 | | | | | | | | | running (started 15:55Z) |
+| 10 | | | | | | | | | not started |
+
+- RF 70 to 140: latency x1.56, LUT x0.54, FF x0.57, BRAM 7 to 399. Unlike the u70 32-bit sweep (LUT flat near 25% above RF 70), LUT keeps falling with RF here.
 
 ## Open questions
 
