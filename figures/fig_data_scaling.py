@@ -1,5 +1,5 @@
 # Created: 2026-10-28
-# Last modified: 2026-10-28
+# Last modified: 2026-10-28 (running-minimum frontier per d, faded non-frontier runs, 8B marker jitter)
 # GRU / MWPM ratio at p = 0.004 against unique training shots: dataset size for fixed sets,
 # 100M x epochs for fresh-shot runs. Hollow markers: older runs checkpointed by min val loss.
 #   python figures/fig_data_scaling.py
@@ -20,9 +20,12 @@ POSTER = ROOT / "figures" / "poster"
 FRAME_IN = (6.9, 4.6)
 LABEL_PT, TICK_PT = 13, 11
 MARKER_MS = 6
+OFF_FRONTIER_SCALE, OFF_FRONTIER_ALPHA = 0.7, 0.35
+# d = 5 and d = 7 fresh-shot runs both sit at 8B; markers only are shifted by this many decades
+X_JITTER_DEX = {(5, 8e9): -0.03, (7, 8e9): 0.03}
 DEPTH_MARKER = {1: "o", 2: "s", 3: "^"}
 # d = 9 point labels as (text, offset in points, ha); "fresh" goes on the best fresh-shot run
-LABELLED_D9 = {1e7: ("10M", (-MARKER_MS, 0), "right"), 1e8: ("100M", (MARKER_MS + 2, -2), "left")}
+LABELLED_D9 = {1e7: ("10M", (-MARKER_MS, 0), "right"), 1e8: ("100M", (MARKER_MS, MARKER_MS + 2), "left")}
 FRESH_LABEL = ("fresh", (0, MARKER_MS + 2), "center")
 
 
@@ -57,26 +60,32 @@ def load():
     return path, runs, skipped
 
 
-def best_per_size(runs, d):
-    best = {}
-    for r in runs:
-        if r["d"] == d and (r["shots"] not in best or r["ratio"] < best[r["shots"]]["ratio"]):
-            best[r["shots"]] = r
-    return [best[s] for s in sorted(best)]
+def frontier(runs, d):
+    # running minimum: a run is on the frontier if it beats every run with fewer or equal unique shots
+    points, lowest = [], float("inf")
+    for r in sorted((r for r in runs if r["d"] == d), key=lambda r: (r["shots"], r["ratio"])):
+        if r["ratio"] < lowest and not (points and points[-1]["shots"] == r["shots"]):
+            points.append(r)
+            lowest = r["ratio"]
+    return points
 
 
 def plot(runs):
     fig, ax = plt.subplots(figsize=FRAME_IN)
     for d in sorted({r["d"] for r in runs}):
         color = poster_style.DIST[d]
-        best = best_per_size(runs, d)
-        ax.plot([r["shots"] for r in best], [r["ratio"] for r in best], lw=1, color=color, zorder=2)
+        front = frontier(runs, d)
+        ax.plot([r["shots"] for r in front], [r["ratio"] for r in front], lw=1, color=color, zorder=2)
         for r in (r for r in runs if r["d"] == d):
-            ax.plot(r["shots"], r["ratio"], ls="none", marker=DEPTH_MARKER[r["depth"]], ms=MARKER_MS,
-                    mec=color, mfc="white" if r["min_val_loss"] else color, mew=1.2, zorder=3)
+            on_front = any(r is f for f in front)
+            x = r["shots"] * 10 ** X_JITTER_DEX.get((d, r["shots"]), 0)
+            ax.plot(x, r["ratio"], ls="none", marker=DEPTH_MARKER[r["depth"]],
+                    ms=MARKER_MS if on_front else MARKER_MS * OFF_FRONTIER_SCALE,
+                    alpha=1 if on_front else OFF_FRONTIER_ALPHA, mec=color,
+                    mfc="white" if r["min_val_loss"] else color, mew=1.2, zorder=4 if on_front else 3)
         if d == 9:
-            fresh = min((r for r in best if r["data"].startswith("fresh")), key=lambda r: r["ratio"])
-            for r in best:
+            fresh = min((r for r in front if r["data"].startswith("fresh")), key=lambda r: r["ratio"])
+            for r in front:
                 label = LABELLED_D9.get(r["shots"], FRESH_LABEL if r is fresh else None)
                 if label:
                     text, offset, ha = label
@@ -128,7 +137,7 @@ if __name__ == "__main__":
         print(f"d={r['d']} {r['width']:7s} {r['data']:17s} shots {r['shots']:.1e}  ratio {r['ratio']:.3f}"
               f"{'  min val loss' if r['min_val_loss'] else ''}")
     for d in (5, 7, 9):
-        print(f"best d={d}:", ", ".join(f"{r['shots']:.0e} {r['ratio']:.3f}" for r in best_per_size(runs, d)))
+        print(f"frontier d={d}:", ", ".join(f"{r['shots']:.1e} {r['width']} {r['ratio']:.3f}" for r in frontier(runs, d)))
     for reason, r in skipped:
         if r["p"] == "0.004" and r["Done?"] == "Yes" and r["reset_after"] == "FALSE":
             print(f"skipped ({reason}): d={r['d']} {r['Width']} {r['Data']} {r['Relative to MWPM']}")
