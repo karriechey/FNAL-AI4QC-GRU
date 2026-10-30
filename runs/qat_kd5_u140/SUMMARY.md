@@ -9,7 +9,7 @@ Status 2026-10-29 17:00Z. The FP32 reference matched the recorded numbers exactl
 - Candidate under the pre-registered rule: QAT, weights 12 bits, state 6 bits (18 total, accumulators 24), eval-block pL 0.005353 = 1.040x FP32, 0.707x MWPM (seed 0); 3-seed mean 1.035x FP32, all three seeds acceptable.
 - Finished: Phase 3 hls4ml C-sim on the first 1,000,000 eval-block shots for w12_s6, w10_s8, w12_s8, w16_s6 (grace1, aarch64, compile worked without changes, about 22 min each). hls4ml and the quantized Keras model agree on 100% of decisions, max |logit difference| 0.0, for all four; no widening was needed. Exports with run_synth.sh in `hls_export/<config>/`.
 - Finished: C synthesis of the four Phase 3 configs on EAF (Vivado HLS 2020.1, RF 70, 2026-10-29 02:28-16:25Z), all meet the 5 ns clock. Results in `results/synth_rf70.csv` (see "Synthesis results" below).
-- RF sweep synthesis of the candidate on EAF: RF 140 done, RF 35 running, RF 10 not started.
+- RF sweep synthesis of the candidate on EAF: RF 140 and RF 35 done (RF 35 misses timing), RF 10 fails at pre-synthesis.
 - Dropped: QAT state 10 (above the PTQ state knee). Not blocked: nothing.
 
 ## Result table (eval block [15.2M, 17M), 1,800,000 shots; FP32 pL 0.005148, MWPM 0.007571 on the same shots)
@@ -112,10 +112,19 @@ Synthesis (Vivado HLS 2020.1 on EAF, `results/synth_vivado_rf_sweep_2026-10-29/`
 |---|---|---|---|---|---|---|---|---|---|
 | 70 | 4.340 | 1,627-1,628 | 8.14 | 1,556 | 7.78 | 522,406 (30.23%) | 132,617 (3.84%) | 49 (0.40%) | 7 (0.13%) |
 | 140 | 4.340 | 2,531-2,532 | 12.66 | 2,390 | 11.95 | 281,915 (16.31%) | 75,000 (2.17%) | 35 (0.28%) | 399 (7.42%) |
-| 35 | | | | | | | | | running (started 15:55Z) |
-| 10 | | | | | | | | | not started |
+| 35 | 8.166 (misses 5 ns) | 1,173-1,174 | 5.87 (9.59 at 8.166 ns) | 1,136 | 5.68 (9.28 at 8.166 ns) | 971,462 (56.22%) | 235,416 (6.81%) | 67 (0.55%) | 14 (0.26%) |
+| 10 | failed at pre-synthesis | | | | | | | | |
 
 - RF 70 to 140: latency x1.56, LUT x0.54, FF x0.57, BRAM 7 to 399. Unlike the u70 32-bit sweep (LUT flat near 25% above RF 70), LUT keeps falling with RF here.
+- RF 35 misses the 5 ns target (estimated 8.166 ns) and took 12.4 h. The critical path is in the Dense output layer
+  (`dense_resource_rf_leq_nin`, config3, 140 -> 1 at RF 35): four AP_SAT additions of the 24-bit accumulator chained in
+  one cycle (`nnet_dense_resource.h:59`). At its estimated clock RF 35 is slower than RF 70 (9.59 vs 7.07 us per shot).
+  Cycles fall only to 0.72x of RF 70, since activations, state update and the Dense head do not scale with RF.
+- RF 10 fails after 4 min: `XFORM 203-504 Stop unrolling loop 'Loop-2.2' (nnet_recurrent.h:238)`, the recurrent
+  multiply of the #1589 Resource cell. At RF 10 the cell runs 14 units in parallel (`n_unit_par = 14`), about
+  14 x 3 x 140 copies of the loop body; Vivado HLS 2020.1 refuses to unroll it. Any RF of 10 needs at least 14 units in
+  parallel in this cell, so a different RF split does not help.
+- RF 70 is the fastest point that meets timing for this cell and part.
 
 ## Open questions
 
