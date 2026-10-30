@@ -124,7 +124,18 @@ Synthesis (Vivado HLS 2020.1 on EAF, `results/synth_vivado_rf_sweep_2026-10-29/`
   multiply of the #1589 Resource cell. At RF 10 the cell runs 14 units in parallel (`n_unit_par = 14`), about
   14 x 3 x 140 copies of the loop body; Vivado HLS 2020.1 refuses to unroll it. Any RF of 10 needs at least 14 units in
   parallel in this cell, so a different RF split does not help.
-- RF 70 is the fastest point that meets timing for this cell and part.
+- RF 70 is the fastest point that meets the 5 ns target in the HLS estimate for this cell and part.
+- Controlled sweep: the RF 35 / 70 / 140 projects have identical firmware except `reuse_factor` and `n_unit_par` in
+  `parameters.h` (same weights file, precisions, hls4ml 1259e2b25, part, clock, Vivado HLS 2020.1). The u70 32-bit
+  sweep used another model, precision and GRU cell (hls4ml 2ed80fb9) and is not part of this sweep.
+- BRAM at RF 140: same pragmas as RF 70; the change is Vivado HLS's binding of the weight ROMs. Weights are split
+  cyclically into banks (RF 70: w2 144 and wr2 840 banks of depth 70; RF 140: 72 and 420 banks of depth 140). At depth
+  70 HLS builds all 990 banks as distributed ROMs (LUTs); at depth 140 it builds 396 as "auto" ROMs, which csynth counts
+  as one BRAM_18K each (RTMG 210-279 lines in synth.log). That accounts for about 396 of the 399 BRAM and part of the LUT
+  drop. Each such BRAM holds 140 x 12 bits, about 10% of its capacity.
+- All latencies and clocks are Vivado HLS C-synthesis estimates, not measured hardware latency. At the 200 MHz target
+  RF 70 is 8.14 us per shot; the 7.07 us at the estimated 4.34 ns clock is not demonstrated (no logic synthesis,
+  place-and-route or co-simulation).
 
 ## Open questions
 
