@@ -10,7 +10,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
-PART="xczu49dr-ffvf1760-2-e"
+PART="xcvu13p-flga2577-2-e"
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 mkdir -p logs
 LOG="logs/run_all_${STAMP}.log"

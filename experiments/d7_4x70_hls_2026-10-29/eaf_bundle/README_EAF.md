@@ -3,7 +3,7 @@
 
 Model depth_d7_L04_u70 seed0 epoch 78 (d=7, p=0.004, FP32 pL 0.003636 on the eval block). hls4ml main
 1259e2b25, Vivado backend, io_parallel, Resource strategy, static GRU, ReuseFactor 70, part
-xczu49dr-ffvf1760-2-e, 5 ns clock. All types ap_fixed<W,I,AP_RND,AP_SAT>, I from profiling.
+xcvu13p-flga2577-2-e, 5 ns clock (same part as the u70 and kd5_u140 synthesis; EAF Vivado HLS 2020.1 has no xczu49dr). All types ap_fixed<W,I,AP_RND,AP_SAT>, I from profiling.
 
 | project | weights, biases | accumulators, state, input | sigmoid/tanh tables |
 |---|---|---|---|
@@ -24,12 +24,12 @@ The C-sim step takes a few minutes.
 
 ## Jupyter terminal cells
 
-Upload eaf_d7_4x70_synth.tar.gz to the home folder, then run from scratch (home is shared and small).
+Upload eaf_d7_4x70_synth_vu13p.tar.gz to the home folder, then run from scratch (home is shared and small).
 
 All four on one server:
 
     mkdir -p /scratch/fast/7DayLifetime/kchey/d7_4x70 && cd /scratch/fast/7DayLifetime/kchey/d7_4x70
-    tar xzf ~/eaf_d7_4x70_synth.tar.gz && cd eaf_d7_4x70_synth
+    tar xzf ~/eaf_d7_4x70_synth_vu13p.tar.gz && cd eaf_d7_4x70_synth
     sha256sum -c MANIFEST.sha256 | grep -v ': OK$' ; echo manifest checked
     nohup bash run_all.sh > run_all.out 2>&1 < /dev/null & disown
 

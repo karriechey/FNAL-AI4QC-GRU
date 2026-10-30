@@ -21,7 +21,7 @@ EVAL_START, EVAL_STOP, SEALED_START = 15_200_000, 17_000_000, 17_000_000
 
 D, N_T, N_POS, UNITS = 7, 8, 48, (70, 70, 70, 70)
 GRU_NAMES = ['gru', 'gru_1', 'gru_2', 'gru_3']
-PART, CLOCK_NS, IO_TYPE, RF = 'xczu49dr-ffvf1760-2-e', 5.0, 'io_parallel', 70
+PART, CLOCK_NS, IO_TYPE, RF = 'xcvu13p-flga2577-2-e', 5.0, 'io_parallel', 70
 
 
 def build_model(weights=WEIGHTS):

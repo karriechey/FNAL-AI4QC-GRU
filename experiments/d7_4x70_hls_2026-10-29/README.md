@@ -3,7 +3,7 @@
 
 Model: d=7, p=0.004, 4 x GRU 70 (reset_after=False) + Dense 1, 113,891 parameters, selected epoch 78 of
 `depth_scaling_d7_2026-10/depth_sweep/depth_d7_L04_u70_20261021T170721Z` (grace1). hls4ml main 1259e2b25
-(contains 5376da23e), Vivado backend, Resource, io_parallel, static GRU, RF 70, xczu49dr-ffvf1760-2-e, 5 ns.
+(contains 5376da23e), Vivado backend, Resource, io_parallel, static GRU, RF 70, 5 ns. C-sim on grace1 used part xczu49dr-ffvf1760-2-e (C-sim does not depend on the part); EAF synthesis targets xcvu13p-flga2577-2-e, the part of the u70 and kd5_u140 synthesis, since EAF Vivado HLS 2020.1 has no xczu49dr.
 
 Inputs: the run's own eval-block per-shot dump [15.2M, 17M) (no pool read), sequences (8, 48) built with the
 training layout. FP32 Keras on the CPU gives 6,545 errors (pL 0.003636), equal to the logged run, decisions
@@ -91,8 +91,8 @@ quantization-aware training.
 ## FPGA cost of the larger tables
 
 Table storage, analytic (12 tables): default 1024 x 18 bits = 221,184 bits (12 BRAM18K if in BRAM); Step B
-4096 x 16 bits = 786,432 bits (48 BRAM18K, 4 per table). xczu49dr has 2,160 BRAM18K, so the extra 36 is
-1.7% of the device. Measured LUT / FF / BRAM / latency come from the EAF synthesis of the four projects
+4096 x 16 bits = 786,432 bits (48 BRAM18K, 4 per table). xcvu13p has 5,376 BRAM18K, so the extra 36 is
+0.7% of the device. Measured LUT / FF / BRAM / latency come from the EAF synthesis of the four projects
 (t4096 vs tdefault at the same precision).
 
 ## EAF bundle
