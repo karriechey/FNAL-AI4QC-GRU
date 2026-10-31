@@ -1,5 +1,5 @@
 # Created: 2026-10-28
-# Last modified: 2026-10-28
+# Last modified: 2026-10-31
 
 """Depth vs distance (PLAN.md): run geometry, log parsing across resumed parts, kill rule,
 LR rule, L_min, results CSV and STATUS.md.
@@ -292,8 +292,12 @@ def mc_str(m):
 def runtime_h(out):
     t0 = datetime.datetime.strptime(re.search(r'_(\d{8}T\d{6}Z)$', out).group(1), '%Y%m%dT%H%M%SZ')
     t0 = t0.replace(tzinfo=datetime.timezone.utc).timestamp()
-    files = [f for f in glob.glob(os.path.join(out, '**'), recursive=True) if os.path.isfile(f)]
-    return round((max(os.path.getmtime(f) for f in files) - t0) / 3600, 2) if files else ''
+    ends = [os.path.join(out, m) for m in ('DONE', 'KILLED', 'DIVERGED', 'FAILED') if os.path.exists(os.path.join(out, m))]
+    if not ends:
+        # os.walk skips the seed<S>/epochs symlink, whose snapshots the /tmp keepalive touches every day
+        ends = [os.path.join(root, f) for root, _, fs in os.walk(out) for f in fs
+                if not os.path.islink(os.path.join(root, f))]
+    return round((max(os.path.getmtime(f) for f in ends) - t0) / 3600, 2) if ends else ''
 
 
 def all_runs():
