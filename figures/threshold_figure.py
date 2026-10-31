@@ -1,5 +1,5 @@
 # Created: 2026-10-27
-# Last modified: 2026-10-31 (GRU vs MWPM improvement note with arrow, lower-is-better label, SVG output; 2026-10-28: Greek nu from DejaVu Sans, MWPM legend entry; sentence-case axis labels; finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
+# Last modified: 2026-10-31 (note reworded; GRU vs MWPM improvement note with arrow, lower-is-better label, SVG output; 2026-10-28: Greek nu from DejaVu Sans, MWPM legend entry; sentence-case axis labels; finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
 # Threshold figure: MWPM logical error rate vs p from the sinter sweep, GRU test-set results
 # as stars. Every point is a counted simulation result; the dashed fit lines are a guide only.
 #   python figures/threshold_figure.py
@@ -140,8 +140,7 @@ def add_improvement_note(ax, stars):
     # improvement against MWPM decoded on the same test shots as each GRU star, not against the sweep curve
     gain = [100 * (1 - s["gru"] / s["mwpm"]) for s in stars]
     target = max((s for s in stars if s["p"] == OPERATING_P), key=lambda s: s["gru"])
-    ax.annotate(f"GRU: {min(gain):.0f}-{max(gain):.0f}% lower $P_L$ than MWPM\n"
-                f"same $d$, $p$ and test shots ({len(stars)} points)",
+    ax.annotate(f"GRU achieves {min(gain):.0f}%-{max(gain):.0f}% lower\nlogical-error rates than MWPM",
                 xy=(target["p"], target["gru"]), xytext=(0.00135, 4e-2), ha="left", va="center",
                 fontsize=poster_style.TICK_PT, color=poster_style.INK,
                 arrowprops=dict(arrowstyle="-|>", lw=0.8, color=poster_style.INK, shrinkA=4, shrinkB=15,
