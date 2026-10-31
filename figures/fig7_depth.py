@@ -1,5 +1,5 @@
 # Created: 2026-10-28
-# Last modified: 2026-10-31 (depth annotation with arrow, heavier MWPM baseline line and label, SVG output; 2026-10-28: small-panel font sizes, MWPM label left, sentence-case labels, matched-run legend instead of bracket, 10 pt point labels)
+# Last modified: 2026-10-31 (shorter 8 pt note; depth annotation with arrow, heavier MWPM baseline line and label, SVG output; 2026-10-28: small-panel font sizes, MWPM label left, sentence-case labels, matched-run legend instead of bracket, 10 pt point labels)
 # Poster version of depth_scaling.py: d = 7, p = 0.004, u70 stacks L = 1-10 and the single-layer
 # u172 / u255 runs matched to L = 4 / 8 in parameters. Eval-block ratios to MWPM on the same shots.
 #   python figures/fig7_depth.py
@@ -22,7 +22,7 @@ FRAME_IN = (4.5, 3.0)
 MARKER_MS = 6
 LABEL_PT, TICK_PT, NOTE_PT = 13, 11, 11   # smaller than poster_style: this panel is 4.5 in wide
 POINT_PT = 10
-BASELINE_PT = 9
+BASELINE_PT = NOTE_SMALL_PT = 8
 
 
 def load():
@@ -64,10 +64,9 @@ def plot(rows):
     # every u70 stack with L >= 4 is below the MWPM line; the arrow points at the first of them
     first_below = min((r for r in stack if r["ratio"] < 1), key=lambda r: r["L"])
     assert all(r["ratio"] < 1 for r in stack if r["L"] >= first_below["L"])
-    note = ax.annotate(f"Increasing GRU depth improves\ndecoding performance, with\n"
-                       f"\u2265{first_below['L']} layers outperforming MWPM.",
-                       xy=(first_below["L"] + 0.15, first_below["ratio"] * 1.03), xytext=(5.0, 1.6),
-                       ha="left", va="center", fontsize=POINT_PT, color=poster_style.INK,
+    note = ax.annotate(f"Deeper is better:\n\u2265{first_below['L']} layers beat MWPM",
+                       xy=(first_below["L"] + 0.15, first_below["ratio"] * 1.03), xytext=(5.2, 1.45),
+                       ha="left", va="center", fontsize=NOTE_SMALL_PT, color=poster_style.INK,
                        arrowprops=dict(arrowstyle="-|>", lw=0.7, color=poster_style.NEUTRAL, shrinkA=3,
                                        shrinkB=5, mutation_scale=8))
     note.set_in_layout(False)   # keep the axes the same size as before the note
