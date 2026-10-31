@@ -1,5 +1,5 @@
 # Created: 2026-10-27
-# Last modified: 2026-10-28 (Greek nu from DejaVu Sans, MWPM legend entry; sentence-case axis labels; finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
+# Last modified: 2026-10-31 (GRU vs MWPM improvement note with arrow, lower-is-better label, SVG output; 2026-10-28: Greek nu from DejaVu Sans, MWPM legend entry; sentence-case axis labels; finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
 # Threshold figure: MWPM logical error rate vs p from the sinter sweep, GRU test-set results
 # as stars. Every point is a counted simulation result; the dashed fit lines are a guide only.
 #   python figures/threshold_figure.py
@@ -136,6 +136,21 @@ def load_gru():
     return stars
 
 
+def add_improvement_note(ax, stars):
+    # improvement against MWPM decoded on the same test shots as each GRU star, not against the sweep curve
+    gain = [100 * (1 - s["gru"] / s["mwpm"]) for s in stars]
+    target = max((s for s in stars if s["p"] == OPERATING_P), key=lambda s: s["gru"])
+    ax.annotate(f"GRU: {min(gain):.0f}-{max(gain):.0f}% lower $P_L$ than MWPM\n"
+                f"same $d$, $p$ and test shots ({len(stars)} points)",
+                xy=(target["p"], target["gru"]), xytext=(0.00135, 4e-2), ha="left", va="center",
+                fontsize=poster_style.TICK_PT, color=poster_style.INK,
+                arrowprops=dict(arrowstyle="-|>", lw=0.8, color=poster_style.INK, shrinkA=4, shrinkB=15,
+                                mutation_scale=10))
+    ax.text(0.012, 0.70, "Lower is better \u2193", transform=ax.transAxes, ha="left", va="top",
+            fontsize=poster_style.TICK_PT, color=poster_style.NEUTRAL)
+    return gain
+
+
 def plot(points, stars, a_fit, p_th):
     fig, ax = plt.subplots(figsize=(14.25, 6.0))
     ax.axvline(OPERATING_P, color="0.6", lw=0.8, zorder=0)
@@ -161,6 +176,7 @@ def plot(points, stars, a_fit, p_th):
                plt.Line2D([], [], marker="*", ms=26, color="0.35", mec=STAR_EDGE, mew=1, ls="none"),
                 plt.Line2D([], [], color="0.35", ls=(0, (5, 4)), lw=1)]
     ax.legend(handles, ["MWPM", "GRU", "Fit"], loc="upper left", frameon=False, handlelength=2.6)
+    add_improvement_note(ax, stars)
 
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -188,6 +204,7 @@ if __name__ == "__main__":
     POSTER.mkdir(parents=True, exist_ok=True)
     fig.savefig(POSTER / "fig_threshold.png", dpi=300, facecolor="white")
     fig.savefig(POSTER / "fig_threshold_transparent.png", dpi=300, transparent=True)
+    fig.savefig(POSTER / "fig_threshold.svg", facecolor="white")
 
     summary = dict(p_th=p_th, A=a_fit, points_in_fit=n_fit, skipped_below_100_errors=skipped,
                    total_shots=sum(v["shots"] for v in sweep.values()),
