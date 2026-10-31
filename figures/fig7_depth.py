@@ -1,5 +1,5 @@
 # Created: 2026-10-28
-# Last modified: 2026-10-31 (shorter 8 pt note; depth annotation with arrow, heavier MWPM baseline line and label, SVG output; 2026-10-28: small-panel font sizes, MWPM label left, sentence-case labels, matched-run legend instead of bracket, 10 pt point labels)
+# Last modified: 2026-10-31 (legend: one-layer GRU, matched params; shorter 8 pt note; depth annotation with arrow, heavier MWPM baseline line and label, SVG output; 2026-10-28: small-panel font sizes, MWPM label left, sentence-case labels, matched-run legend instead of bracket, 10 pt point labels)
 # Poster version of depth_scaling.py: d = 7, p = 0.004, u70 stacks L = 1-10 and the single-layer
 # u172 / u255 runs matched to L = 4 / 8 in parameters. Eval-block ratios to MWPM on the same shots.
 #   python figures/fig7_depth.py
@@ -53,7 +53,7 @@ def plot(rows):
 
     key = plt.Line2D([], [], ls="none", marker="s", ms=MARKER_MS + 1, mfc="white", mew=1.5,
                      color=poster_style.NEUTRAL)
-    ax.legend([key], ["1 wide GRU layer,\nsame parameters as the stack"], loc="upper right",
+    ax.legend([key], ["One-layer GRU, matched params"], loc="upper right",
               frameon=False, fontsize=10, handletextpad=0.3, handlelength=1.0, borderaxespad=0.4)
 
     ax.axhline(1.0, color=poster_style.INK, lw=1.2, ls="--", zorder=1)
