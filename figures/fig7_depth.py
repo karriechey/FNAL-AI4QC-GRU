@@ -1,5 +1,5 @@
 # Created: 2026-10-28
-# Last modified: 2026-10-28 (small-panel font sizes, MWPM label left, sentence-case labels, matched-run legend instead of bracket, 10 pt point labels)
+# Last modified: 2026-10-31 (depth annotation with arrow, heavier MWPM baseline line and label, SVG output; 2026-10-28: small-panel font sizes, MWPM label left, sentence-case labels, matched-run legend instead of bracket, 10 pt point labels)
 # Poster version of depth_scaling.py: d = 7, p = 0.004, u70 stacks L = 1-10 and the single-layer
 # u172 / u255 runs matched to L = 4 / 8 in parameters. Eval-block ratios to MWPM on the same shots.
 #   python figures/fig7_depth.py
@@ -22,6 +22,7 @@ FRAME_IN = (4.5, 3.0)
 MARKER_MS = 6
 LABEL_PT, TICK_PT, NOTE_PT = 13, 11, 11   # smaller than poster_style: this panel is 4.5 in wide
 POINT_PT = 10
+BASELINE_PT = 9
 
 
 def load():
@@ -55,9 +56,21 @@ def plot(rows):
     ax.legend([key], ["1 wide GRU layer,\nsame parameters as the stack"], loc="upper right",
               frameon=False, fontsize=10, handletextpad=0.3, handlelength=1.0, borderaxespad=0.4)
 
-    ax.axhline(1.0, color=poster_style.INK, lw=0.8, ls="--", zorder=1)
-    ax.annotate("MWPM", (0, 1.0), xycoords=ax.get_yaxis_transform(), xytext=(3, 1),
-                textcoords="offset points", ha="left", va="bottom", fontsize=NOTE_PT, color=poster_style.INK)
+    ax.axhline(1.0, color=poster_style.INK, lw=1.2, ls="--", zorder=1)
+    ax.annotate("MWPM baseline", (0, 1.0), xycoords=ax.get_yaxis_transform(), xytext=(3, 1),
+                textcoords="offset points", ha="left", va="bottom", fontsize=BASELINE_PT,
+                color=poster_style.INK)
+
+    # every u70 stack with L >= 4 is below the MWPM line; the arrow points at the first of them
+    first_below = min((r for r in stack if r["ratio"] < 1), key=lambda r: r["L"])
+    assert all(r["ratio"] < 1 for r in stack if r["L"] >= first_below["L"])
+    note = ax.annotate(f"Increasing GRU depth improves\ndecoding performance, with\n"
+                       f"\u2265{first_below['L']} layers outperforming MWPM.",
+                       xy=(first_below["L"] + 0.15, first_below["ratio"] * 1.03), xytext=(5.0, 1.6),
+                       ha="left", va="center", fontsize=POINT_PT, color=poster_style.INK,
+                       arrowprops=dict(arrowstyle="-|>", lw=0.7, color=poster_style.NEUTRAL, shrinkA=3,
+                                       shrinkB=5, mutation_scale=8))
+    note.set_in_layout(False)   # keep the axes the same size as before the note
 
     ax.set_yscale("log")
     ax.set_ylim(0.6, 4.5)
@@ -85,6 +98,7 @@ if __name__ == "__main__":
     POSTER.mkdir(parents=True, exist_ok=True)
     fig.savefig(POSTER / "fig7_depth.png", dpi=300, facecolor="white")
     fig.savefig(POSTER / "fig7_depth_transparent.png", dpi=300, transparent=True)
+    fig.savefig(POSTER / "fig7_depth.svg", facecolor="white")
 
     # marker half-height in ratio units at this y position, for comparison with the error bars
     ax = fig.axes[0]
