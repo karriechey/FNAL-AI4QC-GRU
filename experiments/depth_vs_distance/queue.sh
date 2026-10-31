@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Created: 2026-10-28
-# Last modified: 2026-10-28
+# Last modified: 2026-10-31
 # The whole experiment as one queue (PLAN.md). Launch order: d5 LR scan, d5 L = 1-5, d7 scan,
 # d7 L = 1-5, d9 scan, d9 L = 1-5, then second seeds at L_min - 1 and L_min for each d. Runs go
 # up concurrently as resources allow; a launch waits only on what it needs (the L sweep on its
 # d's LR rule, the seeds on its d's L_min). Safe to rerun after a crash or reboot: finished runs
-# are skipped, unfinished ones resume from their last epoch snapshot.
+# are skipped, unfinished ones resume from their last epoch snapshot. Distances listed in
+# queue/paused_d (one per line) are left out: no launches, no waits, no L_min.
 #   setsid nohup bash queue.sh > queue/queue.out 2>&1 < /dev/null &
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -18,7 +19,9 @@ note () { echo "$(date -u +%FT%TZ) queue $*" >> "$STATUS"; }
 dvd () { "$HOSTPY" "$HERE/dvd.py" "$@"; }
 report () { flock "$HERE/.report.lock" "$HOSTPY" "$HERE/dvd.py" report > /dev/null 2>&1; }
 finished () { dvd finished "$1"; }
-running () { podman ps --format '{{.Names}}' | grep -qx "dvd_$1"; }
+running () { podman ps --format '{{.Names}}' | grep -qxE "dvd(sel|eval)?_$1"; }   # training, selection or eval container
+paused () { grep -qx "$1" "$HERE/queue/paused_d" 2>/dev/null; }
+run_distance () { sed -E 's/^(lrscan|dvd)_d([0-9]+)_.*/\2/' <<< "$1"; }
 
 # /tmp is cleaned of files untouched for 10 days; the snapshots must outlive the queue
 ( while true; do find "$SNAP_ROOT" -type f -exec touch -a -m {} + 2>/dev/null; sleep 86400; done ) &
@@ -29,6 +32,7 @@ declare -A PIDS
 start () {   # launch one run in the background, return once it has started or ended
   local r=$1
   [ -f "$HERE/STOP" ] && { note "STOP file present, $r not launched"; return 1; }
+  paused "$(run_distance "$r")" && { note "d$(run_distance "$r") paused, $r not launched"; return 0; }
   if finished "$r"; then note "$r already finished, skipped"; return 0; fi
   if running "$r"; then note "$r already running"; return 0; fi
   echo "$r" >> "$HERE/queue/planned.txt"
@@ -48,6 +52,7 @@ wait_runs () {   # until every named run is finished (DONE / KILLED / DIVERGED) 
     all=1
     for r in "$@"; do
       finished "$r" && continue
+      paused "$(run_distance "$r")" && continue
       [ -n "${PIDS[$r]:-}" ] && kill -0 ${PIDS[$r]} 2>/dev/null && { all=0; continue; }
       running "$r" && { all=0; continue; }
       # not finished and nothing driving it: launched by an earlier queue that died, or failed twice
@@ -79,6 +84,7 @@ note "start (pid $$)"
 report
 declare -A SWEEP_OK
 for d in 5 7 9; do
+  if paused "$d"; then note "d$d paused, skipped"; SWEEP_OK[$d]=0; continue; fi
   for r in $(dvd scan-names "$d"); do start "$r" || exit 1; done
   lr_gate "$d"
   if [ -z "$LR" ]; then

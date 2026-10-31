@@ -93,6 +93,15 @@ def newest(run):
     return found[-1] if found else None
 
 
+def paused_distances():
+    f = os.path.join(HERE, 'queue', 'paused_d')
+    return {int(x) for x in open(f).read().split()} if os.path.exists(f) else set()
+
+
+def run_distance(run):
+    return int(re.match(r'(?:lrscan|dvd)_d(\d+)_', run).group(1))
+
+
 def marker(out, *names):
     return next((n for n in names if os.path.exists(os.path.join(out, n))), None)
 
@@ -336,10 +345,14 @@ def row_for(run, scores):
         notes.append(killed)
     if r['kind'] == 'scan':
         row['Status'] = c['cls'] if mk in ('DONE', 'KILLED', 'DIVERGED') else (mk or 'running').lower()
+        if row['Status'] == 'running' and d in paused_distances():
+            row['Status'] = 'paused'
         notes.insert(0, f"{c['epochs']} epochs of the {EPOCHS[d]}-epoch schedule; longest rise {c['longest']} epochs, "
                         f"max loss / running min {c['worst']}")
     else:
         row['Status'] = {'DONE': 'Done', 'KILLED': 'killed', 'DIVERGED': 'diverged', 'FAILED': 'failed'}.get(mk, 'running')
+        if row['Status'] == 'running' and d in paused_distances():
+            row['Status'] = 'paused'
         sel_csv = os.path.join(out, 'selection_scores.csv')
         by_ep = {int(x['epoch']): float(x['ratio']) for x in csv.DictReader(open(sel_csv))} \
             if os.path.exists(sel_csv) else {}
@@ -397,12 +410,14 @@ def report():
     now = datetime.datetime.now(datetime.timezone.utc)
     queued_file = os.path.join(HERE, 'queue', 'planned.txt')
     planned = open(queued_file).read().split() if os.path.exists(queued_file) else []
-    done, running, failed, queued = [], [], [], []
+    done, running, failed, queued, paused = [], [], [], [], []
     for run in dict.fromkeys(planned + [r['Run'] for r in rows]):
         out = newest(run)
         mk = marker(out, 'DONE', 'KILLED', 'DIVERGED', 'FAILED') if out else None
         if mk in ('DONE', 'KILLED', 'DIVERGED'):
             done.append((run, mk))
+        elif run_distance(run) in paused_distances():
+            paused.append(run)
         elif mk == 'FAILED':
             failed.append(run)
         elif out:
@@ -442,10 +457,13 @@ def report():
     if failed:
         md += ['', f'## Failed ({len(failed)}), retried when queue.sh runs again', ''] + [f'- {r}' for r in failed]
     md += ['', f'## Queued ({len(queued)})', ''] + [f'- {r} (about {left[r]:.1f} h)' for r in queued]
+    if paused:
+        md += ['', f'## Paused ({len(paused)}), distances in queue/paused_d; resume from the last snapshot', '']
+        md += [f'- {r}' for r in paused]
     tot = sum(left.values())
     md += ['', f'Remaining run-hours about {tot:.0f}; at the current {n_par} concurrent runs the queue needs '
            f'roughly {tot / n_par:.0f} h more (ETA about {(now + datetime.timedelta(hours=tot / n_par)):%Y-%m-%d %H:%M} UTC). '
-           'Second-seed runs are not counted until L_min is known.', '']
+           'Second-seed runs are not counted until L_min is known; paused runs are not counted.', '']
     open(os.path.join(HERE, 'STATUS.md'), 'w').write('\n'.join(md))
     print(f'wrote {path} ({len(rows)} rows) and STATUS.md')
 
