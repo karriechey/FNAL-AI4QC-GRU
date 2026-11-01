@@ -44,6 +44,23 @@ for arm in ta; do                # control: the pilot's kd5_u70 (f5w_p004 teache
     sleep 120
   done
 done
+t0=$(date +%s)
 while pgrep -f "kd_round2_d5_2026-11-01/run_r2.sh" > /dev/null; do sleep 600; done
+hours=$(( ($(date +%s) - t0) / 3600 ))
 "$HOSTPY" "$HERE/report_r2.py" > "$HERE/logs/report_r2.txt" 2>&1 || { status "FAIL report_r2.py"; exit 1; }
-status "round 2 done: results/r2_table.md"
+status "round 2 u70 done in ${hours} h: results/r2_table.md"
+
+# trade-off batch: u34 / u48 / u96 together, only if u70 beat MWPM and took at most MAX_H hours
+beat=$("$HOSTPY" -c "import json,sys; print(any(r['arm'] == 'ta' and r['units'] == 70 and r['beats_mwpm'] for r in json.load(open(sys.argv[1]))['rows']))" "$HERE/results/r2_results.json")
+if [ "$beat" = True ] && [ "$hours" -le "${MAX_H:-8}" ]; then
+  for u in 34 48 96; do
+    setsid nohup bash "$HERE/run_r2.sh" ta "$u" > "$HERE/logs/ta_u$u.out" 2>&1 < /dev/null &
+    status "started trade-off ta u$u"
+    sleep 120
+  done
+  while pgrep -f "kd_round2_d5_2026-11-01/run_r2.sh" > /dev/null; do sleep 600; done
+  "$HOSTPY" "$HERE/report_r2.py" > "$HERE/logs/report_r2.txt" 2>&1 || { status "FAIL report_r2.py"; exit 1; }
+  status "trade-off batch done: results/r2_table.md"
+else
+  status "no trade-off batch (u70 beats MWPM: $beat, ${hours} h)"
+fi
