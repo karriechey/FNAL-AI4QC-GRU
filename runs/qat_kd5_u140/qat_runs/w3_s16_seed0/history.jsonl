@@ -1,0 +1,12 @@
+{"epoch": 0, "pL": 0.24666055555555555, "pL_over_fp32": 47.91075860580554, "note": "start (PTQ at this spec)"}
+{"epoch": 1, "loss": 0.3298757790327072, "pL": 0.09283888888888889, "pL_over_fp32": 18.032804575374985, "pL_over_mwpm": 12.263154032435606, "improved": true, "epoch_s": 126.5, "lr": null}
+{"epoch": 2, "loss": 0.19975746392458676, "pL": 0.07340222222222222, "pL_over_fp32": 14.257472752778675, "pL_over_mwpm": 9.69575108240992, "improved": true, "epoch_s": 120.8, "lr": null}
+{"epoch": 3, "loss": 0.18774136368185282, "pL": 0.07937222222222222, "pL_over_fp32": 15.417071328369481, "pL_over_mwpm": 10.484332575034857, "improved": false, "epoch_s": 120.3, "lr": null}
+{"epoch": 4, "loss": 0.1731330656185746, "pL": 0.08895555555555555, "pL_over_fp32": 17.27851516132513, "pL_over_mwpm": 11.750201805239598, "improved": false, "epoch_s": 120.3, "lr": null}
+{"epoch": 5, "loss": 0.1602482922375202, "pL": 0.057569444444444444, "pL_over_fp32": 11.182151721161109, "pL_over_mwpm": 7.60438834666471, "improved": true, "epoch_s": 120.2, "lr": null}
+{"epoch": 6, "loss": 0.15622824623063206, "pL": 0.05046111111111111, "pL_over_fp32": 9.801445991151397, "pL_over_mwpm": 6.665443604608498, "improved": true, "epoch_s": 120.6, "lr": null}
+{"epoch": 7, "loss": 0.14845123479515315, "pL": 0.05109888888888889, "pL_over_fp32": 9.925326427106938, "pL_over_mwpm": 6.749688119175167, "improved": false, "epoch_s": 120.4, "lr": null}
+{"epoch": 8, "loss": 0.1445684443153441, "pL": 0.05232944444444444, "pL_over_fp32": 10.164346606237185, "pL_over_mwpm": 6.912233066705805, "improved": false, "epoch_s": 108.8, "lr": null}
+{"epoch": 9, "loss": 0.14002172944322228, "pL": 0.05436611111111111, "pL_over_fp32": 10.559943886910542, "pL_over_mwpm": 7.181257797020621, "improved": false, "epoch_s": 80.2, "lr": null}
+{"epoch": 10, "loss": 0.13596625461056827, "pL": 0.052205, "pL_over_fp32": 10.140174813855616, "pL_over_mwpm": 6.8957951126440165, "improved": false, "epoch_s": 52.6, "lr": null}
+{"epoch": 11, "loss": 0.1357966313958168, "pL": 0.050499444444444444, "pL_over_fp32": 9.80889176648322, "pL_over_mwpm": 6.670507081529317, "improved": false, "epoch_s": 52.9, "lr": null}

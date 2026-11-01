@@ -1,0 +1,128 @@
+{
+ "config": "qat:w16_s6_seed0",
+ "n": 1000000,
+ "spec": {
+  "gru_weight": [
+   16,
+   7
+  ],
+  "gru_recurrent_weight": [
+   16,
+   8
+  ],
+  "gru_bias": [
+   16,
+   5
+  ],
+  "logit_weight": [
+   16,
+   5
+  ],
+  "logit_bias": [
+   16,
+   2
+  ],
+  "gru_state": [
+   6,
+   2
+  ],
+  "gru_table": [
+   6,
+   1
+  ],
+  "gru_accum": [
+   24,
+   9
+  ],
+  "logit_accum": [
+   24,
+   7
+  ]
+ },
+ "types": {
+  "typedefs": {
+   "input_t": "ap_uint<1>",
+   "gru_accum_t": "ap_fixed<24,9,AP_RND,AP_SAT,0>",
+   "gru_table_t": "ap_fixed<6,1,AP_RND,AP_SAT,0>",
+   "layer2_t": "ap_fixed<6,2,AP_RND,AP_SAT,0>",
+   "gru_weight_t": "ap_fixed<16,7,AP_RND,AP_SAT,0>",
+   "gru_recurrent_weight_t": "ap_fixed<16,8,AP_RND,AP_SAT,0>",
+   "gru_bias_t": "ap_fixed<16,5,AP_RND,AP_SAT,0>",
+   "gru_recurrent_bias_t": "ap_fixed<16,5,AP_RND,AP_SAT,0>",
+   "layer2_index": "ap_uint<1>",
+   "logit_accum_t": "ap_fixed<24,7,AP_RND,AP_SAT,0>",
+   "result_t": "ap_fixed<24,7,AP_RND,AP_SAT,0>",
+   "logit_weight_t": "ap_fixed<16,5,AP_RND,AP_SAT,0>",
+   "logit_bias_t": "ap_fixed<16,2,AP_RND,AP_SAT,0>",
+   "layer3_index": "ap_uint<1>"
+  },
+  "reset_after": [
+   "false"
+  ],
+  "table_t": [
+   "gru_table_t",
+   "gru_table_t"
+  ],
+  "accum_t": [
+   "gru_accum_t",
+   "gru_accum_t",
+   "gru_accum_t",
+   "logit_accum_t"
+  ],
+  "n_unit_par": [
+   "2"
+  ],
+  "n_cycles": [
+   "1"
+  ],
+  "reuse_factor": [
+   "70",
+   "70",
+   "70",
+   "70",
+   "70",
+   "70"
+  ]
+ },
+ "probe_agreement": 1.0,
+ "fixes_tried": [],
+ "csim_s": 1386.3,
+ "agreement_vs_quantized_keras": 1.0,
+ "max_abs_logit_diff": 0.0,
+ "hls": {
+  "pL": 0.005245,
+  "pL_fp32": 0.005107,
+  "pL_mwpm": 0.007538,
+  "pL_over_fp32": 1.0270217348737025,
+  "pL_over_mwpm": 0.6958079066065268,
+  "mcnemar_vs_fp32": {
+   "n": 1000000,
+   "errors_ref": 5107,
+   "errors_new": 5245,
+   "b": 631,
+   "c": 493,
+   "n_disc": 1124,
+   "p_exact": 4.292409801787684e-05,
+   "agreement": 0.998876
+  }
+ },
+ "emulator": {
+  "pL": 0.005245,
+  "pL_fp32": 0.005107,
+  "pL_mwpm": 0.007538,
+  "pL_over_fp32": 1.0270217348737025,
+  "pL_over_mwpm": 0.6958079066065268,
+  "mcnemar_vs_fp32": {
+   "n": 1000000,
+   "errors_ref": 5107,
+   "errors_new": 5245,
+   "b": 631,
+   "c": 493,
+   "n_disc": 1124,
+   "p_exact": 4.292409801787684e-05,
+   "agreement": 0.998876
+  }
+ },
+ "status": "ok",
+ "export": "/home/kchey/FNAL-AI4QC-GRU-qat/runs/qat_kd5_u140/hls_export/qat_w16_s6_seed0"
+}

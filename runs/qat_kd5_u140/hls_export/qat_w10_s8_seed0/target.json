@@ -1,0 +1,9 @@
+{
+ "part": "xcvu13p-flga2577-2-e",
+ "clock_period_ns": 5.0,
+ "io_type": "io_parallel",
+ "backend": "Vitis",
+ "strategy": "Resource",
+ "reuse_factor": 70,
+ "static_gru": true
+}

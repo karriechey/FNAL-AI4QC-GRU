@@ -1,0 +1,1 @@
+sha256 9fded2fc532aaa8ce348e185e728775717c51f01b76047c5ec237cf3339ecf3a  eaf_qat_kd5_u140_synth.tar.gz (for_eaf/, 4.6 MB)

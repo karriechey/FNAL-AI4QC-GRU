@@ -1,5 +1,5 @@
 # Created: 2026-10-27
-# Last modified: 2026-10-27
+# Last modified: 2026-10-28 (sentence-case axis label)
 # GRU vs MWPM logical error rate at p = 0.004, d = 5, 7, 9: the selected checkpoints' test-set
 # results (1.8M shots, MWPM on the same shots), the same rows as the threshold figure's stars.
 #   python figures/gru_vs_mwpm_bars.py
@@ -41,7 +41,7 @@ def plot(rows):
     ax.set_xticks(x)
     ax.set_xticklabels([f"$d$ = {r['d']}" for r in rows])
     ax.tick_params(axis="x", length=0)
-    ax.set_ylabel("logical error rate $P_L$")
+    ax.set_ylabel("Logical error rate $P_L$")
     ax.legend(loc="upper right", frameon=False)
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)

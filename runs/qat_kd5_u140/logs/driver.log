@@ -1,0 +1,43 @@
+2026-10-28T12:44:12Z START w8_s16_seed0 pid 338199
+2026-10-28T12:44:12Z START w6_s16_seed0 pid 338200
+2026-10-28T12:44:12Z START w5_s16_seed0 pid 338201
+2026-10-28T12:44:12Z START w4_s16_seed0 pid 338203
+2026-10-28T12:44:12Z START w3_s16_seed0 pid 338206
+2026-10-28T12:44:12Z START w16_s8_seed0 pid 338209
+2026-10-28T12:44:12Z START w16_s6_seed0 pid 338212
+2026-10-28T12:59:12Z END w8_s16_seed0: early stop: no improvement for 5 evals
+2026-10-28T13:00:42Z END w5_s16_seed0: early stop: no improvement for 5 evals
+2026-10-28T13:01:42Z END w6_s16_seed0: early stop: no improvement for 5 evals
+2026-10-28T13:01:42Z END w16_s8_seed0: early stop: no improvement for 5 evals
+2026-10-28T13:03:42Z END w3_s16_seed0: early stop: no improvement for 5 evals
+2026-10-28T13:06:42Z END w16_s6_seed0: early stop: no improvement for 5 evals
+2026-10-28T13:08:12Z END w4_s16_seed0: early stop: no improvement for 5 evals
+2026-10-28T13:08:12Z queue empty
+2026-10-28T18:08:06Z START w12_s8_seed0 pid 350276
+2026-10-28T18:08:06Z START w12_s6_seed0 pid 350277
+2026-10-28T18:08:06Z START w12_s5_seed0 pid 350278
+2026-10-28T18:08:06Z START w10_s8_seed0 pid 350281
+2026-10-28T18:08:06Z START w10_s6_seed0 pid 350284
+2026-10-28T18:08:06Z START w10_s5_seed0 pid 350286
+2026-10-28T18:08:06Z START w8_s16_seed0_lr3e-05 pid 350289
+2026-10-28T18:20:06Z END w10_s8_seed0: early stop: no improvement for 5 evals
+2026-10-28T18:22:36Z END w10_s6_seed0: early stop: no improvement for 5 evals
+2026-10-28T18:25:36Z END w8_s16_seed0_lr3e-05: early stop: no improvement for 5 evals
+2026-10-28T18:27:06Z END w12_s6_seed0: early stop: no improvement for 5 evals
+2026-10-28T18:28:06Z END w12_s8_seed0: early stop: no improvement for 5 evals
+2026-10-28T18:31:06Z END w10_s5_seed0: early stop: no improvement for 5 evals
+2026-10-28T18:34:06Z END w12_s5_seed0: early stop: no improvement for 5 evals
+2026-10-28T18:34:06Z queue empty
+2026-10-28T18:34:36Z START w12_s6_seed1 pid 365095
+2026-10-28T18:34:36Z START w12_s6_seed2 pid 365096
+2026-10-28T18:34:36Z START w12_s5_seed1 pid 365097
+2026-10-28T18:34:36Z START w12_s5_seed2 pid 365099
+2026-10-28T18:34:36Z START w10_s8_seed1 pid 365102
+2026-10-28T18:34:36Z START w10_s8_seed2 pid 365105
+2026-10-28T18:46:06Z END w10_s8_seed1: early stop: no improvement for 5 evals
+2026-10-28T18:46:06Z END w10_s8_seed2: early stop: no improvement for 5 evals
+2026-10-28T18:51:36Z END w12_s6_seed1: early stop: no improvement for 5 evals
+2026-10-28T18:55:36Z END w12_s5_seed2: early stop: no improvement for 5 evals
+2026-10-28T18:56:06Z END w12_s5_seed1: early stop: no improvement for 5 evals
+2026-10-28T18:58:36Z END w12_s6_seed2: early stop: no improvement for 5 evals
+2026-10-28T18:58:36Z queue empty

@@ -1,0 +1,193 @@
+{
+ "environment": {
+  "hls4ml_version": "1.4.0.dev+g1259e2b25",
+  "hls4ml_path": "/tmp/kchey_qat/hls4ml_main",
+  "hls4ml_commit": "1259e2b25ed082e000e749b8ba97b449f4e613a9",
+  "hls4ml_local_changes": "none"
+ },
+ "tf": "2.15.1",
+ "wiring_fq_vs_fp32": {
+  "pL": 0.00516,
+  "pL_fp32": 0.005148333333333334,
+  "pL_mwpm": 0.007570555555555555,
+  "pL_over_fp32": 1.002266105535772,
+  "pL_over_mwpm": 0.6815880237763264,
+  "mcnemar_vs_fp32": {
+   "n": 1800000,
+   "errors_ref": 9267,
+   "errors_new": 9288,
+   "b": 85,
+   "c": 64,
+   "n_disc": 149,
+   "p_exact": 0.10100293201282867,
+   "agreement": 0.9999172222222222
+  },
+  "max_abs_logit_diff": 0.5411043167114258,
+  "decision_agreement": 0.9999172222222222,
+  "s": 8.5
+ },
+ "wiring_hls": {
+  "n": 20000,
+  "csim_s": 152.2,
+  "types": {
+   "typedefs": {
+    "input_t": "ap_uint<1>",
+    "gru_accum_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "layer2_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "gru_weight_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "gru_recurrent_weight_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "gru_bias_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "gru_recurrent_bias_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "gru_table_t": "ap_fixed<18,8>",
+    "layer2_index": "ap_uint<1>",
+    "logit_accum_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "result_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "logit_weight_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "logit_bias_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "layer3_index": "ap_uint<1>"
+   },
+   "reset_after": [
+    "false"
+   ],
+   "table_t": [
+    "gru_table_t",
+    "gru_table_t"
+   ],
+   "accum_t": [
+    "gru_accum_t",
+    "gru_accum_t",
+    "gru_accum_t",
+    "logit_accum_t"
+   ],
+   "n_unit_par": [
+    "2"
+   ],
+   "n_cycles": [
+    "1"
+   ],
+   "reuse_factor": [
+    "70",
+    "70",
+    "70",
+    "70",
+    "70",
+    "70"
+   ]
+  },
+  "recurrent_bias_all_zero": true,
+  "recurrent_bias_len": 420,
+  "hls_vs_fq_agreement": 0.99975,
+  "hls_vs_fq_max_abs": 0.26689910888671875,
+  "hls_vs_fp32_agreement": 0.99965,
+  "hls_vs_fp32_max_abs": 0.4613199234008789,
+  "errors_hls": 88,
+  "errors_fq": 91,
+  "errors_fp32": 93
+ },
+ "qgru_check": {
+  "same_typedefs": false,
+  "same_reset_after": true,
+  "qgru_types": {
+   "typedefs": {
+    "input_t": "ap_uint<1>",
+    "gru_accum_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "layer2_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "gru_weight_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "gru_recurrent_weight_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "gru_bias_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "gru_recurrent_bias_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "gru_table_t": "ap_fixed<18,8>",
+    "layer2_index": "ap_uint<1>",
+    "logit_accum_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "result_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "weight3_t": "ap_fixed<8,7>",
+    "bias3_t": "ap_fixed<8,7>",
+    "layer3_index": "ap_uint<1>"
+   },
+   "reset_after": [
+    "false"
+   ],
+   "table_t": [
+    "gru_table_t",
+    "gru_table_t"
+   ],
+   "accum_t": [
+    "gru_accum_t",
+    "gru_accum_t",
+    "gru_accum_t",
+    "logit_accum_t"
+   ],
+   "n_unit_par": [
+    "2"
+   ],
+   "n_cycles": [
+    "1"
+   ],
+   "reuse_factor": [
+    "70",
+    "70",
+    "70",
+    "70",
+    "70",
+    "70"
+   ]
+  },
+  "kgru_types": {
+   "typedefs": {
+    "input_t": "ap_uint<1>",
+    "gru_accum_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "layer2_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "gru_weight_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "gru_recurrent_weight_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "gru_bias_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "gru_recurrent_bias_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "gru_table_t": "ap_fixed<18,8>",
+    "layer2_index": "ap_uint<1>",
+    "logit_accum_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "result_t": "ap_fixed<32,10,AP_RND,AP_SAT,0>",
+    "logit_weight_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "logit_bias_t": "ap_fixed<8,7,AP_RND,AP_SAT,0>",
+    "layer3_index": "ap_uint<1>"
+   },
+   "reset_after": [
+    "false"
+   ],
+   "table_t": [
+    "gru_table_t",
+    "gru_table_t"
+   ],
+   "accum_t": [
+    "gru_accum_t",
+    "gru_accum_t",
+    "gru_accum_t",
+    "logit_accum_t"
+   ],
+   "n_unit_par": [
+    "2"
+   ],
+   "n_cycles": [
+    "1"
+   ],
+   "reuse_factor": [
+    "70",
+    "70",
+    "70",
+    "70",
+    "70",
+    "70"
+   ]
+  },
+  "qgru_weights_equal_keras_gru_conversion": true,
+  "qgru_weight_file_is_raw_float": false,
+  "qgru_weight_file_on_8bit_grid": false,
+  "qgru_layer_attrs": {
+   "activation": "tanh",
+   "recurrent_activation": "sigmoid",
+   "apply_reset_gate": "before",
+   "weight_quantizer": "<hls4ml.model.quantizers.QKerasQuantizer object at 0xfffa75f615d0>",
+   "recurrent_weight_quantizer": "<hls4ml.model.quantizers.QKerasQuantizer object at 0xfffa75f60d10>",
+   "bias_quantizer": "<hls4ml.model.quantizers.QKerasQuantizer object at 0xfffa75f62510>",
+   "accum_quantizer": "None"
+  }
+ }
+}

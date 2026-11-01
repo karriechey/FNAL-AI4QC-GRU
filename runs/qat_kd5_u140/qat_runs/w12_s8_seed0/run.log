@@ -1,0 +1,35 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+2026-10-28 18:08:07.442953: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-10-28 18:08:07.442983: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-10-28 18:08:07.443477: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+{"epoch": 0, "ler": 0.0052138888888888886, "ler_over_fp32": 1.0127333549152906, "note": "start (PTQ at this spec)"}
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793210904.402385     415 device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+{"epoch": 1, "loss": 0.016042311078868807, "ler": 0.005196666666666666, "ler_over_fp32": 1.0093881515053413, "ler_over_mwpm": 0.686431349526675, "improved": true, "epoch_s": 146.8, "lr": null}
+{"epoch": 2, "loss": 0.01603875353327021, "ler": 0.0051805555555555554, "ler_over_fp32": 1.0062587676702275, "ler_over_mwpm": 0.6843032215454612, "improved": true, "epoch_s": 141.5, "lr": null}
+{"epoch": 3, "loss": 0.016065379816573112, "ler": 0.0051916666666666665, "ler_over_fp32": 1.008416963418582, "ler_over_mwpm": 0.6857708960152639, "improved": false, "epoch_s": 141.2, "lr": null}
+{"epoch": 4, "loss": 0.016041852279100568, "ler": 0.005188333333333333, "ler_over_fp32": 1.0077695046940756, "ler_over_mwpm": 0.685330593674323, "improved": false, "epoch_s": 141.3, "lr": null}
+{"epoch": 5, "loss": 0.01606565756024793, "ler": 0.005167777777777778, "ler_over_fp32": 1.00377684255962, "ler_over_mwpm": 0.6826153959051883, "improved": true, "epoch_s": 137.7, "lr": null}
+{"epoch": 6, "loss": 0.016072984216734768, "ler": 0.005204444444444445, "ler_over_fp32": 1.0108988885291896, "ler_over_mwpm": 0.6874587216555369, "improved": false, "epoch_s": 118.5, "lr": null}
+{"epoch": 7, "loss": 0.0160328587051481, "ler": 0.005217777777777778, "ler_over_fp32": 1.0134887234272147, "ler_over_mwpm": 0.6892199310192999, "improved": false, "epoch_s": 99.6, "lr": null}
+{"epoch": 8, "loss": 0.016007393516600132, "ler": 0.005241111111111111, "ler_over_fp32": 1.018020934498759, "ler_over_mwpm": 0.6923020474058854, "improved": false, "epoch_s": 99.3, "lr": null}
+{"epoch": 9, "loss": 0.016008159997873007, "ler": 0.005201111111111111, "ler_over_fp32": 1.0102514298046832, "ler_over_mwpm": 0.6870184193145961, "improved": false, "epoch_s": 79.7, "lr": null}
+{"epoch": 10, "loss": 0.016036904634907843, "ler": 0.005184444444444445, "ler_over_fp32": 1.0070141361821516, "ler_over_mwpm": 0.6848169076098922, "improved": false, "epoch_s": 61.2, "lr": null}
+DONE early stop: no improvement for 5 evals 5 0.005167777777777778

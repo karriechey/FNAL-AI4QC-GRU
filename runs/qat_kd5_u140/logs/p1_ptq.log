@@ -1,0 +1,34 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+2026-10-28 12:34:56.929730: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-10-28 12:34:56.929760: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-10-28 12:34:56.930369: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+{"gru_weight": 7, "gru_recurrent_weight": 8, "gru_bias": 5, "logit_weight": 5, "logit_bias": 2, "gru_accum": 9, "gru_state": 3, "gru_table": 2, "logit_accum": 7} {"gru_weight": 27.822988510131836, "gru_recurrent_weight": 51.92874526977539, "gru_bias": 7.411993026733398, "logit_weight": 4.558508396148682, "logit_bias": 0.6109345555305481, "gru_accum": 73.01370239257812, "gru_state": 1.0, "gru_table": 0.999999, "logit_accum": 16.388364791870117}
+{"method": "PTQ", "axis": "weights", "weight_bits": 16, "state_bits": 16, "accum_bits": 24, "total_bits": 32, "ler": 0.005158888888888889, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 1.0020502859609366, "ler_over_mwpm": 0.6814412563293462, "b": 85, "c": 66, "n_disc": 151, "p_exact": 0.1427180761829656, "agreement_fp32": 0.9999161111111111, "acceptable": true, "s": 2.1}
+{"method": "PTQ", "axis": "weights", "weight_bits": 12, "state_bits": 16, "accum_bits": 24, "total_bits": 28, "ler": 0.005243333333333333, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 1.0184525736484298, "ler_over_mwpm": 0.692595582299846, "b": 772, "c": 601, "n_disc": 1373, "p_exact": 4.358503159241909e-06, "agreement_fp32": 0.9992372222222222, "acceptable": true, "s": 1.5}
+{"method": "PTQ", "axis": "weights", "weight_bits": 10, "state_bits": 16, "accum_bits": 24, "total_bits": 26, "ler": 0.008567777777777778, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 1.664184741556059, "ler_over_mwpm": 1.1317237836647833, "b": 8514, "c": 2359, "n_disc": 10873, "p_exact": 0.0, "agreement_fp32": 0.9939594444444444, "acceptable": false, "s": 1.5}
+{"method": "PTQ", "axis": "weights", "weight_bits": 8, "state_bits": 16, "accum_bits": 24, "total_bits": 24, "ler": 0.050307222222222225, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 9.771554980036688, "ler_over_mwpm": 6.645116313201733, "b": 84873, "c": 3587, "n_disc": 88460, "p_exact": 0.0, "agreement_fp32": 0.9508555555555556, "acceptable": false, "s": 1.5}
+{"method": "PTQ", "axis": "weights", "weight_bits": 6, "state_bits": 16, "accum_bits": 24, "total_bits": 22, "ler": 0.5300872222222223, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 102.9628790331283, "ler_over_mwpm": 70.01959345417187, "b": 949532, "c": 4642, "n_disc": 954174, "p_exact": 0.0, "agreement_fp32": 0.46990333333333334, "acceptable": false, "s": 1.5}
+{"method": "PTQ", "axis": "weights", "weight_bits": 5, "state_bits": 16, "accum_bits": 24, "total_bits": 21, "ler": 0.1952011111111111, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 37.915398726664506, "ler_over_mwpm": 25.78425185293902, "b": 346264, "c": 4169, "n_disc": 350433, "p_exact": 0.0, "agreement_fp32": 0.805315, "acceptable": false, "s": 1.5}
+{"method": "PTQ", "axis": "weights", "weight_bits": 4, "state_bits": 16, "accum_bits": 24, "total_bits": 20, "ler": 0.2882105555555556, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 55.981331606776735, "ler_over_mwpm": 38.0699346884861, "b": 513804, "c": 4292, "n_disc": 518096, "p_exact": 0.0, "agreement_fp32": 0.7121688888888889, "acceptable": false, "s": 1.6}
+{"method": "PTQ", "axis": "state", "weight_bits": 16, "state_bits": 16, "accum_bits": 24, "total_bits": 32, "ler": 0.005158888888888889, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 1.0020502859609366, "ler_over_mwpm": 0.6814412563293462, "b": 85, "c": 66, "n_disc": 151, "p_exact": 0.1427180761829656, "agreement_fp32": 0.9999161111111111, "acceptable": true, "s": 1.5}
+{"method": "PTQ", "axis": "state", "weight_bits": 16, "state_bits": 12, "accum_bits": 24, "total_bits": 28, "ler": 0.005157222222222222, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 1.0017265565986833, "ler_over_mwpm": 0.6812211051588758, "b": 113, "c": 97, "n_disc": 210, "p_exact": 0.30061044614673826, "agreement_fp32": 0.9998833333333333, "acceptable": true, "s": 1.5}
+{"method": "PTQ", "axis": "state", "weight_bits": 16, "state_bits": 10, "accum_bits": 24, "total_bits": 26, "ler": 0.005156666666666667, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 1.0016186468112658, "ler_over_mwpm": 0.6811477214353857, "b": 263, "c": 248, "n_disc": 511, "p_exact": 0.5357444395302421, "agreement_fp32": 0.9997161111111111, "acceptable": true, "s": 1.5}
+{"method": "PTQ", "axis": "state", "weight_bits": 16, "state_bits": 8, "accum_bits": 24, "total_bits": 24, "ler": 0.005286666666666667, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 1.026869537067012, "ler_over_mwpm": 0.698319512732076, "b": 971, "c": 722, "n_disc": 1693, "p_exact": 1.561630896205588e-09, "agreement_fp32": 0.9990594444444445, "acceptable": true, "s": 1.5}
+{"method": "PTQ", "axis": "state", "weight_bits": 16, "state_bits": 6, "accum_bits": 24, "total_bits": 22, "ler": 0.012968333333333333, "ler_fp32": 0.005148333333333334, "ler_mwpm": 0.007570555555555555, "ler_over_fp32": 2.5189381676918097, "ler_over_mwpm": 1.712996257430102, "b": 16100, "c": 2024, "n_disc": 18124, "p_exact": 0.0, "agreement_fp32": 0.9899311111111111, "acceptable": false, "s": 1.5}
+knees {'weights': 12, 'state': 8}

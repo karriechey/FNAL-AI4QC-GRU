@@ -1,0 +1,36 @@
+
+================
+== TensorFlow ==
+================
+
+NVIDIA Release 24.03-tf2 (build 85286640)
+TensorFlow Version 2.15.0
+Container image Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright 2017-2024 The TensorFlow Authors.  All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+2026-10-28 18:34:37.445132: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9373] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-10-28 18:34:37.445163: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-10-28 18:34:37.445765: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1534] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+WARNING:tensorflow:Layer gru will not use cuDNN kernels since it doesn't meet the criteria. It will use a generic GPU kernel as fallback when running on GPU.
+{"epoch": 0, "ler": 0.005715, "ler_over_fp32": 1.110067983166073, "note": "start (PTQ at this spec)"}
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793212493.115400     415 device_compiler.h:186] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+{"epoch": 1, "loss": 0.01665934285474941, "ler": 0.005389444444444444, "ler_over_fp32": 1.0468328477392899, "ler_over_mwpm": 0.7118955015777501, "improved": true, "epoch_s": 112.7, "lr": null}
+{"epoch": 2, "loss": 0.016556986978743225, "ler": 0.00544, "ler_over_fp32": 1.0566526383943025, "ler_over_mwpm": 0.718573420415352, "improved": false, "epoch_s": 107.3, "lr": null}
+{"epoch": 3, "loss": 0.016495188568718733, "ler": 0.005391666666666667, "ler_over_fp32": 1.047264486888961, "ler_over_mwpm": 0.7121890364717106, "improved": false, "epoch_s": 107.1, "lr": null}
+{"epoch": 4, "loss": 0.016487540650181473, "ler": 0.005406666666666666, "ler_over_fp32": 1.0501780511492391, "ler_over_mwpm": 0.7141703970059441, "improved": false, "epoch_s": 107.1, "lr": null}
+{"epoch": 5, "loss": 0.016517630291637032, "ler": 0.005367777777777778, "ler_over_fp32": 1.0426243660299988, "ler_over_mwpm": 0.709033536361635, "improved": true, "epoch_s": 107.0, "lr": null}
+{"epoch": 6, "loss": 0.01647242200700566, "ler": 0.005329444444444445, "ler_over_fp32": 1.0351785906981763, "ler_over_mwpm": 0.7039700594408161, "improved": true, "epoch_s": 107.1, "lr": null}
+{"epoch": 7, "loss": 0.016453742275945843, "ler": 0.005361111111111111, "ler_over_fp32": 1.041329448580986, "ler_over_mwpm": 0.7081529316797535, "improved": false, "epoch_s": 71.8, "lr": null}
+{"epoch": 8, "loss": 0.01646251236787066, "ler": 0.005392777777777778, "ler_over_fp32": 1.047480306463796, "ler_over_mwpm": 0.7123358039186909, "improved": false, "epoch_s": 70.4, "lr": null}
+{"epoch": 9, "loss": 0.016457949972245842, "ler": 0.0053438888888888885, "ler_over_fp32": 1.0379842451710368, "ler_over_mwpm": 0.7058780362515594, "improved": false, "epoch_s": 70.4, "lr": null}
+{"epoch": 10, "loss": 0.016413385052233935, "ler": 0.005356666666666667, "ler_over_fp32": 1.0404661702816445, "ler_over_mwpm": 0.7075658618918325, "improved": false, "epoch_s": 70.4, "lr": null}
+{"epoch": 11, "loss": 0.016454392805695533, "ler": 0.005334444444444445, "ler_over_fp32": 1.0361497787849356, "ler_over_mwpm": 0.7046305129522272, "improved": false, "epoch_s": 70.4, "lr": null}
+DONE early stop: no improvement for 5 evals 6 0.005329444444444445

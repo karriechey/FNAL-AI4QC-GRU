@@ -1,0 +1,38 @@
+{
+ "gru_weight": [
+  16,
+  7
+ ],
+ "gru_recurrent_weight": [
+  16,
+  8
+ ],
+ "gru_bias": [
+  16,
+  5
+ ],
+ "logit_weight": [
+  16,
+  5
+ ],
+ "logit_bias": [
+  16,
+  2
+ ],
+ "gru_state": [
+  8,
+  2
+ ],
+ "gru_table": [
+  8,
+  1
+ ],
+ "gru_accum": [
+  24,
+  9
+ ],
+ "logit_accum": [
+  24,
+  7
+ ]
+}

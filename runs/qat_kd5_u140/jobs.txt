@@ -1,0 +1,24 @@
+# tag seed [lr]; Phase 2 one-dimensional QAT points
+w8_s16 0
+w6_s16 0
+w5_s16 0
+w4_s16 0
+w3_s16 0
+w16_s8 0
+w16_s6 0
+# Phase 2 two-dimensional grid around the best acceptable combination (PTQ weight knee 12, QAT state 6)
+w12_s8 0
+w12_s6 0
+w12_s5 0
+w10_s8 0
+w10_s6 0
+w10_s5 0
+# diagnostic, not pre-registered and not used for selection: w8 at 1/10 the QAT LR
+w8_s16 0 3e-05
+# seeds for the candidate (w12_s6), its neighbor one state bit lower (w12_s5), and the other 18-bit acceptable point (w10_s8)
+w12_s6 1
+w12_s6 2
+w12_s5 1
+w12_s5 2
+w10_s8 1
+w10_s8 2
