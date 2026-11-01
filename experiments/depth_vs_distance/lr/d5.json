@@ -1,0 +1,12 @@
+{
+ "lr": "3e-3",
+ "reason": "highest LR stable at L = 1 and L = 5 (stable: ['1e-3', '2e-3', '3e-3'])",
+ "status": {
+  "lrscan_d5_L05_lr1e-3": "stable",
+  "lrscan_d5_L05_lr2e-3": "stable",
+  "lrscan_d5_L05_lr3e-3": "stable",
+  "lrscan_d5_L01_lr1e-3": "stable",
+  "lrscan_d5_L01_lr2e-3": "stable",
+  "lrscan_d5_L01_lr3e-3": "stable"
+ }
+}
