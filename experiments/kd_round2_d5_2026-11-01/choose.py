@@ -21,8 +21,10 @@ choice = {'best_run': best['run'], 'best_alpha': best['alpha'], 'best_T': best['
           'teacher_eval_errors': r2['eval_errors'],
           'r2_alpha': f"{r2['alpha']:g}" if r2['alpha'] not in (0, 1) else f"{r2['alpha']:.1f}",
           'r2_T': r2['T'] if r2['T'] != '-' else '1.0'}
-json.dump(choice, open(os.path.join(HERE, 'choice.json'), 'w'), indent=1)
 dump_dir = os.path.dirname(r2['weights'])
+while not os.path.exists(os.path.join(dump_dir, 'eval_selected_per_shot.npz')):   # pilot runs keep weights in seed0/epochs
+    dump_dir = os.path.dirname(dump_dir)
+choice['teacher_dir'] = dump_dir
 with open(os.path.join(HERE, 'ta_teacher.sh'), 'w') as f:
     f.write(f"""# written by choose.py: round-2 teacher = sweep run {r2['run']}
 T_NAME={r2['run']}; T_UNITS="140"; T_PARAMS=69441; T_EPOCH={r2['selected_epoch']}; T_EVAL_ERR={r2['eval_errors']}
@@ -31,4 +33,5 @@ T_DUMP={dump_dir}/eval_selected_per_shot.npz
 T_COPY=$HERE/teachers/{r2['run']}_epoch{r2['selected_epoch']:03d}.weights.h5
 G0=$HERE/teacher_check
 """)
+json.dump(choice, open(os.path.join(HERE, 'choice.json'), 'w'), indent=1)
 print(json.dumps(choice, indent=1))
