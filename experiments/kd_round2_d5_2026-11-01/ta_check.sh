@@ -15,7 +15,7 @@ source "$HERE/ta_teacher.sh"
 mkdir -p "$G0" "$HERE/teachers"
 [ -f "$T_COPY" ] || cp -p "$T_SRC" "$T_COPY"
 [ "$(sha256sum < "$T_SRC")" = "$(sha256sum < "$T_COPY")" ] || { echo "FAIL: teacher copy differs from $T_SRC"; exit 1; }
-cp -p "$T_DUMP" "$G0/teacher_eval_per_shot.npz"
+cp -p "$T_DUMP" "$G0/teacher_eval_per_shot.npz" || { echo "FAIL: no eval dump $T_DUMP"; exit 1; }
 
 for mode in off on; do
   [ "$mode" = off ] && X=(--no-tf32 --n 100000) || X=(--n 1800000)
