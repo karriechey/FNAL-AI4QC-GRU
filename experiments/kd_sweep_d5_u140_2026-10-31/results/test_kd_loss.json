@@ -1,0 +1,113 @@
+{
+ "checks": [
+  {
+   "alpha": 0.0,
+   "T": 1.0,
+   "max_abs_value_diff": 1.7763568394002505e-15,
+   "max_abs_grad_diff": 2.914335439641036e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.0,
+   "T": 2.0,
+   "max_abs_value_diff": 3.552713678800501e-15,
+   "max_abs_grad_diff": 5.551115123125783e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.0,
+   "T": 4.0,
+   "max_abs_value_diff": 7.105427357601002e-15,
+   "max_abs_grad_diff": 1.1102230246251565e-15,
+   "ok": true
+  },
+  {
+   "alpha": 0.25,
+   "T": 1.0,
+   "max_abs_value_diff": 1.7763568394002505e-15,
+   "max_abs_grad_diff": 3.3306690738754696e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.25,
+   "T": 2.0,
+   "max_abs_value_diff": 3.552713678800501e-15,
+   "max_abs_grad_diff": 6.661338147750939e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.25,
+   "T": 4.0,
+   "max_abs_value_diff": 7.105427357601002e-15,
+   "max_abs_grad_diff": 9.992007221626409e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.5,
+   "T": 1.0,
+   "max_abs_value_diff": 1.7763568394002505e-15,
+   "max_abs_grad_diff": 2.498001805406602e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.5,
+   "T": 2.0,
+   "max_abs_value_diff": 3.552713678800501e-15,
+   "max_abs_grad_diff": 4.440892098500626e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.5,
+   "T": 4.0,
+   "max_abs_value_diff": 3.552713678800501e-15,
+   "max_abs_grad_diff": 6.661338147750939e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.75,
+   "T": 1.0,
+   "max_abs_value_diff": 1.7763568394002505e-15,
+   "max_abs_grad_diff": 3.3306690738754696e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.75,
+   "T": 2.0,
+   "max_abs_value_diff": 1.7763568394002505e-15,
+   "max_abs_grad_diff": 4.440892098500626e-16,
+   "ok": true
+  },
+  {
+   "alpha": 0.75,
+   "T": 4.0,
+   "max_abs_value_diff": 3.552713678800501e-15,
+   "max_abs_grad_diff": 4.440892098500626e-16,
+   "ok": true
+  },
+  {
+   "alpha": 1.0,
+   "T": 1.0,
+   "max_abs_value_diff": 2.220446049250313e-16,
+   "max_abs_grad_diff": 2.220446049250313e-16,
+   "ok": true
+  },
+  {
+   "alpha": 1.0,
+   "T": 2.0,
+   "max_abs_value_diff": 2.220446049250313e-16,
+   "max_abs_grad_diff": 2.220446049250313e-16,
+   "ok": true
+  },
+  {
+   "alpha": 1.0,
+   "T": 4.0,
+   "max_abs_value_diff": 2.220446049250313e-16,
+   "max_abs_grad_diff": 2.220446049250313e-16,
+   "ok": true
+  }
+ ],
+ "alpha1_same_for_every_T_and_teacher": true,
+ "alpha0_T1_vs_bce_on_teacher_prob_max_diff": 1.7763568394002505e-15,
+ "soft_grad_at_z_student_eq_z_teacher_max": 6.661338147750939e-16,
+ "passed": true
+}
