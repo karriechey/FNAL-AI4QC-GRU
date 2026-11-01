@@ -1,0 +1,14 @@
+# name alpha T source (new: trained here; pilot: reused from ../kd_pilot_p004_2026-10/runs, same recipe and shots)
+kd5_u140	0.0	1.0	pilot
+hl5_u140	1.0	-	pilot
+kd5_u140_a0.0_T2.0	0.0	2.0	new
+kd5_u140_a0.0_T4.0	0.0	4.0	new
+kd5_u140_a0.25_T1.0	0.25	1.0	new
+kd5_u140_a0.25_T2.0	0.25	2.0	new
+kd5_u140_a0.25_T4.0	0.25	4.0	new
+kd5_u140_a0.5_T1.0	0.5	1.0	new
+kd5_u140_a0.5_T2.0	0.5	2.0	new
+kd5_u140_a0.5_T4.0	0.5	4.0	new
+kd5_u140_a0.75_T1.0	0.75	1.0	new
+kd5_u140_a0.75_T2.0	0.75	2.0	new
+kd5_u140_a0.75_T4.0	0.75	4.0	new
