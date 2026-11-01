@@ -7,7 +7,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SWEEP="$(cd "$HERE/../kd_sweep_d5_u140_2026-10-31" && pwd)"
 HOSTPY=${HOSTPY:-$HOME/tfenv/bin/python}
-WIDTHS=(34 48 70 96)           # 6,053 / 10,561 / 20,021 / 34,945 parameters
+WIDTHS=(70)                    # 20,021 parameters; one bet, see README
 mkdir -p "$HERE/logs"
 status () { echo "$(date -u +%FT%TZ) $*" | tee -a "$HERE/STATUS"; }
 
@@ -37,10 +37,8 @@ bash "$HERE/ta_check.sh" > "$HERE/logs/ta_check.txt" 2>&1 || { status "FAIL teac
 status "teacher check passed ($(tail -1 "$HERE/logs/ta_check.txt"))"
 
 A=$(get r2_alpha); T=$(get r2_T)
-for arm in ta f5w; do
+for arm in ta; do                # control: the pilot's kd5_u70 (f5w_p004 teacher, alpha 0, T 1, same shots)
   for u in "${WIDTHS[@]}"; do
-    # kd5_u70 of the pilot is the f5w u70 cell at alpha 0, T 1 (same recipe and shots)
-    [ "$arm" = f5w ] && [ "$u" = 70 ] && [ "$A" = 0.0 ] && [ "$T" = 1.0 ] && continue
     setsid nohup bash "$HERE/run_r2.sh" "$arm" "$u" > "$HERE/logs/${arm}_u$u.out" 2>&1 < /dev/null &
     status "started $arm u$u"
     sleep 120
