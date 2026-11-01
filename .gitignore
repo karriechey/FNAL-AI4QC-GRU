@@ -30,3 +30,5 @@ experiments/gru_check/hls4ml_pr1568_check/synthesis_package/hls_projects/
 experiments/overnight_2026-09-27/A_sanity/tmp_ckpt/
 experiments/overnight_2026-09-27/A_sanity/tmp_runs/
 **/prj_*/
+# generated hls4ml projects of the d7 4x70 EAF bundle (kept on branch hls-d7-4x70)
+experiments/d7_4x70_hls_2026-10-29/eaf_bundle/projects/
