@@ -1,7 +1,7 @@
 # Created: 2026-11-01 | Last updated: 2026-11-01
 # Round-2 table: every finished student in keep/ plus the references (round-2 teacher, kd5_u140, pilot
 # kd5_u70 / hl5_u70), on the eval block. McNemar against kd5_u140 and, per width, round-2 teacher arm (ta)
-# against the direct f5w arm (b = ta right, f5w wrong).
+# against the direct f5w arm, kd5_u70 at u70 (b = ta right, f5w wrong).
 #   ~/tfenv/bin/python report_r2.py
 import csv
 import glob
@@ -64,6 +64,8 @@ rows += [row(k, refs[k], u, 'reference') for k, u in (('round2_teacher', 140), (
 by = {(r['arm'], r['units']): r for r in rows}
 for r in rows:
     other = by.get(('f5w', r['units'])) if r['arm'] == 'ta' else None
+    if r['arm'] == 'ta' and other is None and r['units'] == 70:
+        other = next(o for o in rows if o['run'] == 'kd5_u70')     # direct-from-f5w control at u70
     if other is not None:
         r['ta_vs_f5w_b'], r['ta_vs_f5w_c'], r['ta_vs_f5w_p'] = mcnemar(r['correct'], other['correct'])
 for r in rows:
