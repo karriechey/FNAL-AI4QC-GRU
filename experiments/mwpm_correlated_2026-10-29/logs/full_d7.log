@@ -1,0 +1,42 @@
+[mwpm] wall 7.7 s  cpu 7.7 s  build 0.01 s  decode 7.7 s (4.3 us/shot)  peak RSS 655 MiB (no-op child 646 MiB)
+[mwpm_correlated] wall 22.7 s  cpu 22.6 s  build 0.01 s  decode 22.6 s (12.6 us/shot)  peak RSS 648 MiB (no-op child 646 MiB)
+{
+ "d": 7,
+ "n_shots": 1800000,
+ "uncorrelated_equals_stored_mwpm": true,
+ "errors": {
+  "mwpm": 7724,
+  "mwpm_correlated": 4290,
+  "gru": 4878
+ },
+ "x_mwpm": {
+  "gru_over_mwpm": 0.6315380631796997,
+  "gru_over_mwpm_correlated": 1.1370629370629373,
+  "mwpm_correlated_over_mwpm": 0.5554117037804246
+ },
+ "relative_improvement_pct": {
+  "gru_vs_mwpm": 36.84619368203003,
+  "gru_vs_mwpm_correlated": -13.706293706293726,
+  "mwpm_correlated_vs_mwpm": 44.45882962195754
+ },
+ "mcnemar": {
+  "gru_vs_mwpm_correlated": {
+   "b_A_right_B_wrong": 2060,
+   "c_B_right_A_wrong": 2648,
+   "n_disc": 4708,
+   "p_exact": 1.0715112816690482e-17
+  },
+  "gru_vs_mwpm": {
+   "b_A_right_B_wrong": 4846,
+   "c_B_right_A_wrong": 2000,
+   "n_disc": 6846,
+   "p_exact": 4.7753183529917025e-267
+  },
+  "mwpm_correlated_vs_mwpm": {
+   "b_A_right_B_wrong": 5002,
+   "c_B_right_A_wrong": 1568,
+   "n_disc": 6570,
+   "p_exact": 0.0
+  }
+ }
+}

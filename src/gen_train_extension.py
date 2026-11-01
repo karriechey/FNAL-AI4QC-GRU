@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # from FNAL-QCDecoding-FPGA/gen_train_extension.py @ d5ee86f
 # Created: 2026-08-21
-# Last modified: 2026-09-30 (--compact: detection events only, bit-packed; --formal: a primary pool with the FORMAL partitions, for new p values).
+# Last modified: 2026-10-29 (--basis x: X-basis memory, file tag _X_; --evts-only: detection events and flips, no measurements, also for --formal). Earlier 2026-09-30 (--compact: detection events only, bit-packed; --formal: a primary pool with the FORMAL partitions, for new p values).
 # Earlier 2026-09-25 (build_circuit from circuit_generators)
 
 """Generate a training-only pool: every shot is training data, no reserved blocks.
@@ -40,6 +40,9 @@ def main():
     ap.add_argument('--formal', action='store_true',
                     help='write a primary FORMAL pool (full format) with the partitions of '
                          'configs/partitions.yaml')
+    ap.add_argument('--basis', choices=('z', 'x'), default='z')
+    ap.add_argument('--evts-only', action='store_true',
+                    help='store detection events + flips, no measurements (serves the GRU on evts)')
     args = ap.parse_args()
     if args.formal and args.compact:
         raise SystemExit('[ext] --formal pools keep the full format; drop --compact')
@@ -52,11 +55,12 @@ def main():
 
     d, p, r = args.d, args.p, args.rounds
     os.makedirs(args.out_dir, exist_ok=True)
-    fn = os.path.join(args.out_dir, f'data_d{d}_p{p:.3f}_r{r}_{args.tag}_seed{args.gen_seed}.npz')
+    btag = '_X' if args.basis == 'x' else ''
+    fn = os.path.join(args.out_dir, f'data_d{d}_p{p:.3f}_r{r}{btag}_{args.tag}_seed{args.gen_seed}.npz')
     if os.path.exists(fn):
         raise SystemExit(f"[ext] {fn} exists -- refusing to overwrite.")
 
-    circ = build_circuit(d, p, r)
+    circ = build_circuit(d, p, r, basis=args.basis)
     print(f"[ext] d={d} p={p} rounds={r}: {circ.num_detectors} detectors, "
           f"{r * (d ** 2 - 1) + d ** 2} measurements, gen_seed={args.gen_seed}")
 
@@ -71,8 +75,12 @@ def main():
         measurements, det_evts, flips = sample_pool(circ, args.n, args.gen_seed)
         print(f"[ext] sampled {args.n:,} shots in {(time.time() - t0) / 60:.1f} min  "
               f"meas{measurements.shape} det{det_evts.shape}", flush=True)
-        np.savez(fn, measurements=measurements, det_evts=det_evts, flips=flips)
+        if args.evts_only:
+            np.savez(fn, det_evts=det_evts, flips=flips)
+        else:
+            np.savez(fn, measurements=measurements, det_evts=det_evts, flips=flips)
         meas_shape, det_shape = str(measurements.shape), str(det_evts.shape)
+        del measurements
     size_gb = os.path.getsize(fn) / 1024 ** 3
     flips_sha = hashlib.sha256(np.ascontiguousarray(flips).tobytes()).hexdigest()
 
@@ -84,8 +92,10 @@ def main():
                 protocol='Training-only augmentation pool. Every shot is training data; '
                          'no validation, evaluation or sealed region exists here. The '
                          'primary pool supplies all three of those and is unmodified.',
+                basis=args.basis,
                 format=('compact: det_evts_packed (np.packbits axis=1), n_det, flips'
-                        if args.compact else 'full: measurements, det_evts, flips'),
+                        if args.compact else 'evts-only: det_evts, flips' if args.evts_only
+                        else 'full: measurements, det_evts, flips'),
                 measurements_shape=meas_shape,
                 det_evts_shape=det_shape,
                 base_rate=round(float(flips.mean()), 5),

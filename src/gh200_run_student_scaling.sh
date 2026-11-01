@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # from FNAL-QCDecoding-FPGA/gh200_run_student_scaling.sh @ d5ee86f
 # Created: 2026-08-19
-# Last updated: 2026-10-18 (TEACHER_WEIGHTS/UNITS/PARAMS, SAVE_EPOCHS_FROM). Earlier 2026-10-11 (FRESH_SEED_BASE: first Stim seed of the fresh shots, for replicates on different shots; tag _fsb<base> when set). Earlier 2026-10-09 (FRESH_SHOTS=<n>: n new Stim shots per epoch replace the training array; needs NTRAIN=0 and no EXTRA_POOL; tag _fresh<n>). Earlier 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
+# Last updated: 2026-10-29 (pools without measurements; QEC_BASIS passes through the environment). Earlier 2026-10-21 (STOP_AFTER_STEPS, SKIP_TAIL_EVAL). Earlier 2026-10-18 (TEACHER_WEIGHTS/UNITS/PARAMS, SAVE_EPOCHS_FROM). Earlier 2026-10-11 (FRESH_SEED_BASE: first Stim seed of the fresh shots, for replicates on different shots; tag _fsb<base> when set). Earlier 2026-10-09 (FRESH_SHOTS=<n>: n new Stim shots per epoch replace the training array; needs NTRAIN=0 and no EXTRA_POOL; tag _fresh<n>). Earlier 2026-10-06 (ALPHA, TEMPERATURE, TEACHER_MODEL: distillation from a saved GRU teacher; tag _kd<alpha>). Earlier 2026-10-05 (UNITS may list several widths, e.g. "280 280": stacked GRU layers; tag u280x280). Earlier 2026-10-03 (LR_WARMUP_EPOCHS, EMA_DECAY, WARM_START, MAX_PARAMS). Earlier 2026-09-30 (run tag and default OUT carry p, e.g. p003; p004 as before). Earlier 2026-09-29 (RESUME_WEIGHTS, INITIAL_EPOCH, RESUME_BEST_JSON, RESUME_HISTORY). Earlier 2026-09-27 (partitions and pool path read from configs/*.yaml; RESET_AFTER, UNROLL, TRAIN_NO_TF32, EVAL_NO_TF32; several EXTRA_POOL; LR_SCHEDULE, LR_END, GLOBAL_CLIPNORM)
 #
 # Student distance scaling at p=0.004 on grace1 (GH200). Hard labels, batch 10,000,
 # seeds 0/1/2, fixed epoch budget with validation-based checkpoint selection.
@@ -59,6 +59,12 @@ TEACHER_UNITS="${TEACHER_UNITS:-}"
 TEACHER_PARAMS="${TEACHER_PARAMS:-}"
 # SAVE_EPOCHS_FROM=<n>: every epoch from n in seed<S>/epochs/ (snapshot_epochs.py layout)
 SAVE_EPOCHS_FROM="${SAVE_EPOCHS_FROM:-}"
+# STOP_AFTER_STEPS=<n>: stop after n updates; the LR schedule is still laid over all EPOCHS.
+# COMPLETE then expects n / steps-per-epoch epochs (FRESH_SHOTS runs). Default empty = off.
+STOP_AFTER_STEPS="${STOP_AFTER_STEPS:-}"
+# SKIP_TAIL_EVAL=1: no evaluation-block scoring of the best checkpoint after training
+# (scored later by the caller, or not at all). Default 0 = as before.
+SKIP_TAIL_EVAL="${SKIP_TAIL_EVAL:-0}"
 # FRESH_SHOTS=<n> trains on n NEW shots per epoch sampled from Stim during training
 # (train_student.py --fresh-shots-per-epoch, src/fresh_shots.py), so no training shot is seen
 # twice. Needs NTRAIN=0, no EXTRA_POOL and hard labels. FRESH_WORKERS sampling processes
@@ -227,7 +233,7 @@ N = z['det_evts'].shape[0]
 v1, e1 = v0 + vn, e0 + en
 print(f"[gru] pool {pool}")
 print(f"[gru] shots={N:,}  det_evts{z['det_evts'].shape}  "
-      f"measurements{z['measurements'].shape}")
+      f"measurements{z['measurements'].shape if 'measurements' in z.files else ' none (detection events only)'}")
 assert N >= sealed, f"pool holds {N:,} shots, sealed block starts at {sealed:,}"
 assert ntr <= v0, f"training prefix [0, {ntr:,}) overlaps validation at {v0:,}"
 assert v1 <= e0, f"validation [{v0:,}, {v1:,}) overlaps evaluation at {e0:,}"
@@ -341,7 +347,8 @@ printf -v GEOMETRY '%s\n%s\n%s\n%s' \
   echo "quantization : weights=${W_BITS:-float32} activations=${A_BITS:-float32}"
   echo "extension    : ${EXTRA_POOL:-none} n=${EXTRA_N:-all}"
   echo "fresh shots  : ${FRESH_SHOTS:-none} per epoch (new Stim shots every epoch; ${FRESH_WORKERS} workers; seed base ${FRESH_SEED_BASE:-default 10**12})"
-  echo "selection    : min val_loss checkpoint, scored once on the evaluation block"
+  echo "selection    : min val_loss checkpoint, $([ "$SKIP_TAIL_EVAL" = 1 ] && echo "not scored here (SKIP_TAIL_EVAL)" || echo "scored once on the evaluation block")"
+  echo "stop after   : ${STOP_AFTER_STEPS:-none} updates (schedule over $EPOCHS epochs)"
   if [ "$STUDENT" = "mlp" ]; then
     echo "reading      : size-matched feed-forward comparison against the GRU at this"
     echo "             : distance. A gap measures that the architectures degrade"
@@ -389,6 +396,14 @@ if [ -n "$TEACHER_WEIGHTS" ]; then
 fi
 [ -n "$FRESH_SHOTS" ] && TRAIN_ONLY+=(--fresh-shots-per-epoch "$FRESH_SHOTS" --fresh-workers "$FRESH_WORKERS")
 [ -n "$FRESH_SEED_BASE" ] && TRAIN_ONLY+=(--fresh-seed-base "$FRESH_SEED_BASE")
+EXPECT_EPOCHS=$EPOCHS
+if [ -n "$STOP_AFTER_STEPS" ]; then
+  [ -n "$FRESH_SHOTS" ] || { echo "[gru] STOP_AFTER_STEPS needs FRESH_SHOTS (steps per epoch). STOP."; exit 1; }
+  TRAIN_ONLY+=(--stop-after-steps "$STOP_AFTER_STEPS")
+  SPE=$((FRESH_SHOTS / BATCH))
+  EXPECT_EPOCHS=$(( (STOP_AFTER_STEPS + SPE - 1) / SPE ))
+  [ "$EXPECT_EPOCHS" -lt "$EPOCHS" ] || EXPECT_EPOCHS=$EPOCHS
+fi
 
 if [ -n "$RESUME_WEIGHTS" ]; then
   TRAIN_ONLY+=(--resume-weights "$RESUME_WEIGHTS" --initial-epoch "$INITIAL_EPOCH")
@@ -462,7 +477,7 @@ run_seed () {
     # Ratio of record: MWPM decoded on these shots, paired shot by shot.
     # train_student.py suppresses its own MWPM column under --eval-start.
     # Scores the min-val_loss checkpoint, never the final-epoch weights.
-    "$PY" eval_student_on_tail.py "${ARCH[@]}" "${EVAL_TF32[@]}" \
+    [ "$SKIP_TAIL_EVAL" = "1" ] || "$PY" eval_student_on_tail.py "${ARCH[@]}" "${EVAL_TF32[@]}" \
       --weights "$SCKPT/$TAG.best.weights.h5" \
       --d "$D" --p "$P" --rounds "$ROUNDS" \
       --pool "$POOL" --eval-start "$EVAL_START" --n-test "$EVAL_N" \
@@ -472,9 +487,11 @@ run_seed () {
     # A seed counts as complete only when all of it landed: the full epoch budget in the
     # history, the best checkpoint, its own row in the eval CSV, and the per-shot dump.
     # Downstream readers key on this file, so a truncated run can never steer a decision.
-    "$PY" - "$SRUNS" "$SCKPT" "$SEEDDIR" "$TAG" "$EPOCHS" <<'PYDONE'
+    "$PY" - "$SRUNS" "$SCKPT" "$SEEDDIR" "$TAG" "$EXPECT_EPOCHS" "$SKIP_TAIL_EVAL" <<'PYDONE'
 import csv, json, os, sys
 runs, ckpt, seeddir, tag, epochs = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5])
+skip_eval = sys.argv[6] == '1'
+
 problems = []
 hist = os.path.join(runs, tag + '.history.json')
 if not os.path.exists(hist):
@@ -489,12 +506,14 @@ if not os.path.exists(best):
     problems.append('best checkpoint missing')
 ev = os.path.join(seeddir, 'eval_best_ckpt.csv')
 want = tag + '.best.weights.h5'
-if not os.path.exists(ev):
+dump = os.path.join(seeddir, f'per_shot_{tag}.npz')
+if skip_eval:
+    pass
+elif not os.path.exists(ev):
     problems.append('eval csv missing')
 elif not any(r['weights'] == want for r in csv.DictReader(open(ev))):
     problems.append(f'no eval row for {want}')
-dump = os.path.join(seeddir, f'per_shot_{tag}.npz')
-if not os.path.exists(dump):
+if not skip_eval and not os.path.exists(dump):
     problems.append('per-shot dump missing')
 if problems:
     print('[complete] NOT complete: ' + '; '.join(problems))
@@ -547,5 +566,5 @@ fi
 echo
 echo "[gru] done  d=$D r=$ROUNDS  seeds: $SEEDS  parallel=$PARALLEL  wall ${WALL}s"
 echo "[gru]   per-seed output -> $OUT/seed<N>/{runs,ckpt,run.log,eval_best_ckpt.csv}"
-grep -h '' "$OUT"/seed*/eval_best_ckpt.csv 2>/dev/null | sort -u | head -20
+grep -h '' "$OUT"/seed*/eval_best_ckpt.csv 2>/dev/null | sort -u | head -20 || true
 exit $rc

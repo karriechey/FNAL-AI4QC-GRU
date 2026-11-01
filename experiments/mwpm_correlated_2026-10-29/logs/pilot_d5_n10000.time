@@ -1,0 +1,23 @@
+	Command being timed: "/home/kchey/tfenv/bin/python compare_mwpm.py --d 5 --dump /home/kchey/FNAL-AI4QC-GRU-kd/experiments/kd_pilot_p004_2026-10/teacher_check/d5/teacher_eval_per_shot.npz --gru f5w_p004 --n 10000"
+	User time (seconds): 9.32
+	System time (seconds): 0.07
+	Percent of CPU this job got: 910%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.03
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 258048
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 5
+	Minor (reclaiming a frame) page faults: 9390
+	Voluntary context switches: 518
+	Involuntary context switches: 337
+	Swaps: 0
+	File system inputs: 75592
+	File system outputs: 1024
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 65536
+	Exit status: 0

@@ -1,0 +1,164 @@
+# Created: 2026-10-27
+# Last modified: 2026-10-27 (curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
+# Threshold figure: MWPM logical error rate vs p from the sinter sweep, GRU test-set results
+# as stars. Every point is a counted simulation result; the dashed fit lines are a guide only.
+#   python figures/threshold_figure.py
+import csv
+import json
+from collections import defaultdict
+from math import ceil, log
+from pathlib import Path
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import brentq
+
+import poster_style
+
+ROOT = Path(__file__).resolve().parents[1]
+SWEEP = ROOT / "experiments" / "threshold_sweep_2026-10-27"
+OUT = ROOT / "figures" / "output"
+
+MIN_ERRORS = 100                  # points below this are left out of the plot and the fit
+BAND_LIKELIHOOD_RATIO = 1000      # same band definition as sinter's plots
+OPERATING_P = 0.004
+
+COLORS = poster_style.DIST
+STAR_EDGE = "#1A1A1A"
+STYLES = {3: "-", 5: "-.", 7: ":", 9: (0, (3, 1, 1, 1, 1, 1)), 11: (0, (8, 2, 1, 2))}
+
+# GRU test-set rows: (d, p) -> (result file, row filter). The d9 p=0.004 headline is f3280e240;
+# f7w_p004 was scored by its launcher, not by eval_selected.sh (protocol/selection_rule.md).
+# d9 p=0.003 (f9w_p003) is left out: its headline model is undecided (240 epochs not converged).
+GRU_SOURCES = {
+    (5, 0.003): (ROOT / "protocol/eval_selected.csv", "f5w_p003_"),
+    (5, 0.004): (ROOT / "protocol/eval_selected.csv", "f5w_p004_"),
+    (5, 0.005): (ROOT / "protocol/eval_selected.csv", "f5w_p005_"),
+    (7, 0.003): (ROOT / "protocol/eval_selected.csv", "f7w_p003_"),
+    (7, 0.004): (SWEEP / "gru_test_f7w_p004_eval_best_ckpt.csv", "f7w_p004_"),
+    (7, 0.005): (ROOT / "protocol/eval_selected.csv", "f7w_p005_"),
+    (9, 0.004): (ROOT / "protocol/eval_selected.csv", "f3280e240_"),
+    (9, 0.005): (ROOT / "protocol/eval_selected.csv", "f9w_p005_"),
+}
+
+
+def load_sweep(path):
+    # sinter appends one row per batch; sum them per (d, p)
+    agg = defaultdict(lambda: [0, 0, 0.0])
+    for r in csv.DictReader(open(path), skipinitialspace=True):
+        m = json.loads(r["json_metadata"])
+        a = agg[m["d"], m["p"]]
+        a[0] += int(r["shots"])
+        a[1] += int(r["errors"])
+        a[2] += float(r["seconds"])
+    return {k: dict(shots=v[0], errors=v[1], cpu_s=v[2]) for k, v in agg.items()}
+
+
+def likelihood_band(errors, shots, ratio=BAND_LIKELIHOOD_RATIO):
+    p_hat = errors / shots
+    ll = lambda q: errors * log(q) + (shots - errors) * log(1 - q)
+    target = ll(p_hat) - log(ratio)
+    lo = brentq(lambda q: ll(q) - target, 1e-15, p_hat) if errors > 0 else 0.0
+    hi = brentq(lambda q: ll(q) - target, p_hat, 1 - 1e-12)
+    return lo, hi
+
+
+def fit_threshold(points):
+    # log P_L - k log p = log A - k log p_th, k = ceil(d/2): linear least squares in (log A, log p_th),
+    # weighted by the error count (var of log P_L ~ 1/errors); refit on points below the new p_th
+    p_th = 0.01
+    for _ in range(50):
+        rows = [(d, p, v) for (d, p), v in points.items() if p < p_th]
+        k = np.array([ceil(d / 2) for d, _, _ in rows], float)
+        y = np.array([log(v["errors"] / v["shots"]) - kk * log(p) for (_, p, v), kk in zip(rows, k)])
+        w = np.sqrt([v["errors"] for _, _, v in rows])
+        X = np.column_stack([np.ones_like(k), -k])
+        (log_a, log_pth), *_ = np.linalg.lstsq(X * w[:, None], y * w, rcond=None)
+        if abs(np.exp(log_pth) - p_th) < 1e-9:
+            break
+        p_th = float(np.exp(log_pth))
+    return float(np.exp(log_a)), p_th, len(rows)
+
+
+def load_gru():
+    stars = []
+    for (d, p), (path, run_prefix) in GRU_SOURCES.items():
+        hits = [r for r in csv.DictReader(open(path))
+                if f"/{run_prefix}" in r["weights_path"] and int(r["d"]) == d
+                and abs(float(r["p"]) - p) < 1e-9]
+        if len(hits) != 1:
+            raise SystemExit(f"{run_prefix} d={d} p={p}: {len(hits)} rows in {path}")
+        r = hits[0]
+        stars.append(dict(d=d, p=p, gru=float(r["p_L"]), mwpm=float(r["mwpm_p_L"]),
+                          n=int(r["n_test"]), source=str(path.relative_to(ROOT)),
+                          weights=r["weights_path"]))
+    return stars
+
+
+def plot(points, stars, a_fit, p_th):
+    fig, ax = plt.subplots(figsize=(14.25, 6.0))
+    ax.axvline(OPERATING_P, color="0.6", lw=0.8, zorder=0)
+    for d in sorted({d for d, _ in points}):
+        ps = sorted(p for dd, p in points if dd == d)
+        v = [points[d, p] for p in ps]
+        pl = [x["errors"] / x["shots"] for x in v]
+        band = np.array([likelihood_band(x["errors"], x["shots"]) for x in v])
+        c = COLORS[d]
+        ax.fill_between(ps, band[:, 0], band[:, 1], color=c, alpha=0.15, lw=0, zorder=1)
+        ax.plot(ps, pl, color=c, ls=STYLES[d], lw=2, marker="o", ms=4, mfc=c, mec=c, zorder=2)
+        ax.annotate(f"$d$ = {d}", (ps[0], pl[0]), textcoords="offset points", xytext=(-8, 0),
+                    ha="right", va="center", color=c, fontsize=poster_style.CURVE_LABEL_PT)
+        # guide only over this d's own measured range, and only below threshold
+        p_guide = np.geomspace(min(ps), min(max(ps), p_th), 100)
+        ax.plot(p_guide, a_fit * (p_guide / p_th) ** ceil(d / 2), color=c, ls=(0, (5, 4)), lw=1,
+                zorder=1)
+    for s in stars:
+        ax.plot(s["p"], s["gru"], marker="*", ms=26, color=COLORS[s["d"]], mec=STAR_EDGE, mew=1,
+                ls="none", zorder=4)
+
+    handles = [plt.Line2D([], [], marker="*", ms=26, color="0.35", mec=STAR_EDGE, mew=1, ls="none"),
+                plt.Line2D([], [], color="0.35", ls=(0, (5, 4)), lw=1)]
+    ax.legend(handles, ["GRU", "fit"], loc="upper left", frameon=False, handlelength=2.6)
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlim(7.2e-4, 1.65e-2)  # room for the curve labels left of p = 0.001
+    x_ticks = [0.001, 0.002, 0.004, 0.008, 0.015]
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels([f"{t:g}" for t in x_ticks])
+    ax.set_xlabel("physical error rate $p$")
+    ax.set_ylabel("logical error rate $P_L$")
+    fig.tight_layout()
+    return fig
+
+
+if __name__ == "__main__":
+    sweep = load_sweep(SWEEP / "sinter_stats.csv")
+    points = {k: v for k, v in sweep.items() if v["errors"] >= MIN_ERRORS}
+    skipped = sorted(k for k in sweep if k not in points)
+    a_fit, p_th, n_fit = fit_threshold(points)
+    stars = load_gru()
+
+    poster_style.apply()
+    fig = plot(points, stars, a_fit, p_th)
+    OUT.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT / "fig_threshold.png", dpi=300, facecolor="white")
+    fig.savefig(OUT / "fig_threshold_transparent.png", dpi=300, transparent=True)
+
+    summary = dict(p_th=p_th, A=a_fit, points_in_fit=n_fit, skipped_below_100_errors=skipped,
+                   total_shots=sum(v["shots"] for v in sweep.values()),
+                   total_cpu_s=sum(v["cpu_s"] for v in sweep.values()),
+                   gru=[dict(s, ratio=s["gru"] / s["mwpm"]) for s in stars])
+    json.dump(summary, open(OUT / "fig_threshold_summary.json", "w"), indent=1, default=list)
+    with open(OUT / "fig_threshold_points.csv", "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["d", "p", "shots", "errors", "P_L", "cpu_s", "plotted", "in_fit"])
+        for (d, p), v in sorted(sweep.items()):
+            w.writerow([d, p, v["shots"], v["errors"], f"{v['errors'] / v['shots']:.4e}",
+                        round(v["cpu_s"], 1), (d, p) in points, (d, p) in points and p < p_th])
+    print(f"p_th = {p_th:.5f}  A = {a_fit:.4f}  ({n_fit} points in fit); skipped {skipped}")
+    for s in stars:
+        print(f"d={s['d']} p={s['p']}: GRU {s['gru']:.6f} MWPM {s['mwpm']:.6f} "
+              f"ratio {s['gru'] / s['mwpm']:.3f}  {s['source']}  {s['weights']}")

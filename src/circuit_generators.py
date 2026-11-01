@@ -1,11 +1,24 @@
 # from FNAL-QCDecoding-FPGA/circuit_generators.py @ d5ee86f
-# Last modified: 2026-09-25 (added build_circuit, the single noise-model definition)
+# Last modified: 2026-10-29 (build_circuit basis: 'z' default, 'x' for X-basis memory; QEC_BASIS env when not passed)
+# Earlier 2026-09-25 (added build_circuit, the single noise-model definition)
 """
 These are a bunch of example functions to generate circuits.
 Add more as needed.
 """
 
+import os
+
 import stim # Quantum circuit simulator
+
+BASES = ('z', 'x')
+
+
+def current_basis(basis=None):
+  # explicit argument, else QEC_BASIS (set by the X-basis launchers), else 'z'
+  b = (basis or os.environ.get('QEC_BASIS') or 'z').lower()
+  if b not in BASES:
+    raise ValueError(f'basis {b!r} not in {BASES}')
+  return b
 
 
 def get_builtin_circuit(builtin_name, distance, rounds, **noise_args):
@@ -126,7 +139,7 @@ def get_custom_circuit(circuit):
   return circuit
 
 
-def build_circuit(d, p, rounds):
+def build_circuit(d, p, rounds, basis=None):
   """
   The one noise-model definition for this repo: Stim's rotated surface-code Z-memory
   circuit with all four noise channels set to the same p.
@@ -139,6 +152,6 @@ def build_circuit(d, p, rounds):
     stim.Circuit
   """
   return get_builtin_circuit(
-    'surface_code:rotated_memory_z', distance=d, rounds=rounds,
+    f'surface_code:rotated_memory_{current_basis(basis)}', distance=d, rounds=rounds,
     before_round_data_depolarization=p, after_reset_flip_probability=p,
     after_clifford_depolarization=p, before_measure_flip_probability=p)

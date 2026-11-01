@@ -1,5 +1,5 @@
 # Created: 2026-10-14
-# Last modified: 2026-10-14
+# Last modified: 2026-10-29 (pool d, p and basis checked before scoring). Earlier 2026-10-14
 
 """Score checkpoints on the selection block FORMAL [0, 10M) (protocol/selection_rule.md).
 
@@ -60,6 +60,8 @@ if not todo:
     sys.exit(0)
 
 import pool_rows as PR
+import partitions as P
+P.check_pool_geometry(args.pool, d, p, d)       # d, p and basis (QEC_BASIS) of the pool
 truth = PR.rows(args.pool, 'flips', SEL_START, SEL_STOP).astype(np.int8).reshape(-1)
 det = PR.rows(args.pool, 'det_evts', SEL_START, SEL_STOP)
 

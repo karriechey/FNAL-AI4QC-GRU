@@ -1,0 +1,99 @@
+{
+ "p_th": 0.007163500157562366,
+ "A": 0.04074952688844453,
+ "points_in_fit": 43,
+ "skipped_below_100_errors": [
+  [
+   11,
+   0.001
+  ],
+  [
+   11,
+   0.001279
+  ]
+ ],
+ "total_shots": 749499979,
+ "total_cpu_s": 5763.651999999993,
+ "gru": [
+  {
+   "d": 5,
+   "p": 0.003,
+   "gru": 0.002038,
+   "mwpm": 0.003261,
+   "n": 1800000,
+   "source": "protocol/eval_selected.csv",
+   "weights": "/home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f5w_p003_u280_20261014T133806Z/seed0/epochs/epoch078.weights.h5",
+   "ratio": 0.6249616681999386
+  },
+  {
+   "d": 5,
+   "p": 0.004,
+   "gru": 0.004923,
+   "mwpm": 0.007571,
+   "n": 1800000,
+   "source": "protocol/eval_selected.csv",
+   "weights": "/home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f5w_p004_u280_20261014T035415Z/seed0/ckpt/gru_d5_p004_u280_fresh100000000_cos3e-5_gclip0.64_hard_seed0_ntr0_b10000.lastepoch.weights.h5",
+   "ratio": 0.6502443534539691
+  },
+  {
+   "d": 5,
+   "p": 0.005,
+   "gru": 0.00953,
+   "mwpm": 0.014049,
+   "n": 1800000,
+   "source": "protocol/eval_selected.csv",
+   "weights": "/home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f5w_p005_u280_20261015T185141Z/seed0/epochs/epoch078.weights.h5",
+   "ratio": 0.6783400953804541
+  },
+  {
+   "d": 7,
+   "p": 0.003,
+   "gru": 0.000842,
+   "mwpm": 0.001363,
+   "n": 1800000,
+   "source": "protocol/eval_selected.csv",
+   "weights": "/home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f7w_p003_u280x280_20261014T133821Z/seed0/epochs/epoch075.weights.h5",
+   "ratio": 0.6177549523110785
+  },
+  {
+   "d": 7,
+   "p": 0.004,
+   "gru": 0.00271,
+   "mwpm": 0.004291,
+   "n": 1800000,
+   "source": "experiments/threshold_sweep_2026-10-27/gru_test_f7w_p004_eval_best_ckpt.csv",
+   "weights": "/home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f7w_p004_u280x280_20261014T035645Z/seed0/ckpt/gru_d7_p004_u280x280_fresh100000000_cos3e-5_wu3_gclip0.64_hard_seed0_ntr0_b10000.best.weights.h5",
+   "ratio": 0.6315544162199954
+  },
+  {
+   "d": 7,
+   "p": 0.005,
+   "gru": 0.006088,
+   "mwpm": 0.010025,
+   "n": 1800000,
+   "source": "protocol/eval_selected.csv",
+   "weights": "/home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f7w_p005_u280x280_20261015T185201Z/seed0/epochs/epoch080.weights.h5",
+   "ratio": 0.607281795511222
+  },
+  {
+   "d": 9,
+   "p": 0.004,
+   "gru": 0.001413,
+   "mwpm": 0.002267,
+   "n": 1800000,
+   "source": "protocol/eval_selected.csv",
+   "weights": "/home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f3280e240_u280x280x280_20261011T064457Z/seed0/ckpt/gru_d9_p004_u280x280x280_fresh100000000_cos3e-5_wu3_gclip0.64_hard_seed0_ntr0_b10000.lastepoch.weights.h5",
+   "ratio": 0.623290692545214
+  },
+  {
+   "d": 9,
+   "p": 0.005,
+   "gru": 0.003971,
+   "mwpm": 0.006792,
+   "n": 1800000,
+   "source": "protocol/eval_selected.csv",
+   "weights": "/home/kchey/FNAL-AI4QC-GRU-fresh2/experiments/ceiling_probe_d7_2026-10-05/f9w_p005_u280x280x280_20261016T155243Z/seed0/epochs/epoch240.weights.h5",
+   "ratio": 0.5846584216725559
+  }
+ ]
+}

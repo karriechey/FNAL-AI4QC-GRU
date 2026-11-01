@@ -1,5 +1,5 @@
 # Created: 2026-09-25
-# Last updated: 2026-10-19 (d5 pilot seed base extended to 160 epochs). Earlier 2026-10-18 (fresh_seed_ranges). Earlier 2026-10-16 (FORMAL pools d5 p = 0.005 seed 62 and d9 p = 0.005 seed 63, from
+# Last updated: 2026-10-29 (X-basis FORMAL pools, seeds 64-66, detection events only, on /tmp; fresh seed bases 12e12-14e12 for the X-basis teachers). Earlier 2026-10-28 (fresh seed bases 6e12-11e12 for depth_vs_distance). Earlier 2026-10-26 (d9 pilot seed base extended to 240 epochs for kd9_3x134). Earlier 2026-10-19 (d5 pilot seed base extended to 160 epochs). Earlier 2026-10-18 (fresh_seed_ranges). Earlier 2026-10-16 (FORMAL pools d5 p = 0.005 seed 62 and d9 p = 0.005 seed 63, from
 # experiments/pools_p005_2026-10-15/generate.sh). Before that 2026-10-14 (FORMAL pools d5 p = 0.003 seed 60 and d9 p = 0.003 seed 61, from
 # experiments/pools_p003_2026-10-14/generate.sh). Earlier 2026-10-06 (the single complete record of every pool: all FORMAL and TRAINONLY
 # pools for d = 5, 7, 9 and p = 0.003, 0.004, 0.005 with seeds, sizes, formats and flips
@@ -116,6 +116,15 @@ pools:
   - {d: 9, p: 0.003, gen_seed: 61, n_total: 19000000, kind: formal, format: full,
      flips_sha256: e7e06487d59b8d63ef66d0714032c893d7d646f04e1282b31d5ed37abc7da187,
      path: "~/pools_d9_p003_19M/data_d9_p0.003_r9_FORMAL_seed61.npz"}
+  # X-basis memory (surface_code:rotated_memory_x), detection events and flips only (no
+  # measurements), FORMAL layout; on /tmp because /home was full (2026-10-29). flips_sha256 is
+  # in each .fingerprint.json.
+  - {d: 5, p: 0.004, gen_seed: 64, n_total: 19000000, kind: formal, format: evts-only, basis: x,
+     path: "/tmp/kchey_xbasis/pools/data_d5_p0.004_r5_X_FORMAL_seed64.npz"}
+  - {d: 7, p: 0.004, gen_seed: 65, n_total: 19000000, kind: formal, format: evts-only, basis: x,
+     path: "/tmp/kchey_xbasis/pools/data_d7_p0.004_r7_X_FORMAL_seed65.npz"}
+  - {d: 9, p: 0.004, gen_seed: 66, n_total: 19000000, kind: formal, format: evts-only, basis: x,
+     path: "/tmp/kchey_xbasis/pools/data_d9_p0.004_r9_X_FORMAL_seed66.npz"}
 
 # Held-out blocks: separate files, every shot sealed (partitions.sealed_block covers the whole
 # file; scoring needs eval_student_on_tail.py --score-sealed and is logged). Not scored.
@@ -152,7 +161,17 @@ fresh_seed_ranges:
   - {base: 2000000000000, max_epochs: 160, used_by: "f3280s1 (d9 p 0.004)"}
   - {base: 3000000000000, max_epochs: 160, used_by: "kd_pilot_p004 d5 (80-epoch runs and the u70 e160 pair)"}
   - {base: 4000000000000, max_epochs: 80, used_by: "kd_pilot_p004 d7"}
-  - {base: 5000000000000, max_epochs: 160, used_by: "kd_pilot_p004 d9"}
+  - {base: 5000000000000, max_epochs: 240,
+     used_by: "kd_pilot_p004 d9 and d9_deep_students (160-epoch runs; kd9_3x134 at 240)"}
+  - {base: 6000000000000, max_epochs: 80, used_by: "depth_vs_distance d5 seed 0 (LR scan and L = 1-5)"}
+  - {base: 7000000000000, max_epochs: 80, used_by: "depth_vs_distance d7 seed 0 (LR scan and L = 1-5)"}
+  - {base: 8000000000000, max_epochs: 160, used_by: "depth_vs_distance d9 seed 0 (LR scan and L = 1-5)"}
+  - {base: 9000000000000, max_epochs: 80, used_by: "depth_vs_distance d5 seed 1"}
+  - {base: 10000000000000, max_epochs: 80, used_by: "depth_vs_distance d7 seed 1"}
+  - {base: 11000000000000, max_epochs: 160, used_by: "depth_vs_distance d9 seed 1"}
+  - {base: 12000000000000, max_epochs: 80, used_by: "xbasis_p004 d5 (X-basis memory)"}
+  - {base: 13000000000000, max_epochs: 80, used_by: "xbasis_p004 d7 (X-basis memory)"}
+  - {base: 14000000000000, max_epochs: 240, used_by: "xbasis_p004 d9 (X-basis memory)"}
 
 # Corrections to fields in the pool fingerprints (2026-10-06).
 fingerprint_notes:
