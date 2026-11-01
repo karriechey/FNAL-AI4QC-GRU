@@ -1,5 +1,5 @@
 # Created: 2026-10-27
-# Last modified: 2026-10-31 (note reworded; GRU vs MWPM improvement note with arrow, lower-is-better label, SVG output; 2026-10-28: Greek nu from DejaVu Sans, MWPM legend entry; sentence-case axis labels; finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
+# Last modified: 2026-10-31 (inset titled, p_th shown as 0.7%, inset axis labels spelled out; note reworded; GRU vs MWPM improvement note with arrow, lower-is-better label, SVG output; 2026-10-28: Greek nu from DejaVu Sans, MWPM legend entry; sentence-case axis labels; finite-size scaling collapse inset, PNGs to figures/poster; curve labels instead of distance legend, DIST colours; poster style: Helvetica, 18/15 pt; distance palette; d9 p=0.003 star removed; fit lines clipped to each d's data range)
 # Threshold figure: MWPM logical error rate vs p from the sinter sweep, GRU test-set results
 # as stars. Every point is a counted simulation result; the dashed fit lines are a guide only.
 #   python figures/threshold_figure.py
@@ -111,11 +111,14 @@ def add_collapse_inset(fig, c):
     ax.plot(xs, np.polyval(c["coef"][::-1], xs), color="0.35", lw=1, zorder=1)
     # Helvetica's nu looks like an italic v; \mathsf takes just that glyph from DejaVu Sans
     plt.rcParams["mathtext.sf"] = "DejaVu Sans:italic"
-    ax.text(0.04, 0.95, f"$p_{{th}}$ = {c['p_th']:.5f} $\\pm$ {c['p_th_err']:.5f}\n"
+    # one significant figure: the fit moves p_th over 0.69-0.76% across windows and minimum d
+    ax.text(0.04, 0.95, f"$p_{{\\mathrm{{th}}}} \\approx$ {100 * c['p_th']:.1f}%\n"
             f"$\\mathsf{{\\nu}}$ = {c['nu']:.2f} $\\pm$ {c['nu_err']:.2f}", transform=ax.transAxes,
             ha="left", va="top", fontsize=poster_style.TICK_PT)
-    ax.set_xlabel("$(p - p_{th})\\,d^{\\,1/\\mathsf{\\nu}}$", fontsize=poster_style.TICK_PT, labelpad=2)
-    ax.set_ylabel("$P_L$", fontsize=poster_style.TICK_PT, labelpad=2)
+    ax.set_xlabel("Scaled error rate $(p - p_{\\mathrm{th}})\\,d^{\\,1/\\mathsf{\\nu}}$",
+                  fontsize=poster_style.TICK_PT, labelpad=2)
+    ax.set_ylabel("$P_L$ (MWPM)", fontsize=poster_style.TICK_PT, labelpad=2)
+    ax.set_title("MWPM threshold estimate", fontsize=poster_style.TICK_PT, pad=4)
     ax.tick_params(labelsize=poster_style.TICK_PT)
     ax.locator_params(axis="both", nbins=4)
     return ax
