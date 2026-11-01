@@ -30,7 +30,7 @@ for d in sorted(glob.glob(os.path.join(HERE, 'keep', 'r2_*_2*'))):
 refs = {'kd5_u140': latest(os.path.join(PILOT, 'runs', 'kd5_u140_2*')),
         'kd5_u70': latest(os.path.join(PILOT, 'runs', 'kd5_u70_2*')),
         'hl5_u70': latest(os.path.join(PILOT, 'runs', 'hl5_u70_2*')),
-        'round2_teacher': os.path.dirname(choice['teacher_weights'])}
+        'round2_teacher': choice['teacher_dir']}
 if choice['r2_alpha'] == '0.0' and choice['r2_T'] == '1.0' and ('f5w', 70) not in runs:
     runs[('f5w', 70)] = refs['kd5_u70']
 
