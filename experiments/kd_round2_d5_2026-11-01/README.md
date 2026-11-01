@@ -14,6 +14,8 @@ Starts by itself when the alpha x T sweep (`../kd_sweep_d5_u140_2026-10-31`) fin
 - One student, 1 x GRU 70 (20,021 params, 3.5x fewer than u140), from the round-2 teacher. Chosen over
   other widths in 6k-35k: the pilot's kd5_u70 (directly from f5w_p004, alpha 0, T 1, same shots) already
   beats MWPM (0.810x) and is the control; u70 also has existing hls4ml synthesis to compare against.
+- Trade-off batch after u70: 1 x GRU 34 / 48 / 96 (6,053 / 10,561 / 34,945 params) from the same teacher,
+  run together, only if the u70 student beats MWPM and took at most 8 h.
 - Recipe, shots (seed base 3e12), checkpoint selection and eval block as the sweep.
 - `report_r2.py`: eval pL, x MWPM, McNemar vs kd5_u140 and vs kd5_u70.
 
