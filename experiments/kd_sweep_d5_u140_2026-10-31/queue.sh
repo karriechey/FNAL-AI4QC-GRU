@@ -13,7 +13,7 @@ mkdir -p /tmp/kchey_kdsweep/runs "$HERE/logs"
 say () { echo "[queue $(date -u +%FT%TZ)] $*"; }
 
 running () { pgrep -f "run_one.sh $1 $2\$" > /dev/null; }
-attempts () { grep -c "START $1 " "$LOG" 2>/dev/null || true; }
+attempts () { cat "$LOG" 2>/dev/null | grep -c "START $1 "; }
 
 while [ ! -f "$HERE/STOP" ]; do
   pending=0
