@@ -1,0 +1,240 @@
+{
+ "environment": {
+  "hls4ml_version": "1.4.0.dev+g1259e2b25",
+  "hls4ml_path": "/tmp/kchey_qat/hls4ml_main",
+  "hls4ml_commit": "1259e2b25ed082e000e749b8ba97b449f4e613a9",
+  "contains_5376da23e": true,
+  "hls4ml_local_changes": "none"
+ },
+ "n": 2000,
+ "variants": {
+  "t1024_18_8_default": {
+   "table_size": [
+    "1024"
+   ],
+   "table_t": [
+    "ap_fixed<18,8>"
+   ],
+   "n_tables": 12,
+   "table_bits_total": 221184,
+   "table_bram18k_if_in_bram": 12,
+   "gru": {
+    "mean_abs_err": 0.003530234700379692,
+    "p99_abs_err": 0.009340867549180985,
+    "max_abs_err": 0.04590681195259094
+   },
+   "gru_1": {
+    "mean_abs_err": 0.006238335178042806,
+    "p99_abs_err": 0.024676947668194775,
+    "max_abs_err": 0.09441453218460083
+   },
+   "gru_2": {
+    "mean_abs_err": 0.009601901310486436,
+    "p99_abs_err": 0.0673800751566887,
+    "max_abs_err": 1.17256098985672
+   },
+   "gru_3": {
+    "mean_abs_err": 0.008634123522415549,
+    "p99_abs_err": 0.07513805225491542,
+    "max_abs_err": 1.1063883304595947
+   },
+   "logit": {
+    "mean_abs_err": 0.129994211607147,
+    "p99_abs_err": 0.6218130588531494,
+    "max_abs_err": 2.8953027725219727
+   },
+   "decision_flips": 1,
+   "flips_abs_keras_logit_ge_0p2": 1
+  },
+  "t4096_18_8": {
+   "table_size": [
+    "4096"
+   ],
+   "table_t": [
+    "ap_fixed<18,8>"
+   ],
+   "n_tables": 12,
+   "table_bits_total": 884736,
+   "table_bram18k_if_in_bram": 48,
+   "gru": {
+    "mean_abs_err": 0.001175727182600552,
+    "p99_abs_err": 0.003587402626872063,
+    "max_abs_err": 0.018254637718200684
+   },
+   "gru_1": {
+    "mean_abs_err": 0.0026071504294825896,
+    "p99_abs_err": 0.012871478721499447,
+    "max_abs_err": 0.06284922361373901
+   },
+   "gru_2": {
+    "mean_abs_err": 0.00364574984203406,
+    "p99_abs_err": 0.025233964174985895,
+    "max_abs_err": 0.40451598167419434
+   },
+   "gru_3": {
+    "mean_abs_err": 0.0032401615059911688,
+    "p99_abs_err": 0.026223423033952715,
+    "max_abs_err": 0.2297452986240387
+   },
+   "logit": {
+    "mean_abs_err": 0.04362969165667892,
+    "p99_abs_err": 0.21116696834564205,
+    "max_abs_err": 0.43424808979034424
+   },
+   "decision_flips": 0,
+   "flips_abs_keras_logit_ge_0p2": 0
+  },
+  "t1024_32_16": {
+   "table_size": [
+    "1024"
+   ],
+   "table_t": [
+    "ap_fixed<32,16>"
+   ],
+   "n_tables": 12,
+   "table_bits_total": 393216,
+   "table_bram18k_if_in_bram": 24,
+   "gru": {
+    "mean_abs_err": 0.0034269437920911076,
+    "p99_abs_err": 0.00879919654224068,
+    "max_abs_err": 0.04513850808143616
+   },
+   "gru_1": {
+    "mean_abs_err": 0.0057572273252466276,
+    "p99_abs_err": 0.021795542538166048,
+    "max_abs_err": 0.08660203218460083
+   },
+   "gru_2": {
+    "mean_abs_err": 0.008753340100399704,
+    "p99_abs_err": 0.058722667396068594,
+    "max_abs_err": 1.13520747423172
+   },
+   "gru_3": {
+    "mean_abs_err": 0.007875375227117704,
+    "p99_abs_err": 0.06863334327936185,
+    "max_abs_err": 1.0424540042877197
+   },
+   "logit": {
+    "mean_abs_err": 0.12570990228652953,
+    "p99_abs_err": 0.5485917949676513,
+    "max_abs_err": 2.7544727325439453
+   },
+   "decision_flips": 1,
+   "flips_abs_keras_logit_ge_0p2": 1
+  },
+  "t4096_32_16": {
+   "table_size": [
+    "4096"
+   ],
+   "table_t": [
+    "ap_fixed<32,16>"
+   ],
+   "n_tables": 12,
+   "table_bits_total": 1572864,
+   "table_bram18k_if_in_bram": 96,
+   "gru": {
+    "mean_abs_err": 0.0009215682416887391,
+    "p99_abs_err": 0.0026024195738136775,
+    "max_abs_err": 0.018391966819763184
+   },
+   "gru_1": {
+    "mean_abs_err": 0.0017912663771916279,
+    "p99_abs_err": 0.007860217690467838,
+    "max_abs_err": 0.0280991792678833
+   },
+   "gru_2": {
+    "mean_abs_err": 0.0024531572475107425,
+    "p99_abs_err": 0.015124537870287896,
+    "max_abs_err": 0.30901122093200684
+   },
+   "gru_3": {
+    "mean_abs_err": 0.0021544405271679613,
+    "p99_abs_err": 0.01799732103943826,
+    "max_abs_err": 0.13924366235733032
+   },
+   "logit": {
+    "mean_abs_err": 0.028450996335595845,
+    "p99_abs_err": 0.13025455474853512,
+    "max_abs_err": 0.2833139896392822
+   },
+   "decision_flips": 0,
+   "flips_abs_keras_logit_ge_0p2": 0
+  },
+  "t1024_18_1_extra": {
+   "table_size": [
+    "1024"
+   ],
+   "table_t": [
+    "ap_fixed<18,1>"
+   ],
+   "n_tables": 12,
+   "table_bits_total": 221184,
+   "table_bram18k_if_in_bram": 12,
+   "gru": {
+    "mean_abs_err": 0.0034269437920911076,
+    "p99_abs_err": 0.00879919654224068,
+    "max_abs_err": 0.04513850808143616
+   },
+   "gru_1": {
+    "mean_abs_err": 0.0057572273252466276,
+    "p99_abs_err": 0.021795542538166048,
+    "max_abs_err": 0.08660203218460083
+   },
+   "gru_2": {
+    "mean_abs_err": 0.008753340100399704,
+    "p99_abs_err": 0.058722667396068594,
+    "max_abs_err": 1.13520747423172
+   },
+   "gru_3": {
+    "mean_abs_err": 0.007875375227117704,
+    "p99_abs_err": 0.06863334327936185,
+    "max_abs_err": 1.0424540042877197
+   },
+   "logit": {
+    "mean_abs_err": 0.12570990228652953,
+    "p99_abs_err": 0.5485917949676513,
+    "max_abs_err": 2.7544727325439453
+   },
+   "decision_flips": 1,
+   "flips_abs_keras_logit_ge_0p2": 1
+  },
+  "t4096_18_1_extra": {
+   "table_size": [
+    "4096"
+   ],
+   "table_t": [
+    "ap_fixed<18,1>"
+   ],
+   "n_tables": 12,
+   "table_bits_total": 884736,
+   "table_bram18k_if_in_bram": 48,
+   "gru": {
+    "mean_abs_err": 0.0009215682416887391,
+    "p99_abs_err": 0.0026024195738136775,
+    "max_abs_err": 0.018391966819763184
+   },
+   "gru_1": {
+    "mean_abs_err": 0.0017912663771916279,
+    "p99_abs_err": 0.007860217690467838,
+    "max_abs_err": 0.0280991792678833
+   },
+   "gru_2": {
+    "mean_abs_err": 0.0024531572475107425,
+    "p99_abs_err": 0.015124537870287896,
+    "max_abs_err": 0.30901122093200684
+   },
+   "gru_3": {
+    "mean_abs_err": 0.0021544405271679613,
+    "p99_abs_err": 0.01799732103943826,
+    "max_abs_err": 0.13924366235733032
+   },
+   "logit": {
+    "mean_abs_err": 0.028450996335595845,
+    "p99_abs_err": 0.13025455474853512,
+    "max_abs_err": 0.2833139896392822
+   },
+   "decision_flips": 0,
+   "flips_abs_keras_logit_ge_0p2": 0
+  }
+ }
+}
