@@ -1,0 +1,10 @@
+2026-11-01T05:54:49Z waiting for the sweep (11 new cells)
+2026-11-01T20:04:50Z sweep ranked: | 1 | 0.25 | 1.0 | 79 | 0.005132 | 0.005109 (0.005006-0.005215) | 0.6749 | 1.038 | 1522 / 1452 (0.21) |
+2026-11-01T20:04:50Z best kd5_u140_a0.25_T1.0 (0.6749101049387246 x MWPM); round 2 from kd5_u140_a0.25_T1.0, alpha 0.25 T 1.0
+2026-11-01T20:05:04Z teacher check passed (PASS dk)
+2026-11-01T20:05:04Z started ta u70
+2026-11-01T22:17:06Z round 2 u70 done in 2 h: results/r2_table.md
+2026-11-01T22:17:06Z started trade-off ta u34
+2026-11-01T22:19:06Z started trade-off ta u48
+2026-11-01T22:21:06Z started trade-off ta u96
+2026-11-02T01:13:07Z trade-off batch done: results/r2_table.md
