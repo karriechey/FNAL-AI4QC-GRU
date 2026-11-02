@@ -1,0 +1,18 @@
+{
+ "best_run": "kd5_u140_a0.25_T1.0",
+ "best_alpha": 0.25,
+ "best_T": "1.0",
+ "best_eval_pL": 0.005109444444444444,
+ "best_eval_x_mwpm": 0.6749101049387246,
+ "best_weights": "/home/kchey/FNAL-AI4QC-GRU-kd/experiments/kd_sweep_d5_u140_2026-10-31/keep/kd5_u140_a0.25_T1.0_20261101T044521Z/epoch079.weights.h5",
+ "best_selected_epoch": 79,
+ "best_eval_errors": 9197,
+ "round2": true,
+ "teacher_run": "kd5_u140_a0.25_T1.0",
+ "teacher_weights": "/home/kchey/FNAL-AI4QC-GRU-kd/experiments/kd_sweep_d5_u140_2026-10-31/keep/kd5_u140_a0.25_T1.0_20261101T044521Z/epoch079.weights.h5",
+ "teacher_epoch": 79,
+ "teacher_eval_errors": 9197,
+ "r2_alpha": "0.25",
+ "r2_T": "1.0",
+ "teacher_dir": "/home/kchey/FNAL-AI4QC-GRU-kd/experiments/kd_sweep_d5_u140_2026-10-31/keep/kd5_u140_a0.25_T1.0_20261101T044521Z"
+}
