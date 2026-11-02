@@ -1,0 +1,16 @@
+{
+ "d": 5,
+ "weights": "/home/kchey/FNAL-AI4QC-GRU-kd/experiments/kd_round2_d5_2026-11-01/teachers/kd5_u140_a0.25_T1.0_epoch079.weights.h5",
+ "sha256": "076878d34c7b02c01cf6d8d02234ecd845b48048adb0baaaf04e7e661ff8f131",
+ "params": 69441,
+ "epoch": 79,
+ "epoch_expected": 79,
+ "tf32": "off",
+ "n": 100000,
+ "features_equal": true,
+ "errors_training_path": 486,
+ "errors_eval_dump": 486,
+ "decisions_differ": 0,
+ "max_abs_logit_diff": 0.0,
+ "labels_equal": true
+}

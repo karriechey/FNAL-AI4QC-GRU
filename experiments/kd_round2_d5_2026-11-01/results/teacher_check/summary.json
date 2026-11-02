@@ -1,0 +1,18 @@
+{
+ "passed": true,
+ "checks": {
+  "eval block errors 9197 == logged 9197": true,
+  "parameters 69441 == 69441": true,
+  "epoch 79 == 79": true,
+  "training layout features == eval features": true,
+  "labels equal to the dump": true,
+  "100k training path: errors 486 == dump 486, 0 decisions differ, max |logit diff| 0.00e+00": true
+ },
+ "eval_errors": 9197,
+ "tf32_errors": 9203,
+ "tf32_gap": 6,
+ "tf32_decisions_differ": 14,
+ "tf32_max_abs_logit_diff": 0.04056358337402344,
+ "train_tf32": "off",
+ "sha256": "076878d34c7b02c01cf6d8d02234ecd845b48048adb0baaaf04e7e661ff8f131"
+}
