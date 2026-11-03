@@ -51,12 +51,14 @@ ap_fixed<18,1>): 9,999 / 10,000 decisions equal; one flip at Keras logit 0.040; 
 
 Step B (`results/step_b.json`, 1.8M shots): I = floor(log2 max abs) + 2 from a float64 replay. Integer bits:
 accumulators 6-8, state 1-2, weights 4-6, biases 1-4, tables 1, input 2. All types AP_RND, AP_SAT. P16: every
-type 16 bits. P8: weights and biases 8 bits, everything else 16 bits.
+type 16 bits. P8: weights and biases 8 bits, everything else 16 bits. tdefault: hls4ml default tables (1024 x
+ap_fixed<18,8>), for the table-size cost comparison (`results/step_b_P8_tdefault.json`).
 
 | config | errors | pL | x FP32 | x MWPM | McNemar b / c (p) | logit abs diff mean / max |
 |---|---|---|---|---|---|---|
 | P16_t4096 | 9,467 | 0.005259 | 1.007 | 1.226 | 474 / 411 (0.037) | 0.125 / 2.32 |
 | P8_t4096 | 493,441 | 0.2741 | 52.5 | 63.9 | 488,322 / 4,285 (0) | 8.32 / 23.4 |
+| P8_tdefault | 494,857 | 0.2749 | 52.6 | 64.1 | 489,743 / 4,290 (0) | / 23.4 |
 | 4 x 70 P16_t4096 | 6,582 | 0.003657 | 1.006 | 0.852 | 199 / 162 (0.058) | 0.066 / 5.30 |
 | 4 x 70 P8_t4096 | 331,522 | 0.1842 | 50.7 | 42.9 | 327,691 / 2,714 (0) | 6.88 / 27.7 |
 
@@ -69,5 +71,6 @@ working 8-bit decoder needs quantization-aware training.
 
 `eaf_bundle/`: run_all.sh (part check, per project 100-shot C-sim against the grace1 hls4ml C-sim, C
 synthesis; start, end and hours of every step in timing.csv), compare_csim.py, collect.py, README_EAF.md.
-Packed with both projects and MANIFEST.sha256 as for_eaf/eaf_d7_2x70_synth.tar.gz (1.3 MB). The 4 x 70
+Packed with both projects and MANIFEST.sha256 as for_eaf/eaf_d7_2x70_synth.tar.gz (1.3 MB);
+P8_tdefault alone as for_eaf/eaf_d7_2x70_P8_tdefault.tar.gz. The 4 x 70
 synthesis took about 66 h.
