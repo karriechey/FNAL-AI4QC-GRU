@@ -1,0 +1,65 @@
+{
+ "environment": {
+  "hls4ml_version": "1.4.0.dev+g1259e2b25",
+  "hls4ml_path": "/tmp/kchey_qat/hls4ml_main",
+  "hls4ml_commit": "1259e2b25ed082e000e749b8ba97b449f4e613a9",
+  "contains_5376da23e": true,
+  "hls4ml_local_changes": "none"
+ },
+ "shots": [
+  15200000,
+  15210000
+ ],
+ "table_size": 4096,
+ "table_t": "ap_fixed<18,1>",
+ "layer_types": {
+  "syndrome_sequence": "Input",
+  "gru": "GRU",
+  "gru_1": "GRU",
+  "logit": "Dense"
+ },
+ "gru_attrs": {
+  "gru": {
+   "return_sequences": "True",
+   "apply_reset_gate": "before",
+   "n_unit_par": "1",
+   "n_cycles": "1",
+   "reuse_factor": "70",
+   "static": "True"
+  },
+  "gru_1": {
+   "return_sequences": "False",
+   "apply_reset_gate": "before",
+   "n_unit_par": "1",
+   "n_cycles": "1",
+   "reuse_factor": "70",
+   "static": "True"
+  }
+ },
+ "csim_s": 4.9,
+ "n_flipped": 1,
+ "flipped": [
+  {
+   "shot": 15209177,
+   "keras_logit": 0.039838001132011414,
+   "hls_logit": -0.016366731375455856,
+   "truth": 0
+  }
+ ],
+ "flipped_outside_0p2": 0,
+ "max_abs_logit_diff": 0.2593417167663574,
+ "mean_abs_logit_diff": 0.03490786573905498,
+ "stats_vs_keras": {
+  "n": 10000,
+  "errors_keras": 51,
+  "errors_hls": 50,
+  "pL_keras": 0.0051,
+  "pL_hls": 0.005,
+  "b": 0,
+  "c": 1,
+  "n_disc": 1,
+  "p_exact": 1.0,
+  "decision_agreement": 0.9999
+ },
+ "status": "PASS"
+}
