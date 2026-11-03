@@ -5,7 +5,8 @@
 #   2 full-block C-sim of P8_t4096 (weights and biases 8 bits; accumulators, state, tables and input 16 bits;
 #     4096-entry tables) and P16_t4096 (every type 16 bits, the accuracy reference), AP_RND / AP_SAT
 #   3 the Vivado-backend projects with a 100-shot testbench (inputs, expected = this C-sim) for EAF
-#   bash hpy.sh step_b.py --table-size 4096 [--configs P8_t4096]
+#   bash hpy.sh step_b.py --table-size 4096 [--configs P8_tdefault]
+#   results/step_b.json for the default configs, results/step_b_<configs>.json otherwise (no overwrite)
 import argparse
 import json
 import os
@@ -103,6 +104,8 @@ ALL = [(f'P16_t{args.table_size}', 16, 16, False), (f'P8_t{args.table_size}', 8,
 wanted = args.configs.format(t=args.table_size).split(',')
 CONFIGS = [c for c in ALL if c[0] in wanted]
 assert len(CONFIGS) == len(wanted), wanted
+out_name = 'step_b.json' if args.configs == ap.get_default('configs') else f"step_b_{'_'.join(wanted)}.json"
+assert not os.path.exists(os.path.join(C.HERE, 'results', out_name)), out_name
 out['configs'] = {}
 for name, wb, ob, default_tables in CONFIGS:
     cfg = cfg_for(wb, ob, args.table_size, default_tables)
@@ -130,4 +133,4 @@ for name, wb, ob, default_tables in CONFIGS:
                     for l in open(os.path.join(prj, 'firmware', 'defines.h')) if l.startswith('typedef')}
     out['configs'][name] = rec
     print(name, json.dumps({k: rec[k] for k in ('stats_vs_fp32_keras', 'max_abs_logit_diff', 'pL_hls_over_mwpm', 'csim_s')}), flush=True)
-    C.dump(out, os.path.join(C.HERE, 'results', 'step_b.json'))
+    C.dump(out, os.path.join(C.HERE, 'results', out_name))
