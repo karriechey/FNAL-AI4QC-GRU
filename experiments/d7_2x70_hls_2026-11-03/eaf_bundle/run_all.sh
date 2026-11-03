@@ -5,7 +5,8 @@
 #   1 check that the part exists in this Vivado HLS install, stop if not
 #   2 per project: C-sim on the 100-shot testbench, compare with the expected output (grace1 hls4ml C-sim),
 #     then C synthesis (skipped for a project whose C-sim does not match)
-#   3 collect reports and logs into results_d7_2x70_<timestamp>.tar.gz
+#   3 collect reports and logs into results_d7_2x70_<timestamp>.tar.gz; wall time of every step goes to
+#     timing.csv (start, end, hours, host) as soon as the step ends
 #   bash run_all.sh                       both projects, one after another
 #   bash run_all.sh P8_t4096              one project (one server per project)
 set -uo pipefail
@@ -44,14 +45,19 @@ run_vivado() {   # project, step name, csim, synth
   local p=$1 step=$2 csim=$3 synth=$4 reset=$5
   printf 'array set opt {\n    reset %s\n    csim %s\n    synth %s\n    cosim 0\n    validation 0\n    export 0\n    vsynth 0\n    fifo_opt 0\n    pnr 0\n}\n' \
     "$reset" "$csim" "$synth" > "projects/$p/build_opt.tcl"
-  local t0=$(date +%s)
+  local t0=$(date +%s) start=$(date -u +%FT%TZ)
   ( cd "projects/$p" && vivado_hls -f build_prj.tcl > "$HERE/logs/${p}_${step}.log" 2>&1 ) &
   local pid=$!
   local peak; peak=$(peak_rss_mb $pid)
   wait $pid; local rc=$?
-  echo "{\"project\": \"$p\", \"step\": \"$step\", \"rc\": $rc, \"wall_s\": $(( $(date +%s) - t0 )), \"peak_rss_mb_sampled\": $peak}" \
+  local wall=$(( $(date +%s) - t0 )) end=$(date -u +%FT%TZ)
+  local hours=$(awk -v s=$wall 'BEGIN {printf "%.2f", s / 3600}')
+  echo "{\"project\": \"$p\", \"step\": \"$step\", \"rc\": $rc, \"start_utc\": \"$start\", \"end_utc\": \"$end\", \"wall_s\": $wall, \"wall_h\": $hours, \"host\": \"$(hostname)\", \"peak_rss_mb_sampled\": $peak}" \
     > "logs/${p}_${step}_cost.json"
-  say "$p $step rc=$rc wall $(( $(date +%s) - t0 )) s peak ~${peak} MB"
+  # running record of every step, kept across reruns
+  [ -f timing.csv ] || echo "project,step,rc,start_utc,end_utc,wall_s,wall_h,host,peak_rss_mb_sampled" > timing.csv
+  echo "$p,$step,$rc,$start,$end,$wall,$hours,$(hostname),$peak" >> timing.csv
+  say "$p $step rc=$rc wall ${hours} h ($wall s) peak ~${peak} MB"
   return $rc
 }
 
@@ -72,9 +78,10 @@ done
 
 # 3 collect
 python3 collect.py > "logs/results_table_${STAMP}.txt"
-files=$(ls logs/* results_table.csv projects/*/myproject_prj/solution1/syn/report/myproject_csynth.* \
+files=$(ls logs/* results_table.csv timing.csv projects/*/myproject_prj/solution1/syn/report/myproject_csynth.* \
         projects/*/tb_data/csim_results.log projects/*/firmware/parameters.h projects/*/firmware/defines.h \
         projects/*/hls4ml_config_used.json 2>/dev/null)
 tar czf "results_d7_2x70_${STAMP}.tar.gz" $files
 say "finished; results: $HERE/results_d7_2x70_${STAMP}.tar.gz"
+say "timing (also in timing.csv):"; column -s, -t timing.csv 2>/dev/null || cat timing.csv
 cat "logs/results_table_${STAMP}.txt"
