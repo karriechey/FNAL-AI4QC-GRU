@@ -1,0 +1,11 @@
+{
+ "n": 1800000,
+ "tf": "2.15.1",
+ "device": "CPU",
+ "keras_errors": 9404,
+ "logged_errors": 9404,
+ "mwpm_errors_logged": 7724,
+ "decision_agreement_with_logged": 1.0,
+ "max_abs_logit_diff_vs_logged": 3.719329833984375e-05,
+ "s": 7.8
+}
