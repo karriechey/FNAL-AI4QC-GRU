@@ -17,7 +17,10 @@ Each project has tb_data/ with 100 eval-block shots (inputs, expected hls4ml C-s
 Keras logits for reference). run_all.sh checks the part, then per project runs C-sim, compares (100/100
 decisions, |diff| <= 1e-4) and runs C synthesis only if the C-sim matches.
 
-Expected cost per project: under the 4 x 70 one (one sequence-output GRU layer instead of three).
+Expected cost: the 4 x 70 synthesis took about 66 h in total (not timed by its script). This model has one
+sequence-output GRU layer instead of three (the layers that held 97% of the 4 x 70 LUT), so expect well under
+that per project; run the two projects on two servers. Every step's start, end and hours go to timing.csv
+and run_all.out as soon as the step ends.
 
 ## Jupyter terminal cells
 
