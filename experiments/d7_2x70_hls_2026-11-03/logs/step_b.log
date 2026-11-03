@@ -1,0 +1,7 @@
+integer bits {"gru.accum": 8, "gru.result": 1, "gru_1.accum": 7, "gru_1.result": 2, "logit.accum": 6, "gru.weight": 6, "gru.recurrent_weight": 6, "gru.bias": 4, "gru.table": 1, "gru_1.weight": 5, "gru_1.recurrent_weight": 6, "gru_1.bias": 3, "gru_1.table": 1, "logit.weight": 4, "logit.bias": 1, "input": 2}
+/tmp/kchey_qat/hls4ml_main/hls4ml/model/graph.py:483: UserWarning: Overriding attribute 'table_size' of layer 'gru' (GRU):1024 -> 4096
+  self.graph[name] = self.make_node(kind, name, layer, inputs, outputs)
+/tmp/kchey_qat/hls4ml_main/hls4ml/model/graph.py:483: UserWarning: Overriding attribute 'table_size' of layer 'gru_1' (GRU):1024 -> 4096
+  self.graph[name] = self.make_node(kind, name, layer, inputs, outputs)
+P16_t4096 {"stats_vs_fp32_keras": {"n": 1800000, "errors_keras": 9404, "errors_hls": 9467, "pL_keras": 0.005224444444444445, "pL_hls": 0.005259444444444444, "b": 474, "c": 411, "n_disc": 885, "p_exact": 0.03709070057973774, "decision_agreement": 0.9995083333333333}, "max_abs_logit_diff": 2.317935824394226, "pL_hls_over_mwpm": 1.2256602796478508, "csim_s": 1961.3}
+P8_t4096 {"stats_vs_fp32_keras": {"n": 1800000, "errors_keras": 9404, "errors_hls": 493441, "pL_keras": 0.005224444444444445, "pL_hls": 0.2741338888888889, "b": 488322, "c": 4285, "n_disc": 492607, "p_exact": 0.0, "decision_agreement": 0.7263294444444445}, "max_abs_logit_diff": 23.405757904052734, "pL_hls_over_mwpm": 63.88412739513206, "csim_s": 2100.1}
