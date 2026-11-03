@@ -1,4 +1,4 @@
-# Created: 2026-11-03 | Last updated: 2026-11-03
+# Created: 2026-10-29 | Last updated: 2026-11-03
 # csynth.xml of every project -> results_table.csv (latency, II, LUT, FF, DSP, BRAM_18K, URAM and their %
 # of the device from the same report), plus C-sim check and Vivado wall time / sampled peak memory.
 import csv
@@ -16,6 +16,8 @@ for prj in sorted(glob.glob('projects/*')):
         if os.path.exists(f):
             c = json.load(open(f))
             row[f'{step}_rc'], row[f'{step}_wall_s'], row[f'{step}_peak_rss_mb'] = c['rc'], c['wall_s'], c['peak_rss_mb_sampled']
+            row[f'{step}_wall_h'] = round(c['wall_s'] / 3600, 2)
+            row[f'{step}_start_utc'], row[f'{step}_end_utc'], row['host'] = c.get('start_utc'), c.get('end_utc'), c.get('host')
     f = f'logs/{name}_csim_compare.json'
     if os.path.exists(f) and os.path.getsize(f):
         c = json.load(open(f))
@@ -47,4 +49,4 @@ with open('results_table.csv', 'w', newline='') as f:
     w.writerows(rows)
 for r in rows:
     print(r['project'], {k: r.get(k) for k in ('latency_max_cycles', 'ii_max_cycles', 'LUT', 'LUT_pct', 'FF', 'FF_pct',
-                                               'DSP', 'DSP_pct', 'BRAM_18K', 'BRAM_18K_pct', 'est_clock_ns', 'csim_100_ok')})
+                                               'DSP', 'DSP_pct', 'BRAM_18K', 'BRAM_18K_pct', 'est_clock_ns', 'csim_100_ok', 'csynth_wall_h')})
