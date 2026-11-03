@@ -1,0 +1,100 @@
+{
+ "environment": {
+  "hls4ml_version": "1.4.0.dev+g1259e2b25",
+  "hls4ml_path": "/tmp/kchey_qat/hls4ml_main",
+  "hls4ml_commit": "1259e2b25ed082e000e749b8ba97b449f4e613a9",
+  "contains_5376da23e": true,
+  "hls4ml_local_changes": "none"
+ },
+ "n": 1800000,
+ "table_size_chosen": 4096,
+ "profile": {
+  "rule": "I = floor(log2 max|v|) + 2",
+  "max_abs": {
+   "gru.accum": 77.41742577065155,
+   "gru.result": 0.9999999999999999,
+   "gru_1.accum": 45.74474874506198,
+   "gru_1.result": 1.0,
+   "logit.accum": 18.792009215238675,
+   "gru.weight": 21.828235626220703,
+   "gru.recurrent_weight": 26.57721519470215,
+   "gru.bias": 6.398488998413086,
+   "gru.table": 0.999999,
+   "gru_1.weight": 8.671563148498535,
+   "gru_1.recurrent_weight": 18.76090431213379,
+   "gru_1.bias": 2.0591864585876465,
+   "gru_1.table": 0.999999,
+   "logit.weight": 4.83390998840332,
+   "logit.bias": 0.15743379294872284,
+   "input": 1.0
+  },
+  "integer_bits": {
+   "gru.accum": 8,
+   "gru.result": 1,
+   "gru_1.accum": 7,
+   "gru_1.result": 2,
+   "logit.accum": 6,
+   "gru.weight": 6,
+   "gru.recurrent_weight": 6,
+   "gru.bias": 4,
+   "gru.table": 1,
+   "gru_1.weight": 5,
+   "gru_1.recurrent_weight": 6,
+   "gru_1.bias": 3,
+   "gru_1.table": 1,
+   "logit.weight": 4,
+   "logit.bias": 1,
+   "input": 2
+  },
+  "s": 107.4
+ },
+ "configs": {
+  "P8_tdefault": {
+   "weight_bits": 8,
+   "other_bits": 16,
+   "default_tables": true,
+   "csim_s": 2292.4,
+   "stats_vs_fp32_keras": {
+    "n": 1800000,
+    "errors_keras": 9404,
+    "errors_hls": 494857,
+    "pL_keras": 0.005224444444444445,
+    "pL_hls": 0.27492055555555556,
+    "b": 489743,
+    "c": 4290,
+    "n_disc": 494033,
+    "p_exact": 0.0,
+    "decision_agreement": 0.7255372222222222
+   },
+   "max_abs_logit_diff": 23.422359466552734,
+   "mean_abs_logit_diff": 8.331627916584438,
+   "mwpm_pL_same_shots": 0.004291111111111111,
+   "pL_hls_over_mwpm": 64.06745209735888,
+   "project": "/tmp/kchey_qat/d7_2x70/eaf_P8_tdefault",
+   "types": {
+    "input_t": "ap_fixed<16,2,AP_RND,AP_SAT,0>",
+    "gru_accum_t": "ap_fixed<16,8,AP_RND,AP_SAT,0>",
+    "layer2_t": "ap_fixed<16,1,AP_RND,AP_SAT,0>",
+    "gru_weight_t": "ap_fixed<8,6,AP_RND,AP_SAT,0>",
+    "gru_recurrent_weight_t": "ap_fixed<8,6,AP_RND,AP_SAT,0>",
+    "gru_bias_t": "ap_fixed<8,4,AP_RND,AP_SAT,0>",
+    "gru_recurrent_bias_t": "ap_fixed<8,4,AP_RND,AP_SAT,0>",
+    "gru_table_t": "ap_fixed<18,8>",
+    "layer2_index": "ap_uint<1>",
+    "gru_1_accum_t": "ap_fixed<16,7,AP_RND,AP_SAT,0>",
+    "layer3_t": "ap_fixed<16,2,AP_RND,AP_SAT,0>",
+    "gru_1_weight_t": "ap_fixed<8,5,AP_RND,AP_SAT,0>",
+    "gru_1_recurrent_weight_t": "ap_fixed<8,6,AP_RND,AP_SAT,0>",
+    "gru_1_bias_t": "ap_fixed<8,3,AP_RND,AP_SAT,0>",
+    "gru_1_recurrent_bias_t": "ap_fixed<8,3,AP_RND,AP_SAT,0>",
+    "gru_1_table_t": "ap_fixed<18,8>",
+    "layer3_index": "ap_uint<1>",
+    "logit_accum_t": "ap_fixed<16,6,AP_RND,AP_SAT,0>",
+    "result_t": "ap_fixed<16,6,AP_RND,AP_SAT,0>",
+    "logit_weight_t": "ap_fixed<8,4,AP_RND,AP_SAT,0>",
+    "logit_bias_t": "ap_fixed<8,1,AP_RND,AP_SAT,0>",
+    "layer4_index": "ap_uint<1>"
+   }
+  }
+ }
+}
