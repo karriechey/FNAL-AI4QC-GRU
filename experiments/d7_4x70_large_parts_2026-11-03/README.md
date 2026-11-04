@@ -1,8 +1,21 @@
 <!-- Created: 2026-11-03 | Last updated: 2026-11-04 -->
 # d7 4 x GRU 70 on larger parts: VP1902, VU19P, with VU13P as reference
 
-Status 2026-11-04: table gate done, bundle ready (`for_eaf/eaf_d7_4x70_large_parts.tar.gz`), synthesis not started.
-Scripts tested with stub tools only, since no Xilinx tool runs outside EAF. No synthesis numbers yet.
+Status 2026-11-04: table gate done, preflight run on EAF, stage A started on jupyter-kchey-seed1. VU19P and VP1902 are blocked
+by the EAF install. No synthesis numbers yet.
+
+## Preflight on EAF (jupyter-kchey-seed1, 126 CPUs)
+
+Tools found: Vivado HLS 2020.1 and Vivado 2020.1 in `/opt/xilinx/Vivado/2020.1`. No Vitis HLS.
+
+| part | result | detail |
+|---|---|---|
+| xcvu13p-flga2577-2-e | pass | C-sim and C synthesis run; Vivado implementation license reported missing |
+| xcvu19p (fsvb3824-2-e, fsva3824-2-e) | blocked: part | `[HLS 200-70] Part ... is not installed`; absent from the Vivado part list |
+| xcvp1902-vsva6865-2MP-e-S | blocked: tool | `[HLS 200-70] Part ... is not installed`; needs Vitis HLS with Versal Premium device files |
+
+`XILINXD_LICENSE_FILE` and `LM_LICENSE_FILE` are both empty. C synthesis numbers here are HLS estimates, with no Vivado synthesis
+or place and route. Runnable jobs: VU13P P8_t4096 RF 70 and 14, VU13P P16_tdefault RF 14.
 
 Model: depth_d7_L04_u70 seed 0 epoch 78, the checkpoint behind P8_t4096. No QAT exists for this model, so these are
 post-training quantization configs. hls4ml main 1259e2b25, io_parallel, Resource, 5 ns.
