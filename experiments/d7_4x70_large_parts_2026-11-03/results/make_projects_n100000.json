@@ -1,0 +1,245 @@
+{
+ "vivado_P8_t4096_rf70": {
+  "backend": "vivado",
+  "config": "P8_t4096",
+  "rf": 70,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "1"
+  ],
+  "n_cycles": [
+   "1"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 18284,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.18284,
+   "b": 18077,
+   "c": 159,
+   "n_disc": 18236,
+   "p_exact": 0.0,
+   "decision_agreement": 0.81764
+  }
+ },
+ "vivado_P8_t4096_rf35": {
+  "backend": "vivado",
+  "config": "P8_t4096",
+  "rf": 35,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "2"
+  ],
+  "n_cycles": [
+   "1"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 18284,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.18284,
+   "b": 18077,
+   "c": 159,
+   "n_disc": 18236,
+   "p_exact": 0.0,
+   "decision_agreement": 0.81764
+  }
+ },
+ "vivado_P8_t4096_rf14": {
+  "backend": "vivado",
+  "config": "P8_t4096",
+  "rf": 14,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "5"
+  ],
+  "n_cycles": [
+   "1"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 18284,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.18284,
+   "b": 18077,
+   "c": 159,
+   "n_disc": 18236,
+   "p_exact": 0.0,
+   "decision_agreement": 0.81764
+  }
+ },
+ "vitis_P8_t4096_rf70": {
+  "backend": "vitis",
+  "config": "P8_t4096",
+  "rf": 70,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "1"
+  ],
+  "n_cycles": [
+   "1"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 18284,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.18284,
+   "b": 18077,
+   "c": 159,
+   "n_disc": 18236,
+   "p_exact": 0.0,
+   "decision_agreement": 0.81764
+  }
+ },
+ "vitis_P8_t4096_rf35": {
+  "backend": "vitis",
+  "config": "P8_t4096",
+  "rf": 35,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "2"
+  ],
+  "n_cycles": [
+   "1"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 18284,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.18284,
+   "b": 18077,
+   "c": 159,
+   "n_disc": 18236,
+   "p_exact": 0.0,
+   "decision_agreement": 0.81764
+  }
+ },
+ "vitis_P8_t4096_rf20": {
+  "backend": "vitis",
+  "config": "P8_t4096",
+  "rf": 20,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "7"
+  ],
+  "n_cycles": [
+   "2"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 18284,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.18284,
+   "b": 18077,
+   "c": 159,
+   "n_disc": 18236,
+   "p_exact": 0.0,
+   "decision_agreement": 0.81764
+  }
+ },
+ "vivado_P16_tdefault_rf35": {
+  "backend": "vivado",
+  "config": "P16_tdefault",
+  "rf": 35,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "2"
+  ],
+  "n_cycles": [
+   "1"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 371,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.00371,
+   "b": 24,
+   "c": 19,
+   "n_disc": 43,
+   "p_exact": 0.542384011856484,
+   "decision_agreement": 0.99957
+  }
+ },
+ "vivado_P16_tdefault_rf14": {
+  "backend": "vivado",
+  "config": "P16_tdefault",
+  "rf": 14,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "5"
+  ],
+  "n_cycles": [
+   "1"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 371,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.00371,
+   "b": 24,
+   "c": 19,
+   "n_disc": 43,
+   "p_exact": 0.542384011856484,
+   "decision_agreement": 0.99957
+  }
+ },
+ "vitis_P16_tdefault_rf20": {
+  "backend": "vitis",
+  "config": "P16_tdefault",
+  "rf": 20,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "7"
+  ],
+  "n_cycles": [
+   "2"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 371,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.00371,
+   "b": 24,
+   "c": 19,
+   "n_disc": 43,
+   "p_exact": 0.542384011856484,
+   "decision_agreement": 0.99957
+  }
+ }
+}

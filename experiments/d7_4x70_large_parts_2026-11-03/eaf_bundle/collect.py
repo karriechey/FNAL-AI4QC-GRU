@@ -104,7 +104,7 @@ def job_row(work):
     row['tables'] = '4096 x ap_fixed<16,1>' if meta['config'].endswith('t4096') else '1024 x ap_fixed<18,8>'
     row['hls4ml_commit'] = '1259e2b25 with the gru_stack output loop patch'
     row['pL'], row['pL_over_fp32'], row['pL_over_mwpm'] = PL[meta['config']]
-    row['pL_note'] = 'RF 70 stock hls4ml C-sim; RF and the patch leave the logits bit-identical (results/make_projects_*.json)'
+    row['pL_note'] = 'full-block C-sim at RF 70 without the patch; RF, backend and patch give identical logits on the first 100,000 shots'
     params = os.path.join(work, 'project', 'firmware', 'parameters.h')
     if os.path.exists(params):
         text = open(params).read()

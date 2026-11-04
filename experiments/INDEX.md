@@ -1,4 +1,4 @@
-<!-- Created: 2026-11-01 | Last updated: 2026-11-01 -->
+<!-- Created: 2026-11-01 | Last updated: 2026-11-04 -->
 # Experiments index
 
 One folder per experiment, named by topic and start date. Folders reference each other by relative
@@ -22,6 +22,7 @@ sealed [17M, 19M) blocks; selection block = [0, 10M) of that pool, used to pick 
 | `kd_round2_d5_2026-11-01/` | d5 round 2: GRU 70 from the best sweep student | `README.md`, `run_r2.sh` | `report_r2.py` output in the folder |
 | `../runs/qat_kd5_u140/` | kd5_u140 quantization (PTQ, QAT), hls4ml C-sim, Vivado synthesis | `NOTES.md`, `SUMMARY.md` | `SUMMARY.md`, `results/` |
 | `d7_4x70_hls_2026-10-29/` | hls4ml gate and synthesis for the stacked d7 4 x GRU 70 | `README.md` | `README.md` |
+| `d7_4x70_large_parts_2026-11-03/` | d7 4 x GRU 70 resources and latency on VP1902, VU19P, VU13P | `README.md`, `eaf_bundle/README_EAF.md` | `README.md` |
 | `selection_2026-10-14/` | Checkpoint selection on the selection block, eval-block scoring | `score_selection.py`, `eval_selected.sh` | `selection_scores.csv`, `eval_selected.csv` |
 | `mwpm_fixes_d9_2026-10/` | d9 runs 9-1 to 9-11 (fixes to beat MWPM at d9); also holds the kill rule | `driver.py`, `run_one.py` | `results.tsv` |
 | `ceiling_probe_d7_2026-10-05/` | Wider and deeper teachers (f2280, f3280, f3280e240) | `run_arm*.sh` | `train_slice_scores.csv` |
