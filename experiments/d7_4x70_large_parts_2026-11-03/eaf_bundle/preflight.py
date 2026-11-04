@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Created: 2026-11-03 | Last updated: 2026-11-03
+# Created: 2026-11-03 | Last updated: 2026-11-04
 # Reports HLS tools and versions, and whether each target part is present and licensed, by running a tiny
 # C-sim + C synthesis per tool and part. Takes minutes. Writes preflight/ and copies the report to RESULTS_HOME.
 #   python3 preflight.py
@@ -177,7 +177,7 @@ def failure_message(key, rows, chains):
     if licensed:
         r = licensed[0]
         return f"LICENSE: {r['tool']} {r['tool_version']} has {r['part']} but no license for it. Log line: {r['reason']}"
-    if key == 'vp1902' and not any(c['tool'] != 'vivado_hls' for c in chains):
+    if key == 'vp1902' and not any(c['tool'] != 'vivado_hls' for c in hls):
         versions = ', '.join(f"{c['tool']} {c['version']}" for c in hls)
         return f'TOOL: only {versions} here. VP1902 needs Vitis HLS with Versal Premium device files installed.'
     if all(r['status'] == 'PART' for r in mine):
