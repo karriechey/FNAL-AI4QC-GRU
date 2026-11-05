@@ -1,8 +1,8 @@
 <!-- Created: 2026-11-03 | Last updated: 2026-11-04 -->
 # d7 4 x GRU 70 on larger parts: VP1902, VU19P, with VU13P as reference
 
-Status 2026-11-04: table gate done, preflight run on EAF, stage A started on jupyter-kchey-seed1. VU19P and VP1902 are blocked
-by the EAF install. No synthesis numbers yet.
+Status 2026-11-05: stage A done. The output loop patch cuts P8_t4096 RF 70 from 8.88M to 1.44M LUT, which fits the VU13P.
+VU19P and VP1902 are blocked by the EAF install.
 
 ## Preflight on EAF (jupyter-kchey-seed1, 126 CPUs)
 
@@ -53,8 +53,7 @@ constant bounds and unrolls.
     for (int j = 0; j < CONFIG_T::n_state; j++) { res[j + CONFIG_T::n_state * iloop] = h_state[j]; }
 
 Logits are identical to the stock RF 70 C-sim on the first 100,000 eval-block shots for all 9 projects (max abs diff 0.0,
-`results/make_projects_n100000.json`), so pL carries over. The effect on LUT and runtime is untested until stage A. If the
-last-state layer is the right guide, RF 70 lands near 4 x 163k = 0.65M LUT.
+`results/make_projects_n100000.json`), so pL carries over. Effect on LUT and runtime: see Results.
 
 ## Tools and backends
 
@@ -92,6 +91,33 @@ VU13P stock RF 70 already exists (sheet tab d7_4x70 HLS, 66.05 h), so it is not 
 
 ## Results
 
-Pending. Each job adds a row to `~/d7_4x70_large_parts_results/large_parts_results.csv` on EAF: LUT, FF, DSP, BRAM_18K, URAM with
-available counts and percent of the part, latency, II, RF, est clock, wall hours, peak GB, host, CPU. Steps in
-`eaf_bundle/README_EAF.md`.
+`results/large_parts_results.csv`, copied from `~/d7_4x70_large_parts_results/` on EAF. HLS C-synthesis estimates, sheet tab d7_4x70 HLS.
+
+P8_t4096, RF 70, VU13P, Vivado HLS 2020.1, 5 ns, on jupyter-kchey-seed1 (AMD EPYC 7542, 126 CPUs):
+
+| | stock | output loop patch |
+|---|---|---|
+| LUT | 8,883,465 (514%) | 1,438,201 (83.23%) |
+| FF | 454,342 (13.15%) | 229,355 (6.64%) |
+| DSP | 1,611 (13.11%) | 1,611 (13.11%) |
+| BRAM_18K | 49 (0.91%) | 49 (0.91%) |
+| URAM | 0 | 0 |
+| latency | unknown | 6,584 cycles, 32.92 us |
+| II | not recorded | 1,634 cycles, 8.17 us |
+| est clock | 4.374 ns | 4.345 ns |
+| wall time, peak memory | 66.05 h, 33.5 GB | 12.82 h, 9.37 GB |
+
+The patched LUT count would be 35.2% of VU19P and 17.0% of VP1902, with DSP at 42.0% and 23.5%. Those parts were not synthesized.
+
+| layer | latency cycles | LUT |
+|---|---|---|
+| gru | 1,633 | 792,824 |
+| gru_1 | 1,625 | 215,481 |
+| gru_2 | 1,625 | 191,569 |
+| gru_3 | 1,625 | 163,473 |
+| logit | 72 | 3,086 |
+
+The first layer has the fewest weights (48 inputs against 70) and 3.7-4.8x the LUT of the others, cause unknown. Latency matches the
+schedule estimate of 6,572 cycles. pL is 0.18418 (50.65x FP32), from the stock full-block C-sim.
+
+LUT at lower RF is unmeasured, and RF 70 already uses 83% of the VU13P.
