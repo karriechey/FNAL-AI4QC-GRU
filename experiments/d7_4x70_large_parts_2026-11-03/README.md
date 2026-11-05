@@ -52,8 +52,8 @@ constant bounds and unrolls.
 
     for (int j = 0; j < CONFIG_T::n_state; j++) { res[j + CONFIG_T::n_state * iloop] = h_state[j]; }
 
-Logits are identical to the stock RF 70 C-sim on the first 100,000 eval-block shots for all 9 projects (max abs diff 0.0,
-`results/make_projects_n100000.json`), so pL carries over. Effect on LUT and runtime: see Results.
+Logits are identical to the stock RF 70 C-sim on the first 100,000 eval-block shots for all 10 projects (max abs diff 0.0,
+`results/make_projects_n100000*.json`), so pL carries over. Effect on LUT and runtime: see Results.
 
 ## Tools and backends
 
@@ -85,7 +85,7 @@ saturating adds per cycle and missed 5 ns on kd5_u140 (RF 35 there, 8.17 ns). RF
 |---|---|---|
 | A | VU13P P8_t4096 RF 70 | compares directly with the stock 8.88M LUT, shows whether the patch works |
 | B | VU19P P8_t4096 RF 70, 35; VP1902 P8_t4096 RF 70, 35, 20; VU13P P8_t4096 RF 14 | the asked-for parts at their lowest RF |
-| C | P16_tdefault at VU19P RF 35, VP1902 RF 20, VU13P RF 14 | the working decoder at the same limits |
+| C | P16_tdefault at VU13P RF 70, VU19P RF 35, VP1902 RF 20, VU13P RF 14 | the working decoder at the same limits, and at RF 70 to compare with P8 |
 
 VU13P stock RF 70 already exists (sheet tab d7_4x70 HLS, 66.05 h), so it is not rerun.
 

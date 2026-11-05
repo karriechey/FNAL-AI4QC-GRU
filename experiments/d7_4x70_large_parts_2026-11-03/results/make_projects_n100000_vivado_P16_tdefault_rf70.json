@@ -1,0 +1,29 @@
+{
+ "vivado_P16_tdefault_rf70": {
+  "backend": "vivado",
+  "config": "P16_tdefault",
+  "rf": 70,
+  "n": 100000,
+  "patched_loops": 4,
+  "n_unit_par": [
+   "1"
+  ],
+  "n_cycles": [
+   "1"
+  ],
+  "max_abs_diff_vs_stock": 0.0,
+  "decisions_equal_stock": 1.0,
+  "stats_vs_fp32_keras": {
+   "n": 100000,
+   "errors_keras": 366,
+   "errors_hls": 371,
+   "pL_keras": 0.00366,
+   "pL_hls": 0.00371,
+   "b": 24,
+   "c": 19,
+   "n_disc": 43,
+   "p_exact": 0.542384011856484,
+   "decision_agreement": 0.99957
+  }
+ }
+}

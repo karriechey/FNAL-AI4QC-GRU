@@ -8,4 +8,5 @@ vp1902_P8_t4096_rf20	B	vp1902	P8_t4096	20
 vu13p_P8_t4096_rf14	B	vu13p	P8_t4096	14
 vu19p_P16_tdefault_rf35	C	vu19p	P16_tdefault	35
 vp1902_P16_tdefault_rf20	C	vp1902	P16_tdefault	20
+vu13p_P16_tdefault_rf70	C	vu13p	P16_tdefault	70
 vu13p_P16_tdefault_rf14	C	vu13p	P16_tdefault	14

@@ -1,4 +1,4 @@
-# Created: 2026-11-03 | Last updated: 2026-11-03
+# Created: 2026-11-03 | Last updated: 2026-11-05
 # Writes the EAF projects from the d7_4x70 configs and checks each C-sim against the RF 70 stock logits
 #   bash hpy.sh make_projects.py --n 100000
 #   bash hpy.sh make_projects.py --only vivado_P8_t4096_rf70 --n 0 (0 = full eval block)
@@ -19,7 +19,8 @@ OUT = '/tmp/kchey_qat/d7_4x70_parts'
 PARTS = {'vivado': 'xcvu13p-flga2577-2-e', 'vitis': 'xcvp1902-vsva6865-2MP-e-S'}
 PROJECTS = [('vivado', 'P8_t4096', 70), ('vivado', 'P8_t4096', 35), ('vivado', 'P8_t4096', 14),
             ('vitis', 'P8_t4096', 70), ('vitis', 'P8_t4096', 35), ('vitis', 'P8_t4096', 20),
-            ('vivado', 'P16_tdefault', 35), ('vivado', 'P16_tdefault', 14), ('vitis', 'P16_tdefault', 20)]
+            ('vivado', 'P16_tdefault', 70), ('vivado', 'P16_tdefault', 35), ('vivado', 'P16_tdefault', 14),
+            ('vitis', 'P16_tdefault', 20)]
 # variable loop bound in gru_stack: HLS cannot unroll it, so GRU latency is unknown and h_state gets muxed
 STOCK_LOOP = re.compile(r'for \(int i = CONFIG_T::n_state \* iloop, j = 0; i < \(CONFIG_T::n_state \* \(iloop \+ 1\)\); '
                         r'i\+\+, j\+\+\) \{(\s+#pragma HLS UNROLL\s+)res\[i\] = h_state\[j\];')

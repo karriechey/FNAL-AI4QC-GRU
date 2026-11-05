@@ -1,4 +1,4 @@
-<!-- Created: 2026-11-03 | Last updated: 2026-11-03 -->
+<!-- Created: 2026-11-03 | Last updated: 2026-11-05 -->
 # d7 4 x GRU 70 on larger parts: EAF steps
 
 Needs python3 (standard library), bash and the Xilinx tools. No pip, no network. Upload
@@ -39,6 +39,12 @@ Stage C is the working 16-bit decoder at the lowest RF each part fits:
 
 Jobs that preflight did not pass are skipped with a message. A job stops after 144 h (`export JOB_TIMEOUT_H=...`).
 A finished job is skipped on a rerun.
+
+P16 RF 70 on the VU13P came after the first bundle. Upload `eaf_d7_4x70_P16_rf70_addon.tar.gz` to the home folder, then:
+
+    cd /scratch/fast/7DayLifetime/kchey/d7_parts && tar xzf ~/eaf_d7_4x70_P16_rf70_addon.tar.gz && cd eaf_d7_4x70_large_parts
+    sha256sum -c MANIFEST_P16_rf70.sha256 | grep -v ': OK$' ; echo manifest checked
+    nohup python3 run_synth.py vu13p_P16_tdefault_rf70 > run_vu13p_P16_rf70.out 2>&1 < /dev/null & disown
 
 ## 4. Bring back
 
